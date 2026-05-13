@@ -110,14 +110,8 @@ export const Login = () => {
 
       {/* ===== BACKGROUND WATERMARK LOGO ===== */}
       <div className="lx-bglogo" aria-hidden="true">
-        <div className="lx-bglogo-icon">
-          <svg viewBox="0 0 24 24" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="0.8">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
-        </div>
-        <span className="lx-bglogo-text">NFORCEONE</span>
+        <span className="lx-bglogo-text">NFORCE</span>
+        <span className="lx-bglogo-sub">ONE</span>
       </div>
 
       {/* Card */}
@@ -472,39 +466,39 @@ export const Login = () => {
 .lx-bglogo {
   position: absolute;
   inset: 0;
-  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
   user-select: none;
-  animation: bgLogoFade 2s ease-out forwards;
+  z-index: 3;
+  animation: bgLogoFade 2.5s ease-out forwards;
 }
 @keyframes bgLogoFade {
   0% { opacity: 0; }
   100% { opacity: 1; }
 }
-.lx-bglogo-icon {
-  color: rgba(255,30,30,0.04);
-  margin-bottom: -8px;
-  filter: blur(1px);
-  animation: bgLogoPulse 6s infinite alternate ease-in-out;
-}
 .lx-bglogo-text {
-  font-size: clamp(4rem, 15vw, 10rem);
-  font-weight: 900;
-  letter-spacing: clamp(12px, 3vw, 30px);
-  color: rgba(255,30,30,0.03);
+  font-size: clamp(5rem, 20vw, 14rem);
+  font-weight: 800;
+  letter-spacing: clamp(16px, 4vw, 40px);
+  color: rgba(255,255,255,0.08);
   text-shadow:
-    0 0 60px rgba(255,30,30,0.02),
-    0 0 120px rgba(255,30,30,0.01);
-  filter: blur(2px);
-  animation: bgLogoPulse 8s infinite alternate-reverse ease-in-out;
+    0 0 100px rgba(255,30,30,0.2),
+    0 0 200px rgba(255,30,30,0.1),
+    0 0 300px rgba(255,30,30,0.05);
+  line-height: 1;
 }
-@keyframes bgLogoPulse {
-  0% { opacity: 0.6; }
-  100% { opacity: 1; }
+.lx-bglogo-sub {
+  font-size: clamp(2rem, 6vw, 5rem);
+  font-weight: 300;
+  letter-spacing: clamp(24px, 8vw, 60px);
+  color: rgba(255,30,30,0.08);
+  text-shadow:
+    0 0 80px rgba(255,30,30,0.15),
+    0 0 150px rgba(255,30,30,0.08);
+  margin-top: -8px;
 }
 
 /* ===== RESPONSIVE ===== */
