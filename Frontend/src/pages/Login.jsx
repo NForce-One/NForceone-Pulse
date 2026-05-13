@@ -114,17 +114,6 @@ export const Login = () => {
           <div className="lx-card-shine" />
           <div className="lx-card-border" />
 
-          {/* Logo */}
-          <div className="lx-logo">
-            <div className="lx-logo-icon">
-              <svg viewBox="0 0 40 40" fill="none" width="32" height="32">
-                <rect x="2" y="2" width="36" height="36" rx="8" stroke="#ff1e1e" strokeWidth="2" fill="none" />
-                <path d="M12 28V12h6l4 8 4-8h6v16" stroke="#ff1e1e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span className="lx-logo-text">NFORCE</span>
-          </div>
-
           <div className="lx-header">
             <h1 className="lx-title">Welcome Back</h1>
             <p className="lx-sub">Sign in to your account to continue</p>
