@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Lock, Eye, EyeOff, LogIn, Mail, ShieldAlert } from "lucide-react";
+import { Eye, EyeOff, LogIn, Mail, ShieldAlert, Lock, Github } from "lucide-react";
 
 import { loginUser } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
-const EMBER_COUNT = 80;
-const SPARK_COUNT = 50;
+const PARTICLE_COUNT = 60;
 
 export const Login = () => {
   const [email, setEmail] = useState("");
@@ -21,27 +20,15 @@ export const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const embers = useMemo(() =>
-    Array.from({ length: EMBER_COUNT }, (_, i) => ({
+  const particles = useMemo(() =>
+    Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
       id: i,
-      size: Math.random() * 6 + 2,
-      x: Math.random() * 100,
-      delay: Math.random() * 10,
-      duration: Math.random() * 4 + 4,
-      opacity: Math.random() * 0.8 + 0.2,
-      hue: Math.floor(Math.random() * 40) + 10,
-      drift: (Math.random() - 0.5) * 80,
-    })), []
-  );
-
-  const sparks = useMemo(() =>
-    Array.from({ length: SPARK_COUNT }, (_, i) => ({
-      id: i,
-      size: Math.random() * 2.5 + 0.5,
+      size: Math.random() * 3 + 1,
       x: Math.random() * 100,
       y: Math.random() * 100,
       delay: Math.random() * 8,
-      duration: Math.random() * 2 + 1.5,
+      duration: Math.random() * 6 + 4,
+      opacity: Math.random() * 0.5 + 0.1,
     })), []
   );
 
@@ -50,10 +37,8 @@ export const Login = () => {
       const x = e.clientX / window.innerWidth;
       const y = e.clientY / window.innerHeight;
       if (cardRef.current) {
-        cardRef.current.style.setProperty("--rx", `${(y - 0.5) * -5}deg`);
-        cardRef.current.style.setProperty("--ry", `${(x - 0.5) * 5}deg`);
-        cardRef.current.style.setProperty("--gx", `${x * 100}%`);
-        cardRef.current.style.setProperty("--gy", `${y * 100}%`);
+        cardRef.current.style.setProperty("--rx", `${(y - 0.5) * -4}deg`);
+        cardRef.current.style.setProperty("--ry", `${(x - 0.5) * 4}deg`);
       }
       if (rootRef.current) {
         rootRef.current.style.setProperty("--mx", `${x * 100}%`);
@@ -84,145 +69,158 @@ export const Login = () => {
     } finally { setIsLoading(false); }
   };
 
-  const handleRipple = (e) => {
-    const btn = e.currentTarget;
-    const rect = btn.getBoundingClientRect();
-    const ripple = document.createElement("span");
-    ripple.className = "nfo-ripple";
-    ripple.style.left = `${e.clientX - rect.left}px`;
-    ripple.style.top = `${e.clientY - rect.top}px`;
-    btn.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 800);
-  };
-
   return (
-    <div className="nfo-root" ref={rootRef}>
-      {/* Background gradient mesh */}
-      <div className="nfo-bg">
-        <div className="nfo-mesh m1" />
-        <div className="nfo-mesh m2" />
-        <div className="nfo-mesh m3" />
-        <div className="nfo-mesh m4" />
-        <div className="nfo-mesh m5" />
-        <div className="nfo-mesh m6" />
+    <div className="lx-root" ref={rootRef}>
+      {/* Background */}
+      <div className="lx-bg">
+        <div className="lx-mesh m1" />
+        <div className="lx-mesh m2" />
+        <div className="lx-mesh m3" />
+        <div className="lx-mesh m4" />
       </div>
 
-      {/* Floating glass orbs */}
-      <div className="nfo-orb o1" />
-      <div className="nfo-orb o2" />
-      <div className="nfo-orb o3" />
-      <div className="nfo-orb o4" />
-      <div className="nfo-orb o5" />
+      {/* Neon lines */}
+      <div className="lx-neon n1" />
+      <div className="lx-neon n2" />
+      <div className="lx-neon n3" />
 
-      {/* Stars */}
-      <div className="nfo-stars" aria-hidden="true">
-        {sparks.map((s) => (
-          <div key={s.id} className="nfo-star"
+      {/* Particles */}
+      <div className="lx-particles" aria-hidden="true">
+        {particles.map((p) => (
+          <div key={p.id} className="lx-particle"
             style={{
-              left: `${s.x}%`, top: `${s.y}%`,
-              width: s.size, height: s.size,
-              animationDelay: `${s.delay}s`,
-              animationDuration: `${s.duration}s`,
+              left: `${p.x}%`, top: `${p.y}%`,
+              width: p.size, height: p.size,
+              opacity: p.opacity,
+              animationDelay: `${p.delay}s`,
+              animationDuration: `${p.duration}s`,
             }}
           />
         ))}
       </div>
 
-      {/* Shooting stars */}
-      <div className="nfo-shooting s1" />
-      <div className="nfo-shooting s2" />
-      <div className="nfo-shooting s3" />
+      {/* Red ambient glow */}
+      <div className="lx-ambient" />
 
-      {/* Subtle grid overlay */}
-      <div className="nfo-grid-overlay" />
+      {/* Grid overlay */}
+      <div className="lx-grid" />
 
       {/* Mouse glow */}
-      <div className="nfo-mglow" />
+      <div className="lx-mglow" />
 
       {/* Card */}
-      <div className="nfo-cwrap">
-        <div className="nfo-card" ref={cardRef}>
-          <div className="nfo-card-gloss" />
-          <div className="nfo-card-border" />
-          <div className="nfo-card-border-inner" />
+      <div className="lx-cwrap">
+        <div className="lx-card" ref={cardRef}>
+          <div className="lx-card-shine" />
+          <div className="lx-card-border" />
 
-          {/* Small flame accent at top of card */}
-          <div className="nfo-flame-acc" />
+          {/* Logo */}
+          <div className="lx-logo">
+            <div className="lx-logo-icon">
+              <svg viewBox="0 0 40 40" fill="none" width="32" height="32">
+                <rect x="2" y="2" width="36" height="36" rx="8" stroke="#ff1e1e" strokeWidth="2" fill="none" />
+                <path d="M12 28V12h6l4 8 4-8h6v16" stroke="#ff1e1e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span className="lx-logo-text">NFORCE</span>
+          </div>
 
-          <h1 className="nfo-title">
-            NFORCE<span className="nfo-title-one">ONE</span>
-          </h1>
-          <p className="nfo-sub">TIME TRACKING TOOL</p>
+          <div className="lx-header">
+            <h1 className="lx-title">Welcome Back</h1>
+            <p className="lx-sub">Sign in to your account to continue</p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="nfo-form">
+          <form onSubmit={handleSubmit} className="lx-form">
             {error && (
-              <div className="nfo-err">
+              <div className="lx-err">
                 <ShieldAlert size={16} />
                 <span>{error}</span>
               </div>
             )}
 
-            <div className="nfo-fld" style={{ animationDelay: "0.2s" }}>
-              <label className="nfo-lbl"><Mail size={12} /> EMAIL ADDRESS</label>
-              <div className="nfo-iwrap">
-                <Mail size={18} className="nfo-icn" />
-                <input type="email" placeholder="Enter your email"
+            <div className="lx-fld" style={{ animationDelay: "0.15s" }}>
+              <label className="lx-lbl">Email Address</label>
+              <div className="lx-iwrap">
+                <Mail size={16} className="lx-icn" />
+                <input type="email" placeholder="you@company.com"
                   value={email} onChange={(e) => setEmail(e.target.value)}
-                  required className="nfo-inp" />
+                  required className="lx-inp" />
               </div>
             </div>
 
-            <div className="nfo-fld" style={{ animationDelay: "0.35s" }}>
-              <label className="nfo-lbl"><Lock size={12} /> PASSWORD</label>
-              <div className="nfo-iwrap">
-                <Lock size={18} className="nfo-icn" />
+            <div className="lx-fld" style={{ animationDelay: "0.25s" }}>
+              <label className="lx-lbl">Password</label>
+              <div className="lx-iwrap">
+                <Lock size={16} className="lx-icn" />
                 <input type={showPassword ? "text" : "password"} placeholder="Enter your password"
                   value={password} onChange={(e) => setPassword(e.target.value)}
-                  required className="nfo-inp" />
-                <button type="button" className="nfo-eye"
+                  required className="lx-inp" />
+                <button type="button" className="lx-eye"
                   onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <div className="nfo-meta" style={{ animationDelay: "0.5s" }}>
-              <label className="nfo-rem">
+            <div className="lx-meta" style={{ animationDelay: "0.35s" }}>
+              <label className="lx-rem">
                 <input type="checkbox" checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)} />
-                <span className="nfo-cbox"><span className="nfo-cbox-check" /></span>
-                <span>Remember Me</span>
+                <span className="lx-cbox" />
+                <span>Remember me</span>
               </label>
-              <Link to="/forgot-password" className="nfo-forgot">Forgot Password?</Link>
+              <Link to="/forgot-password" className="lx-forgot">Forgot password?</Link>
             </div>
 
             <button type="submit" disabled={isLoading}
-              className="nfo-btn" style={{ animationDelay: "0.65s" }}
-              onClick={handleRipple}>
+              className="lx-btn" style={{ animationDelay: "0.45s" }}>
               {isLoading ? (
-                <div className="nfo-spin" />
+                <div className="lx-spin" />
               ) : (
-                <><LogIn size={20} /><span>Sign In</span></>
+                <><LogIn size={18} /><span>Sign In</span></>
               )}
             </button>
           </form>
 
-          <div className="nfo-foot">
-            <span>Track</span><span className="nfo-dot">•</span>
-            <span>Analyze</span><span className="nfo-dot">•</span>
+          <div className="lx-divider" style={{ animationDelay: "0.5s" }}>
+            <span>or continue with</span>
+          </div>
+
+          <div className="lx-social" style={{ animationDelay: "0.55s" }}>
+            <button className="lx-social-btn" aria-label="Sign in with Google">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                <path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+            </button>
+            <button className="lx-social-btn" aria-label="Sign in with GitHub">
+              <Github size={20} />
+            </button>
+            <button className="lx-social-btn" aria-label="Sign in with LinkedIn">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+            </button>
+          </div>
+
+          <div className="lx-foot" style={{ animationDelay: "0.6s" }}>
+            <span>Track</span><span className="lx-dot">•</span>
+            <span>Analyze</span><span className="lx-dot">•</span>
             <span>Optimize</span>
           </div>
         </div>
       </div>
 
       <style>{`
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-.nfo-root {
+.lx-root {
   min-height: 100vh;
-  background: #050508;
+  background: #0a0a0a;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -231,288 +229,249 @@ export const Login = () => {
   font-family: 'Inter', sans-serif;
 }
 
-/* ===== GRADIENT MESH ===== */
-.nfo-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
-.nfo-mesh { position: absolute; border-radius: 50%; filter: blur(130px); animation: meshDrift 25s infinite alternate ease-in-out; }
-.m1 { width: 800px; height: 800px; top: -20%; left: -10%; background: radial-gradient(circle, rgba(100,20,60,0.35), rgba(60,10,30,0.1) 40%, transparent 70%); }
-.m2 { width: 700px; height: 700px; bottom: -15%; right: -10%; background: radial-gradient(circle, rgba(200,30,50,0.3), rgba(100,10,20,0.08) 40%, transparent 70%); animation-delay: -6s; }
-.m3 { width: 600px; height: 600px; top: 30%; left: 40%; background: radial-gradient(circle, rgba(80,20,80,0.15), transparent 70%); animation-delay: -12s; }
-.m4 { width: 500px; height: 500px; top: 60%; right: 20%; background: radial-gradient(circle, rgba(180,20,40,0.12), transparent 70%); animation-delay: -3s; }
-.m5 { width: 400px; height: 400px; top: 10%; right: 25%; background: radial-gradient(circle, rgba(120,10,50,0.18), transparent 70%); animation-delay: -9s; }
-.m6 { width: 550px; height: 550px; top: 45%; left: 15%; background: radial-gradient(circle, rgba(220,40,60,0.08), transparent 70%); animation-delay: -15s; }
-@keyframes meshDrift { 0% { transform: scale(1) translate(0,0); } 100% { transform: scale(1.3) translate(80px,-50px); } }
+/* ===== BACKGROUND MESH ===== */
+.lx-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.lx-mesh { position: absolute; border-radius: 50%; filter: blur(140px); animation: meshDrift 20s infinite alternate ease-in-out; }
+.m1 { width: 700px; height: 700px; top: -25%; left: -15%; background: radial-gradient(circle, rgba(255,30,30,0.12), rgba(100,0,0,0.05) 40%, transparent 70%); }
+.m2 { width: 600px; height: 600px; bottom: -20%; right: -15%; background: radial-gradient(circle, rgba(200,0,0,0.1), rgba(50,0,0,0.03) 40%, transparent 70%); animation-delay: -7s; }
+.m3 { width: 500px; height: 500px; top: 40%; left: 50%; background: radial-gradient(circle, rgba(255,50,50,0.06), transparent 70%); animation-delay: -14s; }
+.m4 { width: 400px; height: 400px; top: 10%; right: 20%; background: radial-gradient(circle, rgba(150,0,0,0.08), transparent 70%); animation-delay: -4s; }
+@keyframes meshDrift { 0% { transform: scale(1) translate(0,0); } 100% { transform: scale(1.2) translate(60px,-40px); } }
 
-/* ===== FLOATING GLASS ORBS ===== */
-.nfo-orb { position: absolute; border-radius: 50%; pointer-events: none; animation: orbFloat 12s infinite alternate ease-in-out; }
-.o1 { width: 300px; height: 300px; top: 5%; right: 8%;
-  background: radial-gradient(circle at 30% 30%, rgba(255,50,80,0.08), rgba(200,20,50,0.03) 40%, transparent 70%);
-  filter: blur(50px); animation-duration: 14s; }
-.o2 { width: 200px; height: 200px; bottom: 10%; left: 5%;
-  background: radial-gradient(circle at 70% 40%, rgba(150,30,80,0.06), rgba(80,10,40,0.02) 40%, transparent 70%);
-  filter: blur(40px); animation-duration: 10s; animation-delay: -3s; animation-direction: reverse; }
-.o3 { width: 150px; height: 150px; top: 55%; right: 15%;
-  background: radial-gradient(circle at 50% 50%, rgba(255,60,100,0.05), transparent 60%);
-  filter: blur(30px); animation-duration: 8s; animation-delay: -6s; }
-.o4 { width: 250px; height: 250px; top: 35%; left: 60%;
-  background: radial-gradient(circle at 60% 60%, rgba(180,30,70,0.06), transparent 60%);
-  filter: blur(45px); animation-duration: 11s; animation-delay: -2s; }
-.o5 { width: 180px; height: 180px; bottom: 25%; right: 35%;
-  background: radial-gradient(circle at 40% 30%, rgba(220,40,90,0.04), transparent 60%);
-  filter: blur(35px); animation-duration: 9s; animation-delay: -8s; animation-direction: reverse; }
-@keyframes orbFloat { 0% { transform: translateY(0) scale(1); opacity: 0.3; } 100% { transform: translateY(-30px) scale(1.15); opacity: 0.8; } }
+/* ===== NEON LINES ===== */
+.lx-neon { position: absolute; height: 1px; z-index: 1; pointer-events: none; opacity: 0.3; }
+.lx-neon::before, .lx-neon::after {
+  content: ''; position: absolute; top: -2px; width: 6px; height: 6px;
+  border-radius: 50%; background: #ff1e1e; box-shadow: 0 0 12px #ff1e1e, 0 0 30px rgba(255,30,30,0.3);
+}
+.n1 { top: 15%; left: -10%; right: 60%; background: linear-gradient(90deg, transparent, #ff1e1e, transparent); animation: neonDrift1 8s infinite linear; }
+.n2 { top: 70%; left: 40%; right: -10%; background: linear-gradient(90deg, transparent, #ff1e1e, transparent); animation: neonDrift2 10s infinite linear; animation-delay: -3s; }
+.n3 { top: 45%; left: 50%; right: 20%; background: linear-gradient(90deg, transparent, rgba(255,30,30,0.4), transparent); animation: neonDrift1 12s infinite linear; animation-delay: -6s; opacity: 0.15; }
+@keyframes neonDrift1 { 0% { transform: translateX(0); } 100% { transform: translateX(100vw); } }
+@keyframes neonDrift2 { 0% { transform: translateX(0); } 100% { transform: translateX(-100vw); } }
 
-/* ===== STARS ===== */
-.nfo-stars { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.nfo-star { position: absolute; border-radius: 50%; background: #fff;
-  box-shadow: 0 0 4px rgba(255,255,255,0.6), 0 0 12px rgba(255,200,200,0.2);
-  animation: starTwinkle 3s infinite ease-in-out; }
-@keyframes starTwinkle {
-  0%, 100% { opacity: 0.1; transform: scale(0.5); }
-  50% { opacity: 1; transform: scale(1.2); }
+/* ===== PARTICLES ===== */
+.lx-particles { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.lx-particle { position: absolute; border-radius: 50%; background: #ff1e1e;
+  box-shadow: 0 0 6px rgba(255,30,30,0.4), 0 0 20px rgba(255,30,30,0.1);
+  animation: particleFloat 6s infinite ease-in-out; }
+@keyframes particleFloat {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 0.5; }
+  100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
 }
 
-/* ===== SHOOTING STARS ===== */
-.nfo-shooting { position: absolute; width: 150px; height: 1px; z-index: 2;
-  background: linear-gradient(90deg, transparent, rgba(255,100,150,0.5));
-  transform: rotate(-30deg); animation: shootStar 8s infinite linear; pointer-events: none; }
-.nfo-shooting::after { content: ''; position: absolute; right: 0; top: -2px;
-  width: 4px; height: 4px; border-radius: 50%;
-  background: rgba(255,200,220,0.8);
-  box-shadow: 0 0 10px rgba(255,100,150,0.5), 0 0 30px rgba(255,100,150,0.2); }
-.s1 { top: 15%; right: -20%; animation-delay: 0s; }
-.s2 { top: 45%; right: -20%; animation-delay: -2.7s; animation-duration: 10s; }
-.s3 { top: 75%; right: -20%; animation-delay: -5.3s; animation-duration: 9s; }
-@keyframes shootStar { 0% { transform: rotate(-30deg) translateX(0); opacity: 0; } 5% { opacity: 1; } 95% { opacity: 1; } 100% { transform: rotate(-30deg) translateX(-2500px); opacity: 0; } }
+/* ===== AMBIENT GLOW ===== */
+.lx-ambient { position: absolute; bottom: -200px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 400px; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse, rgba(255,30,30,0.08), transparent 60%); }
 
-/* ===== SUBTLE GRID ===== */
-.nfo-grid-overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+/* ===== GRID ===== */
+.lx-grid { position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background-image:
-    linear-gradient(rgba(255,255,255,0.008) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.008) 1px, transparent 1px);
-  background-size: 80px 80px; }
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 60px 60px; }
 
 /* ===== MOUSE GLOW ===== */
-.nfo-mglow { position: absolute; inset: 0; z-index: 3; pointer-events: none;
-  background: radial-gradient(1000px circle at var(--mx,50%) var(--my,50%), rgba(255,50,80,0.06), transparent 50%); }
+.lx-mglow { position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: radial-gradient(800px circle at var(--mx,50%) var(--my,50%), rgba(255,30,30,0.04), transparent 50%); }
 
 /* ===== CARD WRAPPER ===== */
-.nfo-cwrap { position: relative; z-index: 10; width: 100%; max-width: 440px; padding: 20px;
-  animation: cardIn 1.5s cubic-bezier(0.16,1,0.3,1) forwards; }
-@keyframes cardIn { 0% { opacity: 0; transform: translateY(80px) scale(0.92); filter: blur(20px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+.lx-cwrap { position: relative; z-index: 10; width: 100%; max-width: 420px; padding: 16px;
+  animation: cardIn 1.2s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes cardIn { 0% { opacity: 0; transform: translateY(60px) scale(0.95); filter: blur(10px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 
 /* ===== CARD ===== */
-.nfo-card {
+.lx-card {
   position: relative;
-  background: rgba(8, 5, 14, 0.85);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border-radius: 32px;
-  padding: 50px 40px 42px;
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  border-radius: 24px;
+  padding: 44px 36px 36px;
   overflow: hidden;
-  transform: perspective(1200px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
-  transition: transform 0.12s ease-out;
-  display: flex; flex-direction: column; align-items: center; gap: 24px;
-  animation: cardFloat 5s infinite alternate ease-in-out;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.8), 0 0 60px rgba(255,40,0,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
-}
-@keyframes cardFloat {
-  0% { transform: perspective(1200px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(0); }
-  100% { transform: perspective(1200px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-5px); }
+  transform: perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition: transform 0.15s ease-out;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  box-shadow:
+    0 0 0 1px rgba(255,30,30,0.15),
+    0 30px 80px rgba(0,0,0,0.6),
+    0 0 80px rgba(255,30,30,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
-/* ===== CARD GLOSS ===== */
-.nfo-card-gloss { position: absolute; top: -1px; right: -1px; width: 220px; height: 220px;
-  background: radial-gradient(circle at top right, rgba(255,255,255,0.06), transparent 70%);
-  pointer-events: none; border-radius: 0 32px 0 0;
-  animation: glossFlicker 4s infinite alternate ease-in-out; }
-@keyframes glossFlicker { 0% { opacity: 0.2; } 100% { opacity: 0.7; } }
+.lx-card-shine {
+  position: absolute; top: -50%; right: -50%; width: 100%; height: 100%;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 60%);
+  pointer-events: none; border-radius: 50%;
+  animation: shineMove 8s infinite alternate ease-in-out;
+}
+@keyframes shineMove { 0% { transform: translate(0,0); } 100% { transform: translate(-30%,30%); } }
 
-/* ===== FIRE BORDER ===== */
-.nfo-card-border, .nfo-card-border-inner { position: absolute; inset: -1px; border-radius: 32px; pointer-events: none; }
-.nfo-card-border {
+/* ===== CARD BORDER ===== */
+.lx-card-border { position: absolute; inset: -1px; border-radius: 24px; pointer-events: none;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(200,30,60,0.5), rgba(150,20,50,0.15) 25%, rgba(100,20,60,0.05) 50%, rgba(180,30,50,0.2) 75%, rgba(220,40,60,0.4) 100%);
+  background: linear-gradient(135deg, rgba(255,30,30,0.4), rgba(255,30,30,0.05) 30%, rgba(255,30,30,0.02) 50%, rgba(255,30,30,0.08) 70%, rgba(255,30,30,0.3) 100%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: borderFire 3s infinite alternate ease-in-out;
+  animation: borderPulse 4s infinite alternate ease-in-out;
 }
-.nfo-card-border-inner {
-  background: linear-gradient(135deg, transparent 20%, rgba(255,255,255,0.02) 40%, transparent 60%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: borderDrift 5s infinite linear;
-}
-@keyframes borderFire { 0% { opacity: 0.4; } 100% { opacity: 1; } }
-@keyframes borderDrift { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
+@keyframes borderPulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
 
-/* ===== TOP GLOW ACCENT ===== */
-.nfo-flame-acc {
-  position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
-  width: 140px; height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(255,50,80,0.5), rgba(200,30,100,0.3), rgba(255,50,80,0.5), transparent);
-  border-radius: 2px; filter: blur(3px);
-  animation: topAccent 3s infinite alternate ease-in-out;
+/* ===== LOGO ===== */
+.lx-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.lx-logo-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: rgba(255,30,30,0.1);
+  border: 1px solid rgba(255,30,30,0.2);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 20px rgba(255,30,30,0.05);
 }
-@keyframes topAccent { 0% { opacity: 0.2; width: 100px; } 100% { opacity: 0.7; width: 160px; } }
-
-/* ===== TITLE ===== */
-.nfo-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 2.6rem; font-weight: 900;
-  letter-spacing: 4px; text-align: center;
-  text-transform: uppercase; line-height: 1;
-  background: linear-gradient(135deg, #ff3355 0%, #cc3377 30%, #ff5588 50%, #dd3366 70%, #ff3355 100%);
+.lx-logo-text {
+  font-size: 1.6rem; font-weight: 800; letter-spacing: 3px;
+  background: linear-gradient(135deg, #fff, #ccc);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
-  background-size: 300% 300%;
-  animation: titleFire 4s infinite ease-in-out;
-}
-@keyframes titleFire { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-
-.nfo-title-one {
-  font-family: 'Orbitron', sans-serif;
-  color: #ff3366;
-  -webkit-text-fill-color: #ff3366;
-  text-shadow: 0 0 15px rgba(255,50,100,0.6), 0 0 50px rgba(200,30,80,0.3), 0 0 80px rgba(255,50,100,0.15);
-  animation: onePulse 3s infinite;
-  display: inline-block;
-}
-@keyframes onePulse {
-  0%, 100% { text-shadow: 0 0 15px rgba(255,50,100,0.6), 0 0 50px rgba(200,30,80,0.3); }
-  50% { text-shadow: 0 0 25px rgba(255,80,120,0.8), 0 0 70px rgba(200,50,100,0.5); }
 }
 
-.nfo-sub {
-  font-size: 0.65rem; letter-spacing: 7px; text-transform: uppercase;
-  color: rgba(220,180,200,0.5); font-weight: 400;
-  margin-top: -10px; text-align: center;
-  animation: subFade 3s infinite alternate ease-in-out;
-}
-@keyframes subFade { 0% { opacity: 0.3; letter-spacing: 7px; } 100% { opacity: 0.7; letter-spacing: 9px; } }
+/* ===== HEADER ===== */
+.lx-header { text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.lx-title { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.lx-sub { font-size: 0.85rem; color: rgba(255,255,255,0.35); font-weight: 400; }
 
 /* ===== FORM ===== */
-.nfo-form { width: 100%; display: flex; flex-direction: column; gap: 20px; }
-.nfo-fld { display: flex; flex-direction: column; gap: 8px; animation: fldIn 0.8s cubic-bezier(0.16,1,0.3,1) both; }
-@keyframes fldIn { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+.lx-form { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 
-.nfo-err { display: flex; align-items: center; gap: 10px;
-  background: rgba(255,40,0,0.1); border: 1px solid rgba(255,60,0,0.3);
-  border-radius: 12px; padding: 12px 16px; color: #ff6633;
-  font-size: 0.85rem; font-weight: 500; animation: shake 0.4s ease, fldIn 0.4s ease both; }
-@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+.lx-err { display: flex; align-items: center; gap: 8px;
+  background: rgba(255,30,30,0.08); border: 1px solid rgba(255,30,30,0.2);
+  border-radius: 10px; padding: 10px 14px; color: #ff4444;
+  font-size: 0.82rem; font-weight: 500; animation: shake 0.4s ease; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
 
-.nfo-lbl { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.8px;
-  color: rgba(220,180,200,0.7); display: flex; align-items: center; gap: 6px; text-transform: uppercase; }
+.lx-fld { display: flex; flex-direction: column; gap: 6px;
+  animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes fldIn { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: translateY(0); } }
 
-.nfo-iwrap { position: relative; display: flex; align-items: center; }
-.nfo-icn { position: absolute; left: 16px; color: rgba(220,180,200,0.5); pointer-events: none; transition: color 0.3s; }
+.lx-lbl { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.5); }
 
-.nfo-inp {
+.lx-iwrap { position: relative; display: flex; align-items: center; }
+.lx-icn { position: absolute; left: 14px; color: rgba(255,255,255,0.2); pointer-events: none; transition: color 0.3s; }
+
+.lx-inp {
   width: 100%;
-  background: rgba(220,180,200,0.08);
-  border: 1.5px solid rgba(220,180,200,0.2);
-  border-radius: 14px;
-  padding: 16px 20px 16px 48px;
-  color: #fff; font-size: 0.95rem; font-family: 'Inter', sans-serif;
-  outline: none; transition: all 0.35s ease;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 14px 16px 14px 44px;
+  color: #fff; font-size: 0.9rem; font-family: 'Inter', sans-serif;
+  outline: none; transition: all 0.3s ease;
 }
-.nfo-inp::placeholder { color: rgba(220,180,200,0.35); font-weight: 400; transition: all 0.3s; }
-.nfo-inp:focus::placeholder { color: rgba(220,180,200,0.12); transform: translateX(5px); }
-.nfo-inp:focus {
-  background: rgba(220,180,200,0.12);
-  border-color: rgba(255,50,100,0.5);
-  box-shadow: 0 0 0 1px rgba(255,50,100,0.15), 0 0 40px rgba(255,50,100,0.1);
+.lx-inp::placeholder { color: rgba(255,255,255,0.15); font-weight: 400; }
+.lx-inp:focus {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,30,30,0.35);
+  box-shadow: 0 0 0 1px rgba(255,30,30,0.1), 0 0 30px rgba(255,30,30,0.04);
 }
-.nfo-inp:focus ~ .nfo-icn { color: rgba(255,80,120,0.7); }
+.lx-inp:focus ~ .lx-icn { color: rgba(255,30,30,0.6); }
 
-.nfo-eye { position: absolute; right: 16px; background: none; border: none;
-  color: rgba(200,150,180,0.3); cursor: pointer; padding: 4px;
+.lx-eye { position: absolute; right: 14px; background: none; border: none;
+  color: rgba(255,255,255,0.2); cursor: pointer; padding: 4px;
   display: flex; align-items: center; transition: all 0.3s; }
-.nfo-eye:hover { color: rgba(200,150,180,0.6); transform: scale(1.1); }
+.lx-eye:hover { color: rgba(255,255,255,0.5); }
 
 /* ===== META ===== */
-.nfo-meta { display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.82rem; animation: fldIn 0.8s cubic-bezier(0.16,1,0.3,1) both; }
-.nfo-rem { display: flex; align-items: center; gap: 10px; cursor: pointer;
-  color: rgba(220,180,200,0.6); user-select: none; transition: color 0.3s; }
-.nfo-rem:hover { color: rgba(220,180,200,0.85); }
-.nfo-rem input { display: none; }
-.nfo-cbox { width: 18px; height: 18px; border: 1.5px solid rgba(220,180,200,0.3);
-  border-radius: 5px; position: relative; transition: all 0.3s; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; }
-.nfo-rem input:checked + .nfo-cbox { background: #ff3366; border-color: #ff3366;
-  box-shadow: 0 0 15px rgba(255,50,100,0.3); animation: cboxPop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-@keyframes cboxPop { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-.nfo-cbox-check { display: none; }
-.nfo-rem input:checked + .nfo-cbox .nfo-cbox-check { display: block; width: 5px; height: 9px;
-  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-1px); }
+.lx-meta { display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.8rem; animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+.lx-rem { display: flex; align-items: center; gap: 8px; cursor: pointer;
+  color: rgba(255,255,255,0.35); user-select: none; transition: color 0.3s; }
+.lx-rem:hover { color: rgba(255,255,255,0.55); }
+.lx-rem input { display: none; }
+.lx-cbox { width: 16px; height: 16px; border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 4px; position: relative; transition: all 0.3s; flex-shrink: 0; }
+.lx-rem input:checked + .lx-cbox { background: #ff1e1e; border-color: #ff1e1e;
+  box-shadow: 0 0 12px rgba(255,30,30,0.3); }
+.lx-rem input:checked + .lx-cbox::after { content: ''; position: absolute; top: 2px; left: 4px;
+  width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 
-.nfo-forgot { color: rgba(255,100,150,0.65); text-decoration: none; font-weight: 600;
-  transition: all 0.3s; font-size: 0.82rem; position: relative; }
-.nfo-forgot::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 1px;
-  background: #ff3366; transition: width 0.3s; }
-.nfo-forgot:hover { color: #ff3366; text-shadow: 0 0 12px rgba(255,50,100,0.3); }
-.nfo-forgot:hover::after { width: 100%; }
+.lx-forgot { color: rgba(255,30,30,0.5); text-decoration: none; font-weight: 500;
+  transition: all 0.3s; font-size: 0.8rem; }
+.lx-forgot:hover { color: #ff1e1e; text-shadow: 0 0 12px rgba(255,30,30,0.2); }
 
 /* ===== BUTTON ===== */
-.nfo-btn {
+.lx-btn {
   width: 100%; display: flex; align-items: center; justify-content: center;
-  gap: 10px; padding: 18px 24px; border-radius: 16px; border: none;
-  background: linear-gradient(135deg, #cc2255, #ff3366, #ff5588, #ff3366, #cc2255);
-  background-size: 400% 400%;
-  color: #fff; font-family: 'Inter', sans-serif; font-size: 1rem;
-  font-weight: 700; letter-spacing: 2px; cursor: pointer; text-transform: uppercase;
-  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-  box-shadow: 0 8px 32px rgba(255,50,100,0.25), 0 0 60px rgba(255,50,100,0.06);
-  position: relative; overflow: hidden;
-  animation: fldIn 0.8s cubic-bezier(0.16,1,0.3,1) both, btnFire 3s infinite ease-in-out;
-}
-@keyframes btnFire { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-
-.nfo-btn::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 20%, rgba(255,255,255,0.06) 40%, rgba(255,200,220,0.03) 50%, transparent 70%);
+  gap: 8px; padding: 16px 24px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #cc0000, #ff1e1e, #ff3333, #ff1e1e, #cc0000);
   background-size: 300% 300%;
-  animation: btnShine 4s infinite ease-in-out;
+  color: #fff; font-family: 'Inter', sans-serif; font-size: 0.95rem;
+  font-weight: 600; letter-spacing: 0.5px; cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 4px 24px rgba(255,30,30,0.2), 0 0 40px rgba(255,30,30,0.04);
+  position: relative; overflow: hidden;
+  animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both, btnGrad 3s infinite ease-in-out;
+}
+@keyframes btnGrad { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+.lx-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.04) 50%, transparent 70%);
+  background-size: 200% 200%;
+  animation: btnShine 3s infinite ease-in-out;
   pointer-events: none;
 }
-@keyframes btnShine { 0% { background-position: 300% 0; } 50% { background-position: -300% 0; } 100% { background-position: -300% 0; } }
+@keyframes btnShine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-.nfo-btn::after {
-  content: ''; position: absolute; inset: -1px; border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.06), transparent 50%, rgba(255,200,220,0.03));
-  opacity: 0; transition: opacity 0.4s;
-}
-.nfo-btn:hover { transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 16px 48px rgba(255,50,100,0.35), 0 0 100px rgba(255,50,100,0.12); }
-.nfo-btn:hover::after { opacity: 1; }
-.nfo-btn:active { transform: translateY(0) scale(0.98); }
-.nfo-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+.lx-btn:hover { transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 8px 32px rgba(255,30,30,0.35), 0 0 80px rgba(255,30,30,0.1); }
+.lx-btn:active { transform: translateY(0) scale(0.98); }
+.lx-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
-.nfo-ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.15);
-  transform: scale(0); animation: rippleOut 0.8s ease-out forwards; pointer-events: none; }
-@keyframes rippleOut { to { transform: scale(6); opacity: 0; } }
-
-.nfo-spin { width: 22px; height: 22px; border: 2.5px solid rgba(255,255,255,0.3);
+.lx-spin { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3);
   border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ===== DIVIDER ===== */
+.lx-divider { width: 100%; display: flex; align-items: center; gap: 12px;
+  animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+.lx-divider::before, .lx-divider::after { content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent); }
+.lx-divider span { font-size: 0.72rem; color: rgba(255,255,255,0.2);
+  white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; }
+
+/* ===== SOCIAL ===== */
+.lx-social { display: flex; gap: 12px; animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+.lx-social-btn {
+  width: 42px; height: 42px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: rgba(255,255,255,0.4);
+  transition: all 0.3s ease;
+}
+.lx-social-btn:hover {
+  background: rgba(255,30,30,0.08);
+  border-color: rgba(255,30,30,0.25);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255,30,30,0.1);
+}
+
 /* ===== FOOTER ===== */
-.nfo-foot { display: flex; align-items: center; gap: 8px;
-  font-size: 0.7rem; letter-spacing: 3px; color: rgba(220,180,200,0.45);
-  font-weight: 300; text-transform: uppercase; padding-top: 2px;
-  animation: footFade 3s infinite alternate ease-in-out; }
-@keyframes footFade { 0% { opacity: 0.3; } 100% { opacity: 0.7; } }
-.nfo-dot { color: rgba(255,100,150,0.4); font-weight: 700; }
+.lx-foot { display: flex; align-items: center; gap: 6px;
+  font-size: 0.65rem; letter-spacing: 2px; color: rgba(255,255,255,0.15);
+  font-weight: 300; text-transform: uppercase; padding-top: 2px; }
+.lx-dot { color: rgba(255,30,30,0.3); font-weight: 700; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 500px) {
-  .nfo-card { padding: 38px 24px 32px; border-radius: 24px; }
-  .nfo-title { font-size: 2rem; letter-spacing: 2px; }
-  .nfo-sub { font-size: 0.55rem; letter-spacing: 5px; }
-  .nfo-btn { padding: 16px 20px; font-size: 0.9rem; }
-  .nfo-meta { flex-direction: column; gap: 12px; align-items: flex-start; }
-  .nfo-cwrap { padding: 12px; }
+  .lx-card { padding: 36px 24px 28px; border-radius: 20px; }
+  .lx-title { font-size: 1.35rem; }
+  .lx-sub { font-size: 0.8rem; }
+  .lx-logo-text { font-size: 1.3rem; }
+  .lx-btn { padding: 14px 20px; font-size: 0.9rem; }
+  .lx-meta { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .lx-cwrap { padding: 12px; }
 }
 `}</style>
     </div>
