@@ -11,6 +11,10 @@ const Client = sequelize.define("Client", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  code: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   company: {
     type: DataTypes.STRING,
   },
@@ -23,6 +27,10 @@ const Client = sequelize.define("Client", {
   status: {
     type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
     defaultValue: "ACTIVE",
+  },
+  billingType: {
+    type: DataTypes.ENUM("HOURLY", "FIXED"),
+    defaultValue: "HOURLY",
   },
 }, {
   timestamps: true,

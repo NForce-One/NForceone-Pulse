@@ -36,8 +36,8 @@ export const login = async (req, res) => {
 export const getManagers = async (req, res) => {
   try {
     const managers = await User.findAll({
-      where: { role: "MANAGER" },
-      attributes: ["id", "name", "email"], // only needed fields
+      where: { role: "MANAGER", isActive: true },
+      attributes: ["id", "name", "email"],
     });
 
     res.status(200).json({

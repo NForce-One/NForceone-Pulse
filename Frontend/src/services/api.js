@@ -1,8 +1,10 @@
 import axios from "axios";
 
-// 🔥 BASE URL
+// 🔥 BASE URL — uses VITE_API_URL env var in production, falls back to localhost
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: API_URL,
 });
 
 // ✅ Attach JWT Token (NO CHANGE)
@@ -68,6 +70,12 @@ export const resetPassword = async (data) => {
   return response.data;
 };
 
+// ✅ GET MANAGERS
+export const getManagers = async () => {
+  const response = await api.get("/auth/managers");
+  return response.data;
+};
+
 // ================= TIME ENTRIES =================
 
 // ✅ FETCH
@@ -76,14 +84,21 @@ export const fetchTimeEntries = async () => {
   return response.data;
 };
 
-// ✅ CREATE (NO CHANGE except safe formatting)
+// ✅ CREATE
 export const createTimeEntry = async (data) => {
   const payload = {
+    client: data.client || null,
     project: data.project,
     task: data.task,
     description: data.description,
     hours: Number(data.hours),
     date: data.date || new Date().toISOString(),
+    managerId: data.managerId || null,
+    clientId: data.clientId || null,
+    projectId: data.projectId || null,
+    taskId: data.taskId || null,
+    workItemRef: data.workItemRef || null,
+    isBillable: data.isBillable !== undefined ? data.isBillable : true,
   };
 
   const response = await api.post("/time-entries", payload);
@@ -117,12 +132,298 @@ export const rejectTimeEntry = async (id) => {
   return response.data;
 };
 
-// ================= MANAGERS =================
+// ================= TIMER =================
 
-export const getManagers = async () => {
-  const response = await api.get("/auth/managers");
+export const getActiveTimer = async () => {
+  const response = await api.get("/timers/active");
   return response.data;
 };
 
+export const startTimer = async (data) => {
+  const response = await api.post("/timers/start", data);
+  return response.data;
+};
+
+export const pauseTimer = async (id) => {
+  const response = await api.put(`/timers/${id}/pause`);
+  return response.data;
+};
+
+export const resumeTimer = async (id) => {
+  const response = await api.put(`/timers/${id}/resume`);
+  return response.data;
+};
+
+export const stopTimer = async (id) => {
+  const response = await api.put(`/timers/${id}/stop`);
+  return response.data;
+};
+
+export const saveTimer = async (id) => {
+  const response = await api.put(`/timers/${id}/save`);
+  return response.data;
+};
+
+export const convertTimerToEntry = async (id) => {
+  const response = await api.post(`/timers/${id}/convert`);
+  return response.data;
+};
+
+// ================= TIMESHEETS =================
+
+export const fetchTimesheets = async () => {
+  const response = await api.get("/timesheets");
+  return response.data;
+};
+
+export const fetchTimesheetById = async (id) => {
+  const response = await api.get(`/timesheets/${id}`);
+  return response.data;
+};
+
+// ================= TEAM TIMESHEETS (MANAGER) =================
+
+export const fetchTeamTimesheets = async (filters = {}) => {
+  const params = new URLSearchParams();
+
+  if (filters.status && filters.status !== "ALL") {
+    params.append("status", filters.status);
+  }
+  if (filters.dateFrom) {
+    params.append("dateFrom", filters.dateFrom);
+  }
+  if (filters.dateTo) {
+    params.append("dateTo", filters.dateTo);
+  }
+  if (filters.employeeId) {
+    params.append("employeeId", filters.employeeId);
+  }
+
+  const queryString = params.toString();
+  const url = `/timesheets/team${queryString ? `?${queryString}` : ""}`;
+
+  const response = await api.get(url);
+  return response.data;
+};
+
+export const generateTimesheet = async (weekStartDate) => {
+  const response = await api.post("/timesheets/generate", { weekStartDate });
+  return response.data;
+};
+
+export const submitTimesheet = async (id, comment) => {
+  const response = await api.put(`/timesheets/${id}/submit`, { comment });
+  return response.data;
+};
+
+export const approveTimesheet = async (id, comment) => {
+  const response = await api.put(`/timesheets/${id}/approve`, { comment });
+  return response.data;
+};
+
+export const rejectTimesheet = async (id, comment) => {
+  const response = await api.put(`/timesheets/${id}/reject`, { comment });
+  return response.data;
+};
+
+export const withdrawTimesheet = async (id) => {
+  const response = await api.put(`/timesheets/${id}/withdraw`);
+  return response.data;
+};
+
+export const getTimesheetHistory = async (id) => {
+  const response = await api.get(`/timesheets/${id}/history`);
+  return response.data;
+};
+
+// ================= CLIENTS =================
+
+export const fetchClients = async (userId = null) => {
+  const params = userId ? { userId } : {};
+  const response = await api.get("/clients", { params });
+  return response.data;
+};
+
+export const createClient = async (data) => {
+  const response = await api.post("/clients", data);
+  return response.data;
+};
+
+export const updateClient = async (id, data) => {
+  const response = await api.put(`/clients/${id}`, data);
+  return response.data;
+};
+
+export const deleteClient = async (id) => {
+  const response = await api.delete(`/clients/${id}`);
+  return response.data;
+};
+
+// ================= PROJECTS =================
+
+export const fetchProjects = async (userId = null) => {
+  const params = userId ? { userId } : {};
+  const response = await api.get("/projects", { params });
+  return response.data;
+};
+
+// ================= TASKS =================
+
+export const fetchTasks = async () => {
+  const response = await api.get("/tasks");
+  return response.data;
+};
+
+// ================= USERS =================
+
+export const fetchUsers = async () => {
+  const response = await api.get("/users");
+  return response.data;
+};
+
+export const getUser = async (id) => {
+  const response = await api.get(`/users/${id}`);
+  return response.data;
+};
+
+export const createUser = async (data) => {
+  const response = await api.post("/users", data);
+  return response.data;
+};
+
+export const updateUser = async (id, data) => {
+  const response = await api.put(`/users/${id}`, data);
+  return response.data;
+};
+
+export const deleteUser = async (id) => {
+  const response = await api.delete(`/users/${id}`);
+  return response.data;
+};
+
+export const toggleUserStatus = async (id) => {
+  const response = await api.put(`/users/${id}/toggle-status`);
+  return response.data;
+};
+
+export const getMe = async () => {
+  const response = await api.get("/users/me");
+  return response.data;
+};
+
+export const updateProfile = async (data) => {
+  const response = await api.put("/users/me/profile", data);
+  return response.data;
+};
+
+export const changePassword = async (data) => {
+  const response = await api.put("/users/me/change-password", data);
+  return response.data;
+};
+
+// ================= TEAM MEMBERS (MANAGER) =================
+
+export const fetchTeamMembers = async (managerId = null) => {
+  const params = managerId ? { managerId } : {};
+  const response = await api.get("/users/team-members", { params });
+  return response.data;
+};
+
+// ================= NOTIFICATIONS =================
+
+export const fetchNotifications = async () => {
+  const response = await api.get("/notifications");
+  return response.data;
+};
+
+export const fetchUnreadCount = async () => {
+  const response = await api.get("/notifications/unread-count");
+  return response.data;
+};
+
+export const markNotificationRead = async (id) => {
+  const response = await api.patch(`/notifications/${id}/read`);
+  return response.data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const response = await api.patch("/notifications/read-all");
+  return response.data;
+};
+
+export const deleteNotification = async (id) => {
+  const response = await api.delete(`/notifications/${id}`);
+  return response.data;
+};
+
+// ================= REPORTS =================
+
+export const getDashboardStats = async () => {
+  const response = await api.get("/reports/dashboard");
+  return response.data?.data ?? response.data;
+};
+
+export const getEmployeeHoursReport = async (params) => {
+  const response = await api.get("/reports/employee-hours", { params });
+  return response.data;
+};
+
+export const getProjectHoursReport = async (params) => {
+  const response = await api.get("/reports/project-hours", { params });
+  return response.data;
+};
+
+export const getUtilizationReport = async (params) => {
+  const response = await api.get("/reports/utilization", { params });
+  return response.data;
+};
+
+export const getBillingSummary = async (params) => {
+  const response = await api.get("/reports/billing-summary", { params });
+  return response.data;
+};
+
+export const getTimesheetStatusReport = async (params) => {
+  const response = await api.get("/reports/timesheet-status", { params });
+  return response.data;
+};
+
+export const exportReportCSV = async (params) => {
+  const response = await api.get("/reports/export", {
+    params,
+    responseType: "blob",
+  });
+  return response;
+};
+
+export const createProject = async (data) => {
+  const response = await api.post("/projects", data);
+  return response.data;
+};
+
+export const updateProject = async (id, data) => {
+  const response = await api.put(`/projects/${id}`, data);
+  return response.data;
+};
+
+export const deleteProject = async (id) => {
+  const response = await api.delete(`/projects/${id}`);
+  return response.data;
+};
+
+export const createTask = async (data) => {
+  const response = await api.post("/tasks", data);
+  return response.data;
+};
+
+export const updateTask = async (id, data) => {
+  const response = await api.put(`/tasks/${id}`, data);
+  return response.data;
+};
+
+export const deleteTask = async (id) => {
+  const response = await api.delete(`/tasks/${id}`);
+  return response.data;
+};
 
 export default api;

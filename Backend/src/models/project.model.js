@@ -13,8 +13,36 @@ const Project = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    code: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     description: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    managerId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    startDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    endDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    budgetHours: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    budgetAmount: {
+      type: DataTypes.FLOAT,
       allowNull: true,
     },
     status: {

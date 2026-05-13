@@ -1,136 +1,11 @@
-import express from "express";
 import dotenv from "dotenv";
-import cors from "cors"; // 🔥 ADD THIS
-import sequelize from "./config/db.js";
-
-// ✅ Load models (IMPORTANT for Sequelize)
-import "./models/client.model.js";
-import "./models/project.model.js";
-import "./models/task.model.js";
-import "./models/timeEntry.model.js";
-
-// Routes
-import authRoutes from "./routes/auth.routes.js";
-import clientRoutes from "./routes/client.routes.js";
-import projectRoutes from "./routes/project.routes.js";
-import taskRoutes from "./routes/task.routes.js";
-import timeEntryRoutes from "./routes/timeEntry.routes.js";
-
-// Middleware
-import { protect, authorizeRoles } from "./middleware/auth.middleware.js";
+import cron from "node-cron";
+import * as notificationService from "./services/notification.service.js";
+import { app, sequelize } from "./app.js";
+import User from "./models/user.model.js";
+import TimeEntry from "./models/timeEntry.model.js";
 
 dotenv.config();
-
-const app = express();
-
-/* ======================
-   GLOBAL MIDDLEWARE
-====================== */
-
-// 🔥 VERY IMPORTANT FIX (CORS)
-app.use(cors({
-  origin: "http://localhost:5173", // frontend URL
-  credentials: true
-}));
-
-app.use(express.json());
-
-/* ======================
-   HEALTH CHECK ROUTE
-====================== */
-app.get("/", (req, res) => {
-  res.send("Backend running 🚀");
-});
-
-/* ======================
-   AUTH ROUTES
-====================== */
-app.use("/api/auth", authRoutes);
-
-/* ======================
-   CLIENT ROUTES
-====================== */
-app.use("/api/clients", clientRoutes);
-
-/* ======================
-   PROJECT ROUTES
-====================== */
-app.use("/api/projects", projectRoutes);
-
-/* ======================
-   TASK ROUTES
-====================== */
-app.use("/api/tasks", taskRoutes);
-
-/* ======================
-   TIME ENTRY ROUTES
-====================== */
-app.use("/api/time-entries", timeEntryRoutes);
-
-/* ======================
-   PROTECTED TEST ROUTE
-====================== */
-app.get("/api/test", protect, (req, res) => {
-  res.json({
-    success: true,
-    message: "Protected route accessed ✅",
-    user: req.user,
-  });
-});
-
-/* ======================
-   ROLE-BASED TEST ROUTES
-====================== */
-
-// ADMIN ONLY
-app.get(
-  "/api/admin",
-  protect,
-  authorizeRoles("ADMIN"),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: "Welcome Admin 👑",
-      user: req.user,
-    });
-  }
-);
-
-// MANAGER + ADMIN
-app.get(
-  "/api/manager",
-  protect,
-  authorizeRoles("MANAGER", "ADMIN"),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: "Welcome Manager 👨‍💼",
-      user: req.user,
-    });
-  }
-);
-
-/* ======================
-   404 HANDLER
-====================== */
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found ❌",
-  });
-});
-
-/* ======================
-   GLOBAL ERROR HANDLER
-====================== */
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Something went wrong ❌",
-  });
-});
 
 /* ======================
    SERVER START
@@ -138,19 +13,51 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await sequelize.authenticate();
-    console.log("Database connected ✅");
 
+    // Using sync without alter to avoid "too many keys" error
+    // The notification model is already correctly defined
     await sequelize.sync();
-    console.log("Tables synced ✅");
+
+    // ================= SCHEDULED NOTIFICATION JOBS =================
+
+    // Check missing daily entries at 9:00 AM every day
+    cron.schedule("0 9 * * *", async () => {
+      await notificationService.checkMissingDailyEntries();
+    });
+
+    // Check weekly pending submissions on Friday at 5:00 PM
+    cron.schedule("0 17 * * 5", async () => {
+      await notificationService.checkWeeklyPendingSubmissions();
+    });
+
+    // Check pending approvals for managers every Monday at 10:00 AM
+    cron.schedule("0 10 * * 1", async () => {
+      const managers = await (async () => {
+        const User = (await import("./models/user.model.js")).default;
+        return await User.findAll({ where: { role: "MANAGER", isActive: true } });
+      })();
+
+      const TimeEntry = (await import("./models/timeEntry.model.js")).default;
+      const { Op } = await import("sequelize");
+
+      for (const mgr of managers) {
+        const pendingCount = await TimeEntry.count({
+          where: { managerId: mgr.id, status: "SUBMITTED" },
+        });
+        if (pendingCount > 0) {
+          await notificationService.notifyPendingApprovals(mgr.id, pendingCount);
+        }
+      }
+    });
 
     const PORT = process.env.PORT || 5000;
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT} 🚀`);
-    });
+       console.log(`Server running on port ${PORT} 🚀`);
+     });
 
   } catch (error) {
-    console.error("Startup error ❌", error);
+    console.error("Startup error", error);
   }
 };
 

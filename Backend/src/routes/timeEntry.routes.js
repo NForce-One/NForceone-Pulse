@@ -42,7 +42,8 @@ router.put(
 router.delete(
   "/:id",
   protect,
-  authorizeRoles("ADMIN"),
+  //authorizeRoles("ADMIN", "EMPLOYEE"),
+  authorizeRoles("ADMIN", "EMPLOYEE", "MANAGER"),
   deleteTimeEntry
 );
 

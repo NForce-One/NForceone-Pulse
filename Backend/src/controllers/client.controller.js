@@ -20,7 +20,10 @@ export const createClient = async (req, res) => {
 // GET ALL
 export const getClients = async (req, res) => {
   try {
-    const clients = await clientService.getAllClients();
+    const userId = req.query.userId || null;
+    const clients = userId
+      ? await clientService.getClientsByUser(userId)
+      : await clientService.getAllClients();
 
     res.json({
       success: true,

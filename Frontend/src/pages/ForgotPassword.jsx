@@ -32,17 +32,9 @@ export const ForgotPassword = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
       {/* 🔴 OVERLAY */}
-      <div className="absolute inset-0 bg-black/70"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-red-900/40 via-black/60 to-black/90"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-red-900/40"></div>
 
       {/* ✨ FLOATING PARTICLES */}
       <div className="particles"></div>
@@ -60,12 +52,12 @@ export const ForgotPassword = () => {
         </div>
 
         {/* 🔥 CARD */}
-        <Card className="glass-card relative rounded-2xl">
+        <Card className="glass-card relative rounded-2xl overflow-hidden shadow-2xl">
           <CardHeader>
             <CardTitle className="text-2xl text-center text-white">
               Forgot Password
             </CardTitle>
-            <CardDescription className="text-center text-gray-400">
+            <CardDescription className="text-center text-gray-200">
               Enter your email to receive a reset link
             </CardDescription>
           </CardHeader>
@@ -86,7 +78,6 @@ export const ForgotPassword = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input-modern"
               />
 
               <Button
@@ -98,7 +89,7 @@ export const ForgotPassword = () => {
 
               <div className="text-center text-sm mt-2">
                 <span
-                  className="text-red-400 cursor-pointer hover:underline hover:text-red-500 transition"
+                  className="text-red-300 cursor-pointer hover:underline hover:text-red-200 transition"
                   onClick={() => navigate("/login")}
                 >
                   Back to Login
@@ -124,31 +115,6 @@ export const ForgotPassword = () => {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        /* GLASS CARD */
-        .glass-card {
-          background: rgba(0,0,0,0.7);
-          backdrop-filter: blur(15px);
-          border: 1px solid rgba(255,0,0,0.2);
-          box-shadow: 0 0 25px rgba(255,0,0,0.15);
-        }
-
-        /* 🔴 GLOW BORDER */
-        .glass-card::before {
-          content: "";
-          position: absolute;
-          inset: -1px;
-          border-radius: 16px;
-          background: linear-gradient(90deg, transparent, red, transparent);
-          animation: borderGlow 4s linear infinite;
-          z-index: -1;
-        }
-
-        @keyframes borderGlow {
-          0% { opacity: 0.2; }
-          50% { opacity: 0.6; }
-          100% { opacity: 0.2; }
-        }
-
         /* LOGO GLOW */
         .logo-glow {
           box-shadow: 0 0 20px rgba(255,0,0,0.7);
@@ -161,23 +127,13 @@ export const ForgotPassword = () => {
           100% { box-shadow: 0 0 10px red; }
         }
 
-        /* INPUT */
-        .input-modern {
-          background: rgba(255,255,255,0.1);
-          border: 1px solid #444;
-          color: white;
-        }
-
-        .input-modern:focus {
-          border-color: red;
-          box-shadow: 0 0 8px rgba(255,0,0,0.5);
-        }
-
         /* BUTTON */
         .btn-modern {
           background: linear-gradient(90deg, #ff0000, #cc0000);
           color: white;
           font-weight: 600;
+          padding: 10px;
+          border-radius: 8px;
           transition: all 0.3s;
         }
 
@@ -207,7 +163,7 @@ export const ForgotPassword = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background-image: radial-gradient(red 1px, transparent 1px);
+          background-image: radial-gradient(rgba(255,0,0,0.4) 1px, transparent 1px);
           background-size: 40px 40px;
           animation: moveParticles 20s linear infinite;
           opacity: 0.2;

@@ -8,7 +8,7 @@ import User from "../models/user.model.js";
 const generateToken = (user) => {
   return jwt.sign(
     { id: user.id, role: user.role },
-    "secretkey",
+    process.env.JWT_SECRET || "secretkey",
     { expiresIn: "1d" }
   );
 };
@@ -29,7 +29,10 @@ export const registerUser = async (data) => {
     );
   }
 
-  const existingUser = await User.findOne({ where: { email } });
+  const existingUser = await User.findOne({
+    where: { email },
+    attributes: ["id"],
+  });
   if (existingUser) {
     throw new Error("User already exists");
   }
@@ -56,10 +59,17 @@ export const registerUser = async (data) => {
 
 // ================= LOGIN =================
 export const loginUser = async ({ email, password }) => {
-  const user = await User.findOne({ where: { email } });
+  const user = await User.findOne({
+    where: { email },
+    attributes: ["id", "name", "email", "password", "role", "department", "managerId", "isActive", "defaultHours"],
+  });
 
   if (!user) {
     throw new Error("Invalid credentials");
+  }
+
+  if (!user.isActive) {
+    throw new Error("Account is deactivated. Contact admin.");
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -85,7 +95,10 @@ export const loginUser = async ({ email, password }) => {
 export const forgotPassword = async (email) => {
   console.log("FORGOT PASSWORD EMAIL:", email);
 
-  const user = await User.findOne({ where: { email } });
+  const user = await User.findOne({
+    where: { email },
+    attributes: ["id", "name", "email", "resetToken", "resetTokenExpiry"],
+  });
 
   if (!user) {
     return {
@@ -93,7 +106,7 @@ export const forgotPassword = async (email) => {
     };
   }
 
-  // 🔥 Generate token
+  // Generate token
   const rawToken = crypto.randomBytes(32).toString("hex");
 
   const hashedToken = crypto
@@ -106,18 +119,19 @@ export const forgotPassword = async (email) => {
 
   await user.save();
 
-  const resetLink = `http://localhost:5173/reset-password/${rawToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const resetLink = `${frontendUrl}/reset-password/${rawToken}`;
 
-  console.log("🔗 RESET LINK:", resetLink);
+  console.log("RESET LINK:", resetLink);
 
   try {
-    // ✅ MAILTRAP CONFIG (FIXED)
+    // MAILTRAP CONFIG
     const transporter = nodemailer.createTransport({
       host: "sandbox.smtp.mailtrap.io",
       port: 2525,
       auth: {
         user: "37e4fe872234d2",
-        pass: "d67805ef218d17", // 👈 paste from Mailtrap
+        pass: "d67805ef218d17",
       },
     });
 
@@ -132,10 +146,10 @@ export const forgotPassword = async (email) => {
       `,
     });
 
-    console.log("✅ EMAIL SENT SUCCESSFULLY");
+    console.log("EMAIL SENT SUCCESSFULLY");
 
   } catch (err) {
-    console.log("❌ EMAIL ERROR:", err.message);
+    console.log("EMAIL ERROR:", err.message);
   }
 
   return {
@@ -156,7 +170,8 @@ export const resetPassword = async (token, password) => {
   console.log("HASHED TOKEN:", hashedToken);
 
   const user = await User.findOne({
-    where: { resetToken: hashedToken }
+    where: { resetToken: hashedToken },
+    attributes: ["id", "password", "resetToken", "resetTokenExpiry"],
   });
 
   if (!user) {

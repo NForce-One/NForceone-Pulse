@@ -1,0 +1,92 @@
+import * as reportService from "../services/report.service.js";
+
+export const getEmployeeHoursReport = async (req, res) => {
+  try {
+    const filters = { ...req.query };
+    if (req.user.role === "EMPLOYEE") {
+      filters.userId = req.user.id;
+    }
+    const report = await reportService.getEmployeeHoursReport(filters);
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getProjectHoursReport = async (req, res) => {
+  try {
+    const filters = { ...req.query };
+    if (req.user.role === "EMPLOYEE") {
+      filters.userId = req.user.id;
+    }
+    const report = await reportService.getProjectHoursReport(filters);
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getUtilizationReport = async (req, res) => {
+  try {
+    const filters = { ...req.query };
+    if (req.user.role === "EMPLOYEE") {
+      filters.userId = req.user.id;
+    }
+    const report = await reportService.getUtilizationReport(filters);
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getBillingSummary = async (req, res) => {
+  try {
+    const filters = { ...req.query };
+    if (req.user.role === "EMPLOYEE") {
+      filters.userId = req.user.id;
+    }
+    const report = await reportService.getBillingSummary(filters);
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getTimesheetStatusReport = async (req, res) => {
+  try {
+    const report = await reportService.getTimesheetStatusReport(req.query);
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getDashboardStats = async (req, res) => {
+  try {
+    const stats = await reportService.getDashboardStats(req.user.id, req.user.role);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const exportReport = async (req, res) => {
+  try {
+    console.log("Export request query:", req.query);
+    const filters = { ...req.query };
+    if (req.user.role === "EMPLOYEE") {
+      filters.userId = req.user.id;
+    }
+
+    const csv = await reportService.exportReportCSV(filters);
+    const date = new Date().toISOString().split("T")[0];
+    const filename = `report_${date}.csv`;
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(csv);
+  } catch (error) {
+    console.error("Export error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

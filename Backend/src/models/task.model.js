@@ -17,6 +17,16 @@ const Task = sequelize.define("Task", {
     type: DataTypes.TEXT,
   },
 
+  category: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+
+  isBillableDefault: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+
   status: {
     type: DataTypes.ENUM("PENDING", "IN_PROGRESS", "COMPLETED"),
     defaultValue: "PENDING",

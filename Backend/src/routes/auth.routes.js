@@ -7,10 +7,12 @@ import {
   getManagers // ✅ ADD THIS
 } from "../controllers/auth.controller.js";
 
+import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
+
 const router = express.Router();
 
 // ================= EXISTING =================
-router.post("/register", register);
+router.post("/register", protect, authorizeRoles("ADMIN"), register);
 router.post("/login", login);
 
 // ================= FORGOT PASSWORD =================

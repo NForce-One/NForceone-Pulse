@@ -20,7 +20,10 @@ export const createProject = async (req, res) => {
 // GET ALL
 export const getProjects = async (req, res) => {
   try {
-    const projects = await projectService.getAllProjects();
+    const userId = req.query.userId || null;
+    const projects = userId
+      ? await projectService.getProjectsByUser(userId)
+      : await projectService.getAllProjects();
 
     res.json({
       success: true,

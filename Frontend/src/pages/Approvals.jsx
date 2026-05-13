@@ -65,95 +65,103 @@ export const Approvals = () => {
 
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Approvals</h1>
-        <p className="text-gray-500">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <Check className="w-6 h-6 text-[#ff2d2d]" />
+          Approvals
+        </h1>
+        <p className="text-[#a1a1aa]">
           Review and approve submitted time entries.
         </p>
       </div>
 
       {/* TABLE */}
-      <Card>
+      <Card className="glass-table overflow-hidden">
         <div className="overflow-x-auto min-h-[300px]">
 
-          <table className="w-full text-sm text-left">
-
-            <thead className="bg-gray-50 border-b">
+          <table className="w-full text-sm whitespace-nowrap">
+            <thead className="glass-table thead">
               <tr>
-                <th className="px-6 py-3">Employee</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Project / Task</th>
-                <th className="px-6 py-3">Hours</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">EmpID</th>
+                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Name</th>
+                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Client</th>
+                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Project</th>
+                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Task</th>
+                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Description</th>
+                <th className="px-3 py-3 text-center text-[#a1a1aa] font-medium">Status</th>
+                <th className="px-3 py-3 text-right text-[#a1a1aa] font-medium">Action</th>
               </tr>
             </thead>
 
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-8">
+                  <td colSpan="8" className="text-center py-8 text-[#a1a1aa]">
                     Loading entries...
                   </td>
                 </tr>
 
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-8">
+                  <td colSpan="8" className="text-center py-8 text-[#a1a1aa]">
                     No pending approvals
                   </td>
                 </tr>
 
               ) : (
                 entries.map((entry) => (
-                  <tr key={entry.id} className="border-b">
+                  <tr key={entry.id}>
 
-                    <td className="px-6 py-4 font-medium">
-                      {entry.user?.name || `User ${entry.userId}`}
+                    <td className="px-3 py-3 text-white font-medium">
+                      {entry.userId}
                     </td>
 
-                    <td className="px-6 py-4">
-                      {entry.entryDate
-                        ? format(new Date(entry.entryDate), "MMM dd, yyyy")
-                        : "-"}
+                    <td className="px-3 py-3 text-white">
+                      {entry.User?.name || entry.user?.name || "Unknown"}
                     </td>
 
-                    <td className="px-6 py-4">
-                      <div>{entry.projectId}</div>
-                      <div className="text-xs text-gray-500">
-                        {entry.taskId}
-                      </div>
+                    <td className="px-3 py-3 text-[#a1a1aa]">
+                      {entry.client || "-"}
                     </td>
 
-                    <td className="px-6 py-4">
-                      {entry.hours} h
+                    <td className="px-3 py-3 text-[#a1a1aa]">
+                      {entry.project || "-"}
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-3 text-[#a1a1aa]">
+                      {entry.task || "-"}
+                    </td>
+
+                    <td className="px-3 py-3 text-[#a1a1aa] max-w-[200px] truncate" title={entry.description || ""}>
+                      {entry.description || "-"}
+                    </td>
+
+                    <td className="px-3 py-3 text-center">
                       <Badge variant="warning">
                         {entry.status}
                       </Badge>
                     </td>
 
-                    <td className="px-6 py-4 text-right space-x-2">
+                    <td className="px-3 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 px-3 py-1 hover:scale-105 active:scale-95"
+                          onClick={() => handleApprove(entry.id)}
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Approve
+                        </Button>
 
-                      <Button
-                        size="sm"
-                        className="bg-emerald-100 text-emerald-700"
-                        onClick={() => handleApprove(entry.id)}
-                      >
-                        <Check className="w-4 h-4" />
-                        Approve
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        className="bg-red-100 text-red-700"
-                        onClick={() => handleReject(entry.id)}
-                      >
-                        <X className="w-4 h-4" />
-                        Reject
-                      </Button>
-
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          className="hover:scale-105 active:scale-95"
+                          onClick={() => handleReject(entry.id)}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Reject
+                        </Button>
+                      </div>
                     </td>
 
                   </tr>
