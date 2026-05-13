@@ -4,6 +4,7 @@ import { Eye, EyeOff, LogIn, Mail, ShieldAlert, Lock } from "lucide-react";
 
 import { loginUser } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import logoWatermark from "../assets/logo.png";
 
 const PARTICLE_COUNT = 60;
 
@@ -110,8 +111,7 @@ export const Login = () => {
 
       {/* ===== BACKGROUND WATERMARK LOGO ===== */}
       <div className="lx-bglogo" aria-hidden="true">
-        <span className="lx-bglogo-text">NFORCE</span>
-        <span className="lx-bglogo-sub">ONE</span>
+        <img src={logoWatermark} alt="" className="lx-bglogo-img" />
       </div>
 
       {/* Card */}
@@ -467,7 +467,6 @@ export const Login = () => {
   position: absolute;
   inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
@@ -479,26 +478,11 @@ export const Login = () => {
   0% { opacity: 0; }
   100% { opacity: 1; }
 }
-.lx-bglogo-text {
-  font-size: clamp(5rem, 20vw, 14rem);
-  font-weight: 800;
-  letter-spacing: clamp(16px, 4vw, 40px);
-  color: rgba(255,255,255,0.08);
-  text-shadow:
-    0 0 100px rgba(255,30,30,0.2),
-    0 0 200px rgba(255,30,30,0.1),
-    0 0 300px rgba(255,30,30,0.05);
-  line-height: 1;
-}
-.lx-bglogo-sub {
-  font-size: clamp(2rem, 6vw, 5rem);
-  font-weight: 300;
-  letter-spacing: clamp(24px, 8vw, 60px);
-  color: rgba(255,30,30,0.08);
-  text-shadow:
-    0 0 80px rgba(255,30,30,0.15),
-    0 0 150px rgba(255,30,30,0.08);
-  margin-top: -8px;
+.lx-bglogo-img {
+  width: min(70vw, 450px);
+  height: auto;
+  opacity: 0.1;
+  filter: drop-shadow(0 0 80px rgba(255,30,30,0.08));
 }
 
 /* ===== RESPONSIVE ===== */
