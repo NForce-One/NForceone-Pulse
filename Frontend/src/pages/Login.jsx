@@ -108,6 +108,18 @@ export const Login = () => {
       {/* Mouse glow */}
       <div className="lx-mglow" />
 
+      {/* ===== BACKGROUND WATERMARK LOGO ===== */}
+      <div className="lx-bglogo" aria-hidden="true">
+        <div className="lx-bglogo-icon">
+          <svg viewBox="0 0 24 24" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="0.8">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span className="lx-bglogo-text">NFORCEONE</span>
+      </div>
+
       {/* Card */}
       <div className="lx-cwrap">
         <div className="lx-card" ref={cardRef}>
@@ -455,6 +467,45 @@ export const Login = () => {
   font-size: 0.65rem; letter-spacing: 2px; color: rgba(255,255,255,0.15);
   font-weight: 300; text-transform: uppercase; padding-top: 2px; }
 .lx-dot { color: rgba(255,30,30,0.3); font-weight: 700; }
+
+/* ===== BACKGROUND WATERMARK LOGO ===== */
+.lx-bglogo {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+  animation: bgLogoFade 2s ease-out forwards;
+}
+@keyframes bgLogoFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.lx-bglogo-icon {
+  color: rgba(255,30,30,0.04);
+  margin-bottom: -8px;
+  filter: blur(1px);
+  animation: bgLogoPulse 6s infinite alternate ease-in-out;
+}
+.lx-bglogo-text {
+  font-size: clamp(4rem, 15vw, 10rem);
+  font-weight: 900;
+  letter-spacing: clamp(12px, 3vw, 30px);
+  color: rgba(255,30,30,0.03);
+  text-shadow:
+    0 0 60px rgba(255,30,30,0.02),
+    0 0 120px rgba(255,30,30,0.01);
+  filter: blur(2px);
+  animation: bgLogoPulse 8s infinite alternate-reverse ease-in-out;
+}
+@keyframes bgLogoPulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 500px) {
