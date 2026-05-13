@@ -123,6 +123,7 @@ export const Login = () => {
           <div className="lx-card-shine" />
           <div className="lx-card-border" />
 
+          <div style={{textAlign:"center",marginBottom:4}}><span className="lx-logo-text">NforceOne</span></div>
           <div className="lx-header">
             <h1 className="lx-title">Welcome Back</h1>
             <p className="lx-sub">Sign in to your account to continue</p>
