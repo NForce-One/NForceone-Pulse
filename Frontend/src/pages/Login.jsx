@@ -109,80 +109,75 @@ export const Login = () => {
       {/* Mouse glow */}
       <div className="lx-mglow" />
 
-      {/* ===== MAIN CONTENT: FORM LEFT + LOGO RIGHT ===== */}
-      <div className="lx-content">
-        {/* ---- LEFT: FORM CARD ---- */}
-        <div className="lx-form-section">
-          <div className="lx-card" ref={cardRef}>
-            <div className="lx-card-shine" />
-            <div className="lx-card-border" />
+      {/* ===== WATERMARK LOGO ===== */}
+      <div className="lx-watermark" aria-hidden="true">
+        <img src={logoWatermark} alt="" className="lx-watermark-img" />
+        <span className="lx-watermark-text">Let's Do IT!</span>
+      </div>
 
-            <div style={{textAlign:"center",marginBottom:4}}><span className="lx-logo-text">NforceOne</span></div>
-            <div className="lx-header">
-              <h1 className="lx-title">Welcome Back</h1>
-              <p className="lx-sub">Sign in to your account to continue</p>
+      {/* Card */}
+      <div className="lx-cwrap">
+        <div className="lx-card" ref={cardRef}>
+          <div className="lx-card-shine" />
+          <div className="lx-card-border" />
+
+          <div style={{textAlign:"center",marginBottom:4}}><span className="lx-logo-text">NforceOne</span></div>
+          <div className="lx-header">
+            <h1 className="lx-title">Welcome Back</h1>
+            <p className="lx-sub">Sign in to your account to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="lx-form">
+            {error && (
+              <div className="lx-err">
+                <ShieldAlert size={16} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="lx-fld" style={{ animationDelay: "0.15s" }}>
+              <label className="lx-lbl">EMAIL ADDRESS</label>
+              <div className="lx-iwrap">
+                <Mail size={16} className="lx-icn" />
+                <input type="email" placeholder="you@company.com"
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                  required className="lx-inp" />
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="lx-form">
-              {error && (
-                <div className="lx-err">
-                  <ShieldAlert size={16} />
-                  <span>{error}</span>
-                </div>
+            <div className="lx-fld" style={{ animationDelay: "0.25s" }}>
+              <label className="lx-lbl">PASSWORD</label>
+              <div className="lx-iwrap">
+                <Lock size={16} className="lx-icn" />
+                <input type={showPassword ? "text" : "password"} placeholder="Enter your password"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  required className="lx-inp" />
+                <button type="button" className="lx-eye"
+                  onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="lx-meta" style={{ animationDelay: "0.35s" }}>
+              <label className="lx-rem">
+                <input type="checkbox" checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)} />
+                <span className="lx-cbox" />
+                <span>Remember me</span>
+              </label>
+              <Link to="/forgot-password" className="lx-forgot">Forgot password?</Link>
+            </div>
+
+            <button type="submit" disabled={isLoading}
+              className="lx-btn" style={{ animationDelay: "0.45s" }}>
+              {isLoading ? (
+                <div className="lx-spin" />
+              ) : (
+                <><LogIn size={18} /><span>LOGIN</span></>
               )}
-
-              <div className="lx-fld" style={{ animationDelay: "0.15s" }}>
-                <label className="lx-lbl">EMAIL ADDRESS</label>
-                <div className="lx-iwrap">
-                  <Mail size={16} className="lx-icn" />
-                  <input type="email" placeholder="you@company.com"
-                    value={email} onChange={(e) => setEmail(e.target.value)}
-                    required className="lx-inp" />
-                </div>
-              </div>
-
-              <div className="lx-fld" style={{ animationDelay: "0.25s" }}>
-                <label className="lx-lbl">PASSWORD</label>
-                <div className="lx-iwrap">
-                  <Lock size={16} className="lx-icn" />
-                  <input type={showPassword ? "text" : "password"} placeholder="Enter your password"
-                    value={password} onChange={(e) => setPassword(e.target.value)}
-                    required className="lx-inp" />
-                  <button type="button" className="lx-eye"
-                    onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="lx-meta" style={{ animationDelay: "0.35s" }}>
-                <label className="lx-rem">
-                  <input type="checkbox" checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)} />
-                  <span className="lx-cbox" />
-                  <span>Remember me</span>
-                </label>
-                <Link to="/forgot-password" className="lx-forgot">Forgot password?</Link>
-              </div>
-
-              <button type="submit" disabled={isLoading}
-                className="lx-btn" style={{ animationDelay: "0.45s" }}>
-                {isLoading ? (
-                  <div className="lx-spin" />
-                ) : (
-                  <><LogIn size={18} /><span>LOGIN</span></>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* ---- RIGHT: LOGO + TAGLINE ---- */}
-        <div className="lx-logo-section">
-          <div className="lx-right-logo">
-            <img src={logoWatermark} alt="NForce" className="lx-right-logo-img" />
-            <span className="lx-tagline">Let's Do IT!</span>
-          </div>
+            </button>
+          </form>
         </div>
       </div>
 
@@ -251,30 +246,43 @@ export const Login = () => {
 .lx-mglow { position: absolute; inset: 0; z-index: 3; pointer-events: none;
   background: radial-gradient(800px circle at var(--mx,50%) var(--my,50%), rgba(255,30,30,0.04), transparent 50%); }
 
-/* ===== MAIN CONTENT: TWO-COLUMN LAYOUT ===== */
-.lx-content {
-  position: relative;
-  z-index: 10;
+/* ===== WATERMARK ===== */
+.lx-watermark {
+  position: absolute;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(40px, 6vw, 100px);
-  width: 100%;
-  max-width: 1100px;
-  padding: 20px;
-  animation: contentIn 1.2s cubic-bezier(0.16,1,0.3,1) forwards;
+  pointer-events: none;
+  user-select: none;
+  z-index: 3;
+  animation: watermarkIn 2.5s ease-out forwards;
 }
-@keyframes contentIn {
-  0% { opacity: 0; transform: translateY(30px); filter: blur(6px); }
-  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+@keyframes watermarkIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.lx-watermark-img {
+  width: min(50vw, 380px);
+  height: auto;
+  opacity: 0.04;
+  filter: drop-shadow(0 0 120px rgba(255,30,30,0.06));
+  transform: translateY(-10px);
+}
+.lx-watermark-text {
+  font-size: clamp(0.7rem, 1.5vw, 1rem);
+  letter-spacing: 8px;
+  color: rgba(255,255,255,0.03);
+  text-transform: uppercase;
+  font-weight: 300;
+  margin-top: -4px;
 }
 
-/* ===== LEFT: FORM SECTION ===== */
-.lx-form-section {
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 400px;
-}
+/* ===== CARD WRAPPER ===== */
+.lx-cwrap { position: relative; z-index: 10; width: 100%; max-width: 420px; padding: 16px;
+  animation: cardIn 1.2s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes cardIn { 0% { opacity: 0; transform: translateY(60px) scale(0.95); filter: blur(10px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 
 /* ===== CARD ===== */
 .lx-card {
@@ -283,7 +291,7 @@ export const Login = () => {
   backdrop-filter: blur(40px) saturate(150%);
   -webkit-backdrop-filter: blur(40px) saturate(150%);
   border-radius: 24px;
-  padding: 40px 32px 32px;
+  padding: 44px 36px 36px;
   overflow: hidden;
   transform: perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
   transition: transform 0.15s ease-out;
@@ -312,18 +320,17 @@ export const Login = () => {
 }
 @keyframes borderPulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
 
-/* ===== LOGO TEXT IN CARD ===== */
+/* ===== LOGO TEXT ===== */
 .lx-logo-text {
-  font-size: 1.5rem; font-weight: 800; letter-spacing: 3px;
+  font-size: 1.6rem; font-weight: 800; letter-spacing: 3px;
   background: linear-gradient(135deg, #fff, #ccc);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ===== HEADER ===== */
 .lx-header { text-align: center; display: flex; flex-direction: column; gap: 4px; }
-.lx-title { font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
-.lx-sub { font-size: 0.82rem; color: rgba(255,255,255,0.35); font-weight: 400; }
+.lx-title { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.lx-sub { font-size: 0.85rem; color: rgba(255,255,255,0.35); font-weight: 400; }
 
 /* ===== FORM ===== */
 .lx-form { width: 100%; display: flex; flex-direction: column; gap: 16px; }
@@ -338,7 +345,7 @@ export const Login = () => {
   animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
 @keyframes fldIn { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: translateY(0); } }
 
-.lx-lbl { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px;
+.lx-lbl { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.5px;
   color: rgba(255,255,255,0.5); }
 
 .lx-iwrap { position: relative; display: flex; align-items: center; }
@@ -366,9 +373,8 @@ export const Login = () => {
   display: flex; align-items: center; transition: all 0.3s; }
 .lx-eye:hover { color: rgba(255,255,255,0.5); }
 
-/* ===== META ===== */
 .lx-meta { display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.78rem; animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+  font-size: 0.8rem; animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
 .lx-rem { display: flex; align-items: center; gap: 8px; cursor: pointer;
   color: rgba(255,255,255,0.35); user-select: none; transition: color 0.3s; }
 .lx-rem:hover { color: rgba(255,255,255,0.55); }
@@ -381,7 +387,7 @@ export const Login = () => {
   width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 
 .lx-forgot { color: rgba(255,30,30,0.5); text-decoration: none; font-weight: 500;
-  transition: all 0.3s; font-size: 0.78rem; }
+  transition: all 0.3s; font-size: 0.8rem; }
 .lx-forgot:hover { color: #ff1e1e; text-shadow: 0 0 12px rgba(255,30,30,0.2); }
 
 /* ===== BUTTON ===== */
@@ -417,81 +423,15 @@ export const Login = () => {
   border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===== RIGHT: LOGO SECTION ===== */
-.lx-logo-section {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.lx-right-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  animation: logoSlideIn 1.4s cubic-bezier(0.16,1,0.3,1) forwards;
-}
-@keyframes logoSlideIn {
-  0% { opacity: 0; transform: translateX(40px); filter: blur(8px); }
-  100% { opacity: 1; transform: translateX(0); filter: blur(0); }
-}
-
-.lx-right-logo-img {
-  width: min(35vw, 320px);
-  height: auto;
-  filter: drop-shadow(0 0 120px rgba(255,30,30,0.12)) drop-shadow(0 0 40px rgba(255,30,30,0.05));
-  animation: logoGlow 4s infinite alternate ease-in-out;
-}
-@keyframes logoGlow {
-  0% { opacity: 0.85; }
-  100% { opacity: 1; }
-}
-
-.lx-tagline {
-  font-size: clamp(0.9rem, 2vw, 1.3rem);
-  font-weight: 300;
-  letter-spacing: 6px;
-  color: rgba(255,255,255,0.25);
-  text-transform: uppercase;
-  text-shadow: 0 0 40px rgba(255,30,30,0.06);
-  animation: taglineFade 2s ease-out forwards;
-}
-@keyframes taglineFade {
-  0% { opacity: 0; transform: translateY(8px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .lx-content {
-    flex-direction: column;
-    gap: 40px;
-    padding: 40px 20px;
-  }
-  .lx-form-section {
-    max-width: 100%;
-  }
-  .lx-right-logo-img {
-    width: min(50vw, 200px);
-  }
-  .lx-logo-section {
-    order: -1;
-  }
-  .lx-tagline {
-    font-size: 0.85rem;
-    letter-spacing: 4px;
-  }
-}
-
 @media (max-width: 500px) {
-  .lx-card { padding: 32px 20px 28px; border-radius: 20px; }
-  .lx-title { font-size: 1.3rem; }
-  .lx-sub { font-size: 0.78rem; }
-  .lx-logo-text { font-size: 1.2rem; }
+  .lx-card { padding: 36px 24px 28px; border-radius: 20px; }
+  .lx-title { font-size: 1.35rem; }
+  .lx-sub { font-size: 0.8rem; }
+  .lx-logo-text { font-size: 1.3rem; }
   .lx-btn { padding: 14px 20px; font-size: 0.9rem; }
   .lx-meta { flex-direction: column; gap: 10px; align-items: flex-start; }
-  .lx-right-logo-img { width: min(60vw, 160px); }
+  .lx-cwrap { padding: 12px; }
 }
 `}</style>
     </div>
