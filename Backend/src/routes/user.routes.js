@@ -20,19 +20,20 @@ router.get("/me", protect, getMe);
 router.put("/me/profile", protect, updateProfile);
 router.put("/me/change-password", protect, changePassword);
 
-router.get("/", protect, authorizeRoles("ADMIN"), getAllUsers);
-router.get("/:id", protect, authorizeRoles("ADMIN"), getUser);
-router.post("/", protect, authorizeRoles("ADMIN"), createUser);
-router.put("/:id", protect, authorizeRoles("ADMIN"), updateUser);
-router.delete("/:id", protect, authorizeRoles("ADMIN"), deleteUser);
-router.put("/:id/toggle-status", protect, authorizeRoles("ADMIN"), toggleStatus);
-
 // ================= GET TEAM MEMBERS (MANAGER) =================
+// NOTE: Must be defined BEFORE /:id to avoid Express matching "team-members" as an :id param
 router.get(
   "/team-members",
   protect,
   authorizeRoles("ADMIN", "MANAGER"),
   getTeamMembers
 );
+
+router.get("/", protect, authorizeRoles("ADMIN"), getAllUsers);
+router.get("/:id", protect, authorizeRoles("ADMIN"), getUser);
+router.post("/", protect, authorizeRoles("ADMIN"), createUser);
+router.put("/:id", protect, authorizeRoles("ADMIN"), updateUser);
+router.delete("/:id", protect, authorizeRoles("ADMIN"), deleteUser);
+router.put("/:id/toggle-status", protect, authorizeRoles("ADMIN"), toggleStatus);
 
 export default router;
