@@ -455,6 +455,7 @@ export const getDashboardStats = async (userId, role) => {
     totalMonthHours: Math.round(totalMonthHours * 100) / 100,
     weekendWeekHours: Math.round(weekendWeekHours * 100) / 100,
     holidayWeekHours: Math.round(holidayWeekHours * 100) / 100,
+    extraWeekHours: Math.round((weekendWeekHours + holidayWeekHours) * 100) / 100,
     holidayWeekDetails,
     pendingApprovals,
     teamData,
