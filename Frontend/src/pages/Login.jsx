@@ -5,6 +5,7 @@ import { Eye, EyeOff, LogIn, Mail, ShieldAlert, Lock } from "lucide-react";
 import { loginUser } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import logoWatermark from "../assets/logo.png";
+import wallpaperBg from "../assets/wallpaper-bg.png";
 
 const PARTICLE_COUNT = 60;
 
@@ -74,6 +75,8 @@ export const Login = () => {
     <div className="lx-root" ref={rootRef}>
       {/* Background */}
       <div className="lx-bg">
+        <img src={wallpaperBg} alt="" className="lx-bg-img" />
+        <div className="lx-bg-overlay" />
         <div className="lx-mesh m1" />
         <div className="lx-mesh m2" />
         <div className="lx-mesh m3" />
@@ -109,7 +112,7 @@ export const Login = () => {
       {/* Mouse glow */}
       <div className="lx-mglow" />
 
-      {/* ===== BACKGROUND WATERMARK LOGO ===== */}
+      {/* ===== BACKGROUND WATERMARK LOGO (RIGHT SIDE) ===== */}
       <div className="lx-bglogo" aria-hidden="true">
         <img src={logoWatermark} alt="" className="lx-bglogo-img" />
       </div>
@@ -228,8 +231,10 @@ export const Login = () => {
   font-family: 'Inter', sans-serif;
 }
 
-/* ===== BACKGROUND MESH ===== */
+/* ===== BACKGROUND IMAGE ===== */
 .lx-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.lx-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0.15; }
+.lx-bg-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.4) 50%, rgba(10,10,10,0.85) 100%); }
 .lx-mesh { position: absolute; border-radius: 50%; filter: blur(140px); animation: meshDrift 20s infinite alternate ease-in-out; }
 .m1 { width: 700px; height: 700px; top: -25%; left: -15%; background: radial-gradient(circle, rgba(255,30,30,0.12), rgba(100,0,0,0.05) 40%, transparent 70%); }
 .m2 { width: 600px; height: 600px; bottom: -20%; right: -15%; background: radial-gradient(circle, rgba(200,0,0,0.1), rgba(50,0,0,0.03) 40%, transparent 70%); animation-delay: -7s; }
@@ -462,27 +467,28 @@ export const Login = () => {
   font-weight: 300; text-transform: uppercase; padding-top: 2px; }
 .lx-dot { color: rgba(255,30,30,0.3); font-weight: 700; }
 
-/* ===== BACKGROUND WATERMARK LOGO ===== */
+/* ===== BACKGROUND WATERMARK LOGO (RIGHT SIDE) ===== */
 .lx-bglogo {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   pointer-events: none;
   user-select: none;
   z-index: 3;
   animation: bgLogoFade 2.5s ease-out forwards;
+  padding-right: clamp(20px, 5vw, 80px);
 }
 @keyframes bgLogoFade {
   0% { opacity: 0; }
   100% { opacity: 1; }
 }
 .lx-bglogo-img {
-  width: min(70vw, 450px);
+  width: min(40vw, 300px);
   height: auto;
-  opacity: 0.1;
-  filter: drop-shadow(0 0 80px rgba(255,30,30,0.08));
+  opacity: 0.15;
+  filter: drop-shadow(0 0 100px rgba(255,30,30,0.1));
 }
 
 /* ===== RESPONSIVE ===== */
