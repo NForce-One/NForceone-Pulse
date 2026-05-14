@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
   fetchTimeEntries,
   createTimeEntry,
   submitTimeEntry,
   updateTimeEntry,
+  deleteTimeEntry,
 } from "../services/api";
 
 import axios from "axios";
@@ -19,9 +21,10 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 
-import { Plus, Send, Pencil } from "lucide-react";
+import { Plus, Send, Pencil, Trash2, Save, X } from "lucide-react";
 
 export const MyTimesheet = () => {
+  const [searchParams] = useSearchParams();
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,30 +36,31 @@ export const MyTimesheet = () => {
   const [editData, setEditData] = useState({});
 
   const [formData, setFormData] = useState({
+    client: "",
     project: "",
     task: "",
     date: format(new Date(), "yyyy-MM-dd"),
     hours: "",
     description: "",
+    clientId: null,
+    projectId: null,
+    taskId: null,
   });
 
-  // ================= LOAD ENTRIES =================
+  // LOAD ENTRIES
   const loadEntries = async () => {
     try {
       setIsLoading(true);
       const response = await fetchTimeEntries();
-
-      if (Array.isArray(response)) setEntries(response);
-      else if (response?.data) setEntries(response.data);
-      else setEntries([]);
+      setEntries(response?.data || response || []);
     } catch (error) {
-      console.error("Failed to fetch entries", error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ================= LOAD MANAGERS =================
+  // LOAD MANAGERS
   const loadManagers = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -64,41 +68,63 @@ export const MyTimesheet = () => {
       const res = await axios.get(
         "http://localhost:5000/api/auth/managers",
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      setManagers(res.data.data || []);
+      const data = res.data?.data || res.data || [];
+      setManagers(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Manager fetch error", err);
+      console.error(err);
     }
   };
 
   useEffect(() => {
     loadEntries();
     loadManagers();
+
+    const client = searchParams.get("client") || "";
+    const project = searchParams.get("project") || "";
+    const task = searchParams.get("task") || "";
+    const description = searchParams.get("description") || "";
+    const hours = searchParams.get("hours") || "";
+    const date = searchParams.get("date") || format(new Date(), "yyyy-MM-dd");
+    const clientId = searchParams.get("clientId") || null;
+    const projectId = searchParams.get("projectId") || null;
+    const taskId = searchParams.get("taskId") || null;
+
+    if (project || task || hours) {
+      setFormData({
+        client,
+        project,
+        task,
+        date,
+        hours: hours ? Number(hours).toFixed(2) : "",
+        description,
+        clientId: clientId ? Number(clientId) : null,
+        projectId: projectId ? Number(projectId) : null,
+        taskId: taskId ? Number(taskId) : null,
+      });
+    }
   }, []);
 
-  // ================= INPUT =================
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ================= CREATE =================
+  // CREATE
   const handleCreate = async (e) => {
     e.preventDefault();
 
-    // ✅ VALIDATION
     if (
+      !formData.client ||
       !formData.project ||
       !formData.task ||
       !formData.hours ||
       !selectedManager
     ) {
-      alert("Please fill all required fields");
+      alert("Please fill all required fields and select a manager");
       return;
     }
 
@@ -106,218 +132,266 @@ export const MyTimesheet = () => {
       setIsSubmitting(true);
 
       const payload = {
-        project: formData.project,
-        task: formData.task,
-        date: formData.date,
-        hours: Number(formData.hours),
-        description: formData.description,
-        userId: Number(selectedManager), // ✅ FIXED
+        ...formData,
+        managerId: selectedManager ? Number(selectedManager) : null,
       };
 
-      console.log("Sending payload:", payload);
+      console.log("FINAL PAYLOAD:", payload);
 
-      await createTimeEntry(payload);
+      const result = await createTimeEntry(payload);
+      console.log("CREATE RESULT:", result);
 
-      // ✅ RESET FORM
       setFormData({
+        client: "",
         project: "",
         task: "",
         date: format(new Date(), "yyyy-MM-dd"),
         hours: "",
         description: "",
+        clientId: null,
+        projectId: null,
+        taskId: null,
       });
 
       setSelectedManager("");
-
       await loadEntries();
+
+      alert("Entry created successfully!");
     } catch (error) {
-      console.error("Create error:", error);
-      alert("Failed to add entry");
+      console.error("CREATE ERROR:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create entry";
+      alert(`Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ================= SUBMIT =================
+  // ACTIONS
   const handleSubmitEntry = async (id) => {
-    try {
-      await submitTimeEntry(id);
-      await loadEntries();
-    } catch (err) {
-      console.error(err);
-    }
+    await submitTimeEntry(id);
+    await loadEntries();
   };
+/*
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this entry?")) return;
 
-  // ================= EDIT =================
+    await deleteTimeEntry(id);
+    await loadEntries();
+  };
+*/
+const handleDelete = async (id) => {
+  try {
+    if (!window.confirm("Delete this entry?")) return;
+
+    await deleteTimeEntry(id);
+
+    // 🔥 remove from UI immediately
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+
+  } catch (error) {
+    console.error("DELETE ERROR:", error);
+    alert("Delete failed");
+  }
+};
   const handleEdit = (entry) => {
     setEditingId(entry.id);
-    setEditData({
-      project: entry.project,
-      task: entry.task,
-      entryDate: entry.entryDate,
-      hours: entry.hours,
-      description: entry.description,
-    });
+    setEditData({ ...entry });
   };
 
   const handleSave = async (id) => {
-    try {
-      await updateTimeEntry(id, {
-        project: editData.project,
-        task: editData.task,
-        entryDate: editData.entryDate,
-        hours: Number(editData.hours),
-        description: editData.description,
-      });
-
-      setEditingId(null);
-      await loadEntries();
-    } catch (err) {
-      console.error(err);
-    }
+    await updateTimeEntry(id, editData);
+    setEditingId(null);
+    await loadEntries();
   };
 
-  // ================= STATUS =================
-  const getStatusBadgeVariant = (status) => {
-    switch (status) {
-      case "DRAFT":
-        return "default";
-      case "SUBMITTED":
-        return "warning";
-      case "APPROVED":
-        return "success";
-      case "REJECTED":
-        return "danger";
-      default:
-        return "default";
-    }
+  const getEmployeeStatus = (status) => {
+    return status === "DRAFT" ? "Draft" : "Sent";
+  };
+
+  const getStatusBadgeVariant = (displayStatus) => {
+    return {
+      Draft: "default",
+      Sent: "warning",
+    }[displayStatus] || "default";
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">My Timesheet</h1>
+      <h1 className="text-2xl font-bold text-white">My Timesheet</h1>
 
       {/* FORM */}
       <Card>
         <CardHeader>
-          <CardTitle>Log Time</CardTitle>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Plus className="w-5 h-5 text-[#ff2d2d]" />
+            Log Time
+          </CardTitle>
         </CardHeader>
 
         <CardContent>
-          <form
-            onSubmit={handleCreate}
-            className="grid grid-cols-1 md:grid-cols-6 gap-4"
-          >
-            <Input
-              required
-              name="project"
-              value={formData.project}
-              onChange={handleInputChange}
-              placeholder="Project"
-            />
-
-            <Input
-              required
-              name="task"
-              value={formData.task}
-              onChange={handleInputChange}
-              placeholder="Task"
-            />
-
-            <Input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-            />
-
-            <Input
-              type="number"
-              name="hours"
-              value={formData.hours}
-              onChange={handleInputChange}
-              placeholder="Hours"
-            />
-
-            <Input
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Description"
-            />
-
+          <form className="grid grid-cols-1 md:grid-cols-7 gap-4" onSubmit={handleCreate}>
+            <Input name="client" value={formData.client} onChange={handleInputChange} placeholder="Client" />
+            <Input name="project" value={formData.project} onChange={handleInputChange} placeholder="Project" />
+            <Input name="task" value={formData.task} onChange={handleInputChange} placeholder="Task" />
+            <Input type="date" name="date" value={formData.date} onChange={handleInputChange} />
+            <Input type="number" step="0.01" name="hours" value={formData.hours} onChange={handleInputChange} placeholder="Hours" />
+            <Input name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" />
             <select
-              value={selectedManager}
+              value={selectedManager || ""}
               onChange={(e) => setSelectedManager(e.target.value)}
-              className="border p-2 rounded"
-              required
+              className="h-10 w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d] focus:border-transparent transition-all duration-200"
             >
-              <option value="">Select Manager</option>
+              <option value="" className="bg-[#1a1a1a]">Select Manager</option>
               {managers.map((m) => (
-                <option key={m.id} value={m.id}>
+                <option key={m.id} value={m.id} className="bg-[#1a1a1a]">
                   {m.name}
                 </option>
               ))}
             </select>
-
-            <Button type="submit" disabled={isSubmitting}>
-              <Plus className="w-4 h-4 mr-1" />
-              {isSubmitting ? "Adding..." : "Add Entry"}
+            <Button type="submit" disabled={isSubmitting} className="md:col-span-7 w-full">
+              <Plus className="w-4 h-4" /> {isSubmitting ? "Adding..." : "Add Entry"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
       {/* TABLE */}
-      <Card>
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Project / Task</th>
-              <th>Description</th>
-              <th>Hours</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {entries.map((entry) => (
-              <tr key={entry.id}>
-                <td>
-                  {format(new Date(entry.entryDate), "MMM dd, yyyy")}
-                </td>
-                <td>
-                  <div>{entry.project}</div>
-                  <div className="text-xs">{entry.task}</div>
-                </td>
-                <td>{entry.description}</td>
-                <td>{entry.hours} h</td>
-                <td>
-                  <Badge variant={getStatusBadgeVariant(entry.status)}>
-                    {entry.status}
-                  </Badge>
-                </td>
-                <td>
-                  {entry.status === "DRAFT" && (
-                    <>
-                      <Button size="sm" onClick={() => handleEdit(entry)}>
-                        <Pencil />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSubmitEntry(entry.id)}
-                      >
-                        <Send />
-                      </Button>
-                    </>
-                  )}
-                </td>
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+              <tr>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Client</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Date</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Project</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Task</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Description</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Hours</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Employee Status</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Reported To</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Manager Action</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Manager Comment</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Edit</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {entries.map((entry) => {
+                return (
+                  <tr key={entry.id} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
+                    <td className="p-3 text-white">{entry.client || "-"}</td>
+                    <td className="p-3 text-[#a1a1aa]">
+                      {format(new Date(entry.entryDate), "MMM dd, yyyy")}
+                    </td>
+
+                    <td className="p-3 text-white">
+                      {editingId === entry.id ? (
+                        <Input
+                          value={editData.project}
+                          onChange={(e) =>
+                            setEditData({ ...editData, project: e.target.value })
+                          }
+                        />
+                      ) : (
+                        entry.project
+                      )}
+                    </td>
+
+                    <td className="p-3 text-white">{entry.task}</td>
+
+                    <td className="p-3 text-[#a1a1aa]">
+                      {editingId === entry.id ? (
+                        <Input
+                          value={editData.description}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              description: e.target.value,
+                            })
+                          }
+                        />
+                      ) : (
+                        entry.description
+                      )}
+                    </td>
+
+                    <td className="p-3 text-white font-medium">{entry.hours} h</td>
+
+                    <td className="p-3">
+                      <Badge variant={getStatusBadgeVariant(getEmployeeStatus(entry.status))}>
+                        {getEmployeeStatus(entry.status)}
+                      </Badge>
+                    </td>
+
+                    <td className="p-3 text-[#a1a1aa]">
+                      {entry.Manager?.name || "-"}
+                    </td>
+
+                    <td className="p-3">
+                      {entry.status === "APPROVED" && (
+                        <Badge variant="success">Approved</Badge>
+                      )}
+                      {entry.status === "REJECTED" && (
+                        <Badge variant="danger">Rejected</Badge>
+                      )}
+                      {(entry.status === "DRAFT" ||
+                        entry.status === "SUBMITTED") && "-"}
+                    </td>
+
+                    <td className="p-3 text-[#a1a1aa] max-w-[200px]">
+                      {entry.managerComment || "-"}
+                    </td>
+
+                    <td className="p-3">
+                      {entry.status === "DRAFT" && (
+                        <div className="flex items-center gap-2">
+                          {editingId === entry.id ? (
+                            <>
+                              <Button size="sm" onClick={() => handleSave(entry.id)} className="hover:scale-105">
+                                <Save className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="hover:scale-105">
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button size="sm" variant="ghost" onClick={() => handleEdit(entry)} className="hover:scale-105">
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleSubmitEntry(entry.id)}
+                                className="hover:scale-105"
+                              >
+                                <Send className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => handleDelete(entry.id)}
+                                className="hover:scale-105"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {entries.length === 0 && (
+                <tr>
+                  <td colSpan="11" className="p-8 text-center text-[#a1a1aa]">
+                    No time entries found. Start by adding your first entry above.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
     </div>
   );

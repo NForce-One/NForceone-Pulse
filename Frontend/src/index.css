@@ -2,14 +2,65 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #2563eb; /* blue-600 */
-  --color-primary-hover: #1d4ed8; /* blue-700 */
-  --color-secondary: #9333ea; /* purple-600 */
-  --color-secondary-hover: #7e22ce; /* purple-700 */
+  --color-primary: #ff2d2d; /* Neon Red */
+  --color-primary-hover: #cc0000; /* Darker Red */
+  --color-primary-glow: rgba(255, 45, 45, 0.5); /* Red Glow */
+  --color-secondary: #2a2a2a; /* Dark Secondary */
+  --color-secondary-hover: #333333; /* Hover Secondary */
+  --color-background: #0f0f0f; /* Main Background */
+  --color-card: #1a1a1a; /* Card Background */
+  --color-text-primary: #ffffff; /* Primary Text */
+  --color-text-secondary: #a1a1aa; /* Secondary Text */
+  --color-border: #2a2a2a; /* Border Color */
+  --color-border-focus: #ff2d2d; /* Focus Border */
 }
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    @apply bg-[#0f0f0f] text-[#ffffff] font-sans antialiased;
+  }
+
+  /* Global Micro Interactions */
+  * {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #555555;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ff2d2d;
+  }
+
+  /* Horizontal scrollbar for tables */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: #0f0f0f;
+    border-radius: 4px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #666666;
+    border-radius: 4px;
+    border: 2px solid #0f0f0f;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #ff2d2d;
   }
 }

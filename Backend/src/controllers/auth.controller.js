@@ -1,21 +1,10 @@
 import { 
-  registerUser, 
   loginUser, 
   forgotPassword, 
   resetPassword 
 } from "../services/auth.service.js";
 
-import User from "../models/user.model.js"; // ✅ ADD THIS
-
-// ================= REGISTER =================
-export const register = async (req, res) => {
-  try {
-    const user = await registerUser(req.body);
-    res.status(201).json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
+import User from "../models/user.model.js";
 
 // ================= LOGIN =================
 export const login = async (req, res) => {
@@ -36,8 +25,8 @@ export const login = async (req, res) => {
 export const getManagers = async (req, res) => {
   try {
     const managers = await User.findAll({
-      where: { role: "MANAGER" },
-      attributes: ["id", "name", "email"], // only needed fields
+      where: { role: "MANAGER", isActive: true },
+      attributes: ["id", "name", "email"],
     });
 
     res.status(200).json({

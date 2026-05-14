@@ -29,8 +29,23 @@ const User = sequelize.define(
       type: DataTypes.ENUM("EMPLOYEE", "MANAGER", "ADMIN"),
       defaultValue: "EMPLOYEE",
     },
-
-    // 🔥 ADD THESE (THIS FIXES YOUR ISSUE)
+    // 🔥 NEW FIELDS (from spec)
+    department: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    managerId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
+    defaultHours: {
+      type: DataTypes.FLOAT,
+      defaultValue: 8.0,
+    },
     resetToken: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -45,5 +60,9 @@ const User = sequelize.define(
     timestamps: true,
   }
 );
+
+// 🔥 ADD SELF-RELATION (Manager)
+User.belongsTo(User, { as: "Manager", foreignKey: "managerId" });
+User.hasMany(User, { as: "Subordinates", foreignKey: "managerId" });
 
 export default User;

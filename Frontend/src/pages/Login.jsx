@@ -149,17 +149,6 @@ export const Login = () => {
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
 
-            {/* REGISTER */}
-            <div className="text-center text-sm text-gray-400">
-              Don't have an account?{" "}
-              <span
-                className="text-red-400 cursor-pointer font-medium hover:text-red-300"
-                onClick={() => navigate("/register")}
-              >
-                Register
-              </span>
-            </div>
-
           </form>
         </div>
       </div>

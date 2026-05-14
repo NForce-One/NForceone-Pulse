@@ -7,6 +7,7 @@ import {
   submitTimeEntry,
   approveTimeEntry,
   rejectTimeEntry,
+  commentTimeEntry,
 } from "../controllers/timeEntry.controller.js";
 
 import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
@@ -42,7 +43,8 @@ router.put(
 router.delete(
   "/:id",
   protect,
-  authorizeRoles("ADMIN"),
+  //authorizeRoles("ADMIN", "EMPLOYEE"),
+  authorizeRoles("ADMIN", "EMPLOYEE", "MANAGER"),
   deleteTimeEntry
 );
 
@@ -60,6 +62,14 @@ router.put(
   protect,
   authorizeRoles("ADMIN", "MANAGER"),
   approveTimeEntry
+);
+
+// ================= COMMENT =================
+router.put(
+  "/:id/comment",
+  protect,
+  authorizeRoles("ADMIN", "MANAGER"),
+  commentTimeEntry
 );
 
 // ================= REJECT =================

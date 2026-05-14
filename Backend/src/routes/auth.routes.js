@@ -1,16 +1,14 @@
 import express from "express";
 import { 
-  register, 
   login, 
   forgotPasswordHandler, 
   resetPasswordHandler,
-  getManagers // ✅ ADD THIS
+  getManagers
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
-// ================= EXISTING =================
-router.post("/register", register);
+// ================= LOGIN =================
 router.post("/login", login);
 
 // ================= FORGOT PASSWORD =================
