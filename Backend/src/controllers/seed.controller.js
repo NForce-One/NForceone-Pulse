@@ -151,15 +151,16 @@ export const seedDemoData = async (req, res) => {
 
         const dateStr = date.toISOString().split("T")[0];
         const pIdx = Math.floor(Math.random() * projectIds.length);
-        const tIdx = taskIds[Math.floor(Math.random() * taskIds.length)];
+        const cIdx = Math.floor(Math.random() * clientIds.length);
+        const tIdx = Math.floor(Math.random() * taskIds.length);
 
         const exists = await TimeEntry.findOne({ where: { userId: uid, entryDate: dateStr } });
         if (!exists) {
           const hours = Math.round((4 + Math.random() * 4) * 100) / 100;
           const status = statuses[Math.floor(Math.random() * statuses.length)];
           await TimeEntry.create({
-            userId: uid, managerId, clientId: clientIds[pIdx], projectId: projectIds[pIdx], taskId: tIdx,
-            client: clientData[pIdx].name, project: projectData[pIdx].name, task: taskData[tIdx].title,
+            userId: uid, managerId, clientId: clientIds[cIdx], projectId: projectIds[pIdx], taskId: taskIds[tIdx],
+            client: clientData[cIdx].name, project: projectData[pIdx].name, task: taskData[tIdx].title,
             entryDate: dateStr, hours, description: `Work on ${taskData[tIdx].title} for ${projectData[pIdx].name}`,
             isBillable: Math.random() > 0.2, status,
           });
