@@ -103,12 +103,24 @@ const app = express();
 // 🔥 VERY IMPORTANT FIX (CORS)
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",")
-  : ["http://localhost:5173", "http://localhost:5174"];
+  : [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://cyber-login-eta.vercel.app",
+    ];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) {
+        cb(null, true);
+      } else {
+        cb(null, true);
+      }
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
