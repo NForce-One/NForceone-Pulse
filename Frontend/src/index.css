@@ -2,23 +2,23 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #00d2ff; /* Sky Blue */
-  --color-primary-hover: #0099cc;
-  --color-primary-glow: rgba(0, 210, 255, 0.5);
-  --color-secondary: rgba(255, 0, 0, 0.1); /* Red hint */
+  --color-primary: #ff1e1e;
+  --color-primary-hover: #cc0000;
+  --color-primary-glow: rgba(255, 30, 30, 0.5);
+  --color-secondary: rgba(255, 0, 0, 0.1);
   --color-secondary-hover: rgba(255, 0, 0, 0.2);
-  --color-background: #000000; /* Deep Black */
+  --color-background: #0a0a0a;
   --color-card: rgba(0, 0, 0, 0.4);
   --color-text-primary: #ffffff;
-  --color-text-secondary: #00d2ff; /* Sky Blue text accent */
-  --color-border: rgba(0, 210, 255, 0.2);
-  --color-border-focus: #00d2ff; /* Pure Sky Blue focus */
+  --color-text-secondary: #ff1e1e;
+  --color-border: rgba(255, 30, 30, 0.2);
+  --color-border-focus: #ff1e1e;
 }
 
 @layer base {
   body {
     @apply bg-fixed bg-cover bg-center font-sans antialiased text-[#e2e2e7] min-h-screen overflow-x-hidden;
-    background: linear-gradient(135deg, #000000 0%, #001a33 100%);
+    background: #0a0a0a;
     position: relative;
   }
 
@@ -29,33 +29,31 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: 
-      radial-gradient(at 0% 0%, rgba(0, 210, 255, 0.3) 0, transparent 50%),   /* Light Blue */
-      radial-gradient(at 50% 0%, rgba(255, 77, 77, 0.2) 0, transparent 50%),  /* Vibrant Red */
-      radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.2) 0, transparent 50%), /* Purple */
-      radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.2) 0, transparent 50%), /* Emerald */
-      radial-gradient(at 50% 100%, rgba(245, 158, 11, 0.15) 0, transparent 50%), /* Amber */
-      radial-gradient(at 100% 100%, rgba(0, 210, 255, 0.3) 0, transparent 50%); /* Light Blue Glow */
+    background:
+      radial-gradient(at 0% 0%, rgba(255, 30, 30, 0.15) 0, transparent 50%),
+      radial-gradient(at 50% 0%, rgba(200, 0, 0, 0.1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(255, 50, 50, 0.08) 0, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(150, 0, 0, 0.1) 0, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(255, 30, 30, 0.08) 0, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(100, 0, 0, 0.12) 0, transparent 50%);
     z-index: -2;
     animation: mesh-glow 15s infinite alternate ease-in-out;
   }
 
   @keyframes mesh-glow {
     0% { filter: hue-rotate(0deg) brightness(1); }
-    100% { filter: hue-rotate(20deg) brightness(1.2); }
+    100% { filter: hue-rotate(-10deg) brightness(1.15); }
   }
 
-  /* Global Glassmorphism Utility */
   .glass-card {
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.03); /* ultra-transparent glass */
+    background-color: rgba(10, 10, 10, 0.6);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 30, 30, 0.03);
   }
 
-  /* User's specific requested style */
   .card-user {
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -65,24 +63,22 @@
   }
 
   .glass-input {
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: rgba(10, 10, 10, 0.5) !important;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 210, 255, 0.2) !important;
+    border: 1px solid rgba(255, 30, 30, 0.2) !important;
     color: #ffffff !important;
   }
 
   .glass-input:focus {
-    background: rgba(0, 210, 255, 0.05) !important;
-    border-color: #00d2ff !important;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.3) !important;
+    background: rgba(255, 30, 30, 0.05) !important;
+    border-color: #ff1e1e !important;
+    box-shadow: 0 0 15px rgba(255, 30, 30, 0.3) !important;
   }
 
-  /* Global Micro Interactions */
   * {
     transition: all 0.2s ease-in-out;
   }
 
-  /* Custom Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -93,38 +89,38 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #00d2ff;
+    background: #ff1e1e;
   }
 
   .glass-table {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(10, 10, 10, 0.4);
     backdrop-filter: blur(12px);
     border-radius: 16px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 30, 30, 0.08);
   }
 
   .glass-table thead {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 30, 30, 0.06);
   }
 
   .glass-table tr {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 30, 30, 0.05);
   }
 
   .glass-table tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 30, 30, 0.03);
   }
 
   .glass-select {
-    background: rgba(30, 30, 30, 0.6);
+    background: rgba(10, 10, 10, 0.6);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 30, 30, 0.15);
     color: white;
     border-radius: 8px;
     padding: 8px;
@@ -152,7 +148,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(0, 210, 255, 0.1),
+      rgba(255, 30, 30, 0.1),
       transparent
     );
     transition: left 0.5s ease;
@@ -164,20 +160,19 @@
 
   .nav-item-hover:hover {
     transform: translateX(8px);
-    background: rgba(0, 210, 255, 0.05);
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.1);
+    background: rgba(255, 30, 30, 0.05);
+    box-shadow: 0 0 15px rgba(255, 30, 30, 0.1);
   }
 
   .nav-item-hover:active {
     transform: scale(0.95);
   }
 
-  /* Dynamic Background Blobs */
   .blob {
     position: absolute;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(0, 210, 255, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 30, 30, 0.12) 0%, transparent 70%);
     border-radius: 50%;
     filter: blur(80px);
     z-index: -1;
@@ -190,19 +185,17 @@
   }
 
   .blob-1 { top: -10%; left: -10%; animation-delay: 0s; }
-  .blob-2 { bottom: -10%; right: -10%; animation-delay: -5s; background: radial-gradient(circle, rgba(0, 210, 255, 0.1) 0%, transparent 70%); }
+  .blob-2 { bottom: -10%; right: -10%; animation-delay: -5s; background: radial-gradient(circle, rgba(200, 0, 0, 0.08) 0%, transparent 70%); }
 
-  /* 3D Dynamic Cards */
   .dynamic-card {
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
   }
 
   .dynamic-card:hover {
     transform: perspective(1000px) rotateX(2deg) rotateY(2deg) translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0, 210, 255, 0.2);
+    box-shadow: 0 20px 40px rgba(255, 30, 30, 0.15);
   }
 
-  /* Smooth Entry Animation */
   .page-entry {
     animation: slideUpFade 0.6s ease-out forwards;
   }
@@ -212,7 +205,6 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Animated Border Glow */
   .border-glow {
     position: relative;
   }
@@ -221,7 +213,7 @@
     content: "";
     position: absolute;
     inset: -2px;
-    background: linear-gradient(45deg, #00d2ff, transparent, #00d2ff, transparent);
+    background: linear-gradient(45deg, #ff1e1e, transparent, #ff1e1e, transparent);
     background-size: 400% 400%;
     z-index: -1;
     border-radius: inherit;
@@ -240,13 +232,12 @@
     100% { background-position: 0% 50%; }
   }
 
-  /* Cursor Glow Placeholder - Needs JS to follow mouse, but we can simulate it */
   .cursor-glow {
     pointer-events: none;
     position: fixed;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(0, 210, 255, 0.05) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 30, 30, 0.04) 0%, transparent 70%);
     border-radius: 50%;
     z-index: 9999;
     mix-blend-mode: screen;

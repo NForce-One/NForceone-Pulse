@@ -46,10 +46,10 @@ export const Dashboard = () => {
       title: "Total Hours This Week",
       value: `${stats.totalWeekHours || 0}h`,
       icon: Clock,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/20",
-      borderColor: "border-blue-500/30",
-      shadowColor: "shadow-blue-500/20",
+      color: "text-red-400",
+      bgColor: "bg-red-500/20",
+      borderColor: "border-red-500/30",
+      shadowColor: "shadow-red-500/20",
     },
     {
       title: "Working Hours",
@@ -161,7 +161,7 @@ export const Dashboard = () => {
           {statCards.map((card, index) => (
             <Card
               key={card.title}
-              className={`border ${card.borderColor} hover:shadow-[0_0_30px_rgba(0,210,255,0.2)] hover:border-[#00d2ff]/50 transition-all duration-300 dynamic-card group cursor-pointer border-glow`}
+              className={`border ${card.borderColor} hover:shadow-[0_0_30px_rgba(255,30,30,0.2)] hover:border-[#ff1e1e]/50 transition-all duration-300 dynamic-card group cursor-pointer border-glow`}
               style={{
                 animationDelay: `${index * 100}ms`,
               }}
@@ -188,7 +188,7 @@ export const Dashboard = () => {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#00d2ff]" />
+              <Users className="w-5 h-5 text-[#ff1e1e]" />
               Team Overview
             </CardTitle>
           </CardHeader>
@@ -347,7 +347,7 @@ export const Dashboard = () => {
                       <YAxis stroke="#a1a1aa" />
                       <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.1)" }} />
                       <Legend />
-                      <Bar dataKey="billable" fill="#a855f7" name="Working" />
+                      <Bar dataKey="billable" fill="#ff1e1e" name="Working" />
                       <Bar dataKey="nonBillable" fill="#6b7280" name="Extra Hours" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -372,7 +372,7 @@ export const Dashboard = () => {
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       >
                         {stats.projectDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={["#a855f7", "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e"][index % 5]} />
+                          <Cell key={`cell-${index}`} fill={["#ff1e1e", "#cc0000", "#ff4444", "#ff6b6b", "#990000"][index % 5]} />
                         ))}
                       </Pie>
                       <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.1)" }} />
@@ -401,8 +401,8 @@ export const Dashboard = () => {
                     <YAxis stroke="#a1a1aa" />
                     <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.1)" }} />
                     <Legend />
-                    <Line type="monotone" dataKey="totalHours" stroke="#00d2ff" name="Total Hours" />
-                    <Line type="monotone" dataKey="billableHours" stroke="#ff0000" name="Working Hours" />
+                    <Line type="monotone" dataKey="totalHours" stroke="#ff1e1e" name="Total Hours" />
+                    <Line type="monotone" dataKey="billableHours" stroke="#ff6666" name="Working Hours" />
                     <Line type="monotone" dataKey="nonBillableHours" stroke="#6b7280" name="Extra Hours" />
                   </LineChart>
                 </ResponsiveContainer>

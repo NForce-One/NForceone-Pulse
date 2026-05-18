@@ -50,9 +50,9 @@ export const Sidebar = () => {
   return (
     <div className="flex flex-col w-64 glass-card h-full rounded-none border-r border-white/10 shadow-2xl">
       <div className="h-16 flex items-center px-6 border-b border-white/10">
-        <span className="text-xl font-bold text-[#00d2ff] flex items-center gap-2 hover:scale-110 transition-all cursor-pointer">
-          <Clock className="w-6 h-6 text-[#00d2ff] drop-shadow-[0_0_12px_rgba(0,210,255,1)]" />
-          <span className="bg-gradient-to-r from-[#00d2ff] via-[#a855f7] to-[#ff4d4d] bg-clip-text text-transparent font-extrabold tracking-tighter">
+        <span className="text-xl font-bold text-[#ff1e1e] flex items-center gap-2 hover:scale-110 transition-all cursor-pointer">
+          <Clock className="w-6 h-6 text-[#ff1e1e] drop-shadow-[0_0_12px_rgba(255,30,30,0.8)]" />
+          <span className="bg-gradient-to-r from-[#ff1e1e] via-[#cc0000] to-[#ff4444] bg-clip-text text-transparent font-extrabold tracking-tighter">
             NForce Pulse
           </span>
         </span>
@@ -68,16 +68,16 @@ export const Sidebar = () => {
               className={cn(
                 "flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 nav-item-hover",
                 isActive
-                  ? "bg-[#00d2ff]/10 text-[#00d2ff] border-l-4 border-[#00d2ff] shadow-[inset_0_0_10px_rgba(0,210,255,0.1)]"
-                  : "text-[#a1a1aa] hover:text-white hover:border-l-4 hover:border-[#00d2ff]/50"
+                  ? "bg-[#ff1e1e]/10 text-[#ff1e1e] border-l-4 border-[#ff1e1e] shadow-[inset_0_0_10px_rgba(255,30,30,0.1)]"
+                  : "text-[#a1a1aa] hover:text-white hover:border-l-4 hover:border-[#ff1e1e]/50"
               )}
             >
               <div className="flex items-center gap-3">
-                <item.icon className={cn("w-5 h-5", isActive ? "text-[#00d2ff] drop-shadow-[0_0_5px_rgba(0,210,255,0.5)]" : "text-[#a1a1aa]")} />
+                <item.icon className={cn("w-5 h-5", isActive ? "text-[#ff1e1e] drop-shadow-[0_0_5px_rgba(255,30,30,0.5)]" : "text-[#a1a1aa]")} />
                 {item.name}
               </div>
               {item.path === "/notifications" && unreadCount > 0 && (
-                <span className="bg-gradient-to-br from-[#00d2ff] to-[#ff4d4d] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(0,210,255,0.5)] animate-pulse">
+                <span className="bg-gradient-to-br from-[#ff1e1e] to-[#cc0000] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(255,30,30,0.5)] animate-pulse">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
@@ -99,11 +99,11 @@ export const Sidebar = () => {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 nav-item-hover",
                     isActive
-                      ? "bg-[#00d2ff]/10 text-[#00d2ff] border-l-4 border-[#00d2ff] shadow-[inset_0_0_10px_rgba(0,210,255,0.1)]"
-                      : "text-[#a1a1aa] hover:text-white hover:border-l-4 hover:border-[#00d2ff]/50"
+                      ? "bg-[#ff1e1e]/10 text-[#ff1e1e] border-l-4 border-[#ff1e1e] shadow-[inset_0_0_10px_rgba(255,30,30,0.1)]"
+                      : "text-[#a1a1aa] hover:text-white hover:border-l-4 hover:border-[#ff1e1e]/50"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", isActive ? "text-[#00d2ff]" : "text-[#a1a1aa]")} />
+                  <item.icon className={cn("w-5 h-5", isActive ? "text-[#ff1e1e]" : "text-[#a1a1aa]")} />
                   {item.name}
                 </Link>
               );

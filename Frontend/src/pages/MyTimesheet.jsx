@@ -221,7 +221,7 @@ const handleDelete = async (id) => {
       <Card>
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
-            <Plus className="w-5 h-5 text-[#00d2ff]" />
+            <Plus className="w-5 h-5 text-[#ff1e1e]" />
             Log Time
           </CardTitle>
         </CardHeader>
@@ -237,7 +237,7 @@ const handleDelete = async (id) => {
             <select
               value={selectedManager || ""}
               onChange={(e) => setSelectedManager(e.target.value)}
-              className="glass-select focus:ring-2 focus:ring-[#00d2ff]"
+              className="glass-select focus:ring-2 focus:ring-[#ff1e1e]"
             >
               <option value="">Select Manager</option>
               {managers.map((m) => (

@@ -40,14 +40,14 @@ export const Header = () => {
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#00d2ff] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(0,210,255,0.5)] animate-pulse">
+            <span className="absolute -top-1 -right-1 bg-[#ff1e1e] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(255,30,30,0.5)] animate-pulse">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </button>
 
         <div className="flex items-center gap-2 text-sm text-[#a1a1aa]">
-          <div className="w-8 h-8 bg-[#00d2ff]/10 rounded-full flex items-center justify-center text-[#00d2ff] border border-[#00d2ff]/20">
+          <div className="w-8 h-8 bg-[#ff1e1e]/10 rounded-full flex items-center justify-center text-[#ff1e1e] border border-[#ff1e1e]/20">
             <User className="w-4 h-4" />
           </div>
           <span className="font-medium text-white">{user?.name || user?.email || 'User'}</span>
@@ -56,7 +56,7 @@ export const Header = () => {
           </span>
         </div>
         <div className="w-px h-6 bg-[#2a2a2a]"></div>
-        <Button variant="ghost" size="sm" onClick={logout} className="text-[#a1a1aa] hover:text-[#00d2ff] gap-2 hover:bg-white/5">
+        <Button variant="ghost" size="sm" onClick={logout} className="text-[#a1a1aa] hover:text-[#ff1e1e] gap-2 hover:bg-white/5">
           <LogOut className="w-4 h-4" />
           Logout
         </Button>

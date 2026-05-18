@@ -369,7 +369,7 @@ export const TimerPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Play className="w-6 h-6 text-[#00d2ff]" />
+          <Play className="w-6 h-6 text-[#ff1e1e]" />
           Timer
         </h1>
         <p className="text-[#a1a1aa]">Track time with start, pause, resume, and stop controls</p>
@@ -390,7 +390,7 @@ export const TimerPage = () => {
 
       {/* ACTIVE TIMER DISPLAY */}
       {timer && (
-        <Card className="border-[#00d2ff]/20 shadow-[0_0_30px_rgba(0,210,255,0.1)]">
+        <Card className="border-[#ff1e1e]/20 shadow-[0_0_30px_rgba(255,30,30,0.1)]">
           <CardContent className="pt-6">
             <div className="text-center">
               <div className="flex justify-center mb-4">
@@ -446,7 +446,7 @@ export const TimerPage = () => {
                 <Button
                   onClick={handleConvertToEntry}
                   disabled={isLoading}
-                  className="bg-[#00d2ff] hover:bg-[#0099cc] shadow-lg shadow-[#00d2ff]/30 hover:scale-105 active:scale-95"
+                  className="bg-[#ff1e1e] hover:bg-[#cc0000] shadow-lg shadow-[#ff1e1e]/30 hover:scale-105 active:scale-95"
                 >
                   <ArrowRight className="w-4 h-4 mr-2" />
                   Stop & Add to Timesheet
