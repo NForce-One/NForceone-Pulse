@@ -182,6 +182,12 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/reports", reportRoutes);
 
 /* ======================
+   SEED ROUTE (ADMIN ONLY)
+====================== */
+import { seedDemoData } from "./controllers/seed.controller.js";
+app.post("/api/seed", protect, authorizeRoles("ADMIN"), seedDemoData);
+
+/* ======================
    PROTECTED TEST ROUTE
 ====================== */
 app.get("/api/test", protect, (req, res) => {
