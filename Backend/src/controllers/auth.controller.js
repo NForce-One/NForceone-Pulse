@@ -1,10 +1,21 @@
 import { 
+  registerUser, 
   loginUser, 
   forgotPassword, 
   resetPassword 
 } from "../services/auth.service.js";
 
 import User from "../models/user.model.js";
+
+// ================= REGISTER =================
+export const register = async (req, res) => {
+  try {
+    const user = await registerUser(req.body);
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 // ================= LOGIN =================
 export const login = async (req, res) => {
@@ -21,11 +32,21 @@ export const login = async (req, res) => {
   }
 };
 
-// ================= GET ALL MANAGERS (🔥 NEW FEATURE) =================
+// ================= GET MANAGERS (🔥 NEW FEATURE) =================
 export const getManagers = async (req, res) => {
   try {
+    const role = req.user?.role;
+
+    // Managers report to Admins, Employees report to Managers
+    let targetRole;
+    if (role === "MANAGER") {
+      targetRole = "ADMIN";
+    } else {
+      targetRole = "MANAGER";
+    }
+
     const managers = await User.findAll({
-      where: { role: "MANAGER", isActive: true },
+      where: { role: targetRole, isActive: true },
       attributes: ["id", "name", "email"],
     });
 

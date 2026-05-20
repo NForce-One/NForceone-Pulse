@@ -52,7 +52,7 @@ router.delete(
 router.put(
   "/:id/submit",
   protect,
-  authorizeRoles("EMPLOYEE"),
+  authorizeRoles("ADMIN", "MANAGER", "EMPLOYEE"),
   submitTimeEntry
 );
 

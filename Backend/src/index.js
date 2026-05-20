@@ -18,6 +18,7 @@ import "./models/notification.model.js";
 import "./models/auditLog.model.js";
 import "./models/billingRate.model.js";
 import "./models/projectUser.model.js";
+import "./models/holiday.model.js";
 
 // Import models for associations
 import User from "./models/user.model.js";
@@ -245,6 +246,11 @@ const startServer = async () => {
     // Using sync without alter to avoid "too many keys" error
     // The notification model is already correctly defined
     await sequelize.sync();
+
+    // ================= INIT HOLIDAYS FROM DATABASE =================
+    const { initHolidays, seedDefaultHolidays } = await import("./utils/holidayConfig.js");
+    await seedDefaultHolidays();
+    await initHolidays();
 
     // ================= SCHEDULED NOTIFICATION JOBS =================
 

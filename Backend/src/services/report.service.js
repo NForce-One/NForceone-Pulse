@@ -4,9 +4,10 @@ import Project from "../models/project.model.js";
 import Client from "../models/client.model.js";
 import Task from "../models/task.model.js";
 import Timesheet from "../models/timesheet.model.js";
+import ApprovalHistory from "../models/approvalHistory.model.js";
 import BillingRate from "../models/billingRate.model.js";
-import { Op } from "sequelize";
-import { classifyEntry, getDayName, getDisplayName } from "../utils/holidayConfig.js";
+import { Op, Sequelize } from "sequelize";
+import { classifyEntry, getDayName, getDisplayName, getExtraWorkType } from "../utils/holidayConfig.js";
 import { toDateOnlyString } from "../utils/dateUtils.js";
 
 export const getEmployeeHoursReport = async (filters) => {
@@ -219,44 +220,80 @@ export const getTimesheetStatusReport = async (filters) => {
   });
 };
 
-export const getDashboardStats = async (userId, role) => {
+export const getDashboardStats = async (userId, role, startDate = null, endDate = null, isSelfView = false) => {
   const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
 
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+  let startOfWeek, endOfWeek;
+  let startOfMonth, endOfMonth;
+
+  if (startDate && endDate) {
+    startOfWeek = new Date(startDate + "T00:00:00");
+    endOfWeek = new Date(endDate + "T23:59:59.999");
+    startOfMonth = new Date(startDate + "T00:00:00");
+    endOfMonth = new Date(endDate + "T23:59:59.999");
+  } else {
+    startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
 
   const startOfWeekStr = toDateOnlyString(startOfWeek);
   const endOfWeekStr = toDateOnlyString(endOfWeek);
 
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfMonthStr = toDateOnlyString(startOfMonth);
+  const endOfMonthStr = toDateOnlyString(endOfMonth);
 
   let whereClause = {};
   let teamMemberIds = [];
-  const validStatuses = ["SUBMITTED", "APPROVED"];
+  const isSelfViewActive = role === "EMPLOYEE" || (role === "MANAGER" && isSelfView);
+  const isTeamView = role === "MANAGER" && !isSelfView;
 
-  if (role === "EMPLOYEE") {
+  if (isSelfViewActive) {
     whereClause.userId = userId;
-  }
-
-  if (role === "MANAGER") {
+  } else if (isTeamView) {
     const teamMembers = await User.findAll({
       where: { managerId: userId, isActive: true },
       attributes: ["id"],
     });
     teamMemberIds = teamMembers.map((m) => m.id);
-    whereClause.userId = { [Op.in]: teamMemberIds };
+    if (teamMemberIds.length > 0) {
+      whereClause.userId = { [Op.in]: teamMemberIds };
+    }
   }
 
-  const statusFilter = { status: { [Op.in]: validStatuses } };
+  const approvedOnlyFilter = { status: "APPROVED" };
+  const defaultStatusFilter = { status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED"] } };
+  const statusFilter = isTeamView ? approvedOnlyFilter : defaultStatusFilter;
+
+  let approvalFilter = {};
+  if (isTeamView) {
+    const sequelize = TimeEntry.sequelize;
+    const result = await sequelize.query(
+      `SELECT DISTINCT timeEntryId FROM approval_history WHERE action = 'APPROVED'`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+    const rows = Array.isArray(result) ? result : (result && result[0] ? result[0] : []);
+    const entryIdsWithApproval = rows.map(r => r.timeEntryId);
+    if (entryIdsWithApproval.length > 0) {
+      approvalFilter[Op.or] = [
+        Sequelize.literal(`id IN (SELECT timeEntryId FROM approval_history WHERE action = 'APPROVED' AND actorId = ${parseInt(userId)})`),
+        { id: { [Op.notIn]: entryIdsWithApproval } },
+      ];
+    }
+  }
 
   const weekEntries = await TimeEntry.findAll({
     where: {
       ...whereClause,
       ...statusFilter,
+      ...approvalFilter,
       entryDate: { [Op.between]: [startOfWeekStr, endOfWeekStr] },
     },
     include: [
@@ -265,12 +302,12 @@ export const getDashboardStats = async (userId, role) => {
     ],
   });
 
-  const startOfMonthStr = toDateOnlyString(startOfMonth);
   const monthEntries = await TimeEntry.findAll({
     where: {
       ...whereClause,
       ...statusFilter,
-      entryDate: { [Op.gte]: startOfMonthStr },
+      ...approvalFilter,
+      entryDate: { [Op.between]: [startOfMonthStr, endOfMonthStr] },
     },
   });
 
@@ -279,6 +316,33 @@ export const getDashboardStats = async (userId, role) => {
     .filter((e) => e.isBillable)
     .reduce((sum, e) => sum + Number(e.hours || 0), 0);
   const nonBillableWeekHours = totalWeekHours - billableWeekHours;
+
+  let weekendHours = 0;
+  let weekendEntries = 0;
+  let holidayHours = 0;
+  let holidayEntries = 0;
+  let normalHours = 0;
+
+  monthEntries.forEach((entry) => {
+    const json = entry.toJSON();
+    const dateStr = json.entryDate;
+    const hours = parseFloat(json.hours || 0);
+    let entryType = "working";
+    try {
+      entryType = classifyEntry(dateStr);
+    } catch (e) {
+      console.warn(`[dashboard] classifyEntry failed for date "${dateStr}": ${e.message}`);
+    }
+    if (entryType === "holiday") {
+      holidayHours += hours;
+      holidayEntries++;
+    } else if (entryType === "weekend") {
+      weekendHours += hours;
+      weekendEntries++;
+    } else {
+      normalHours += hours;
+    }
+  });
 
   const totalMonthHours = monthEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
@@ -295,18 +359,15 @@ export const getDashboardStats = async (userId, role) => {
   let missingHours = 0;
 
   if (role === "MANAGER" || role === "ADMIN") {
-    pendingApprovals = await Timesheet.count({
-      where: { status: "SUBMITTED" },
-      include: [
-        {
-          model: User,
-          where: role === "MANAGER" ? { managerId: userId } : {},
-          attributes: [],
-        },
-      ],
-    });
+    if (role === "MANAGER" && !isSelfView) {
+      const pendingWhere = { status: "SUBMITTED" };
+      if (teamMemberIds.length > 0) {
+        pendingWhere.userId = { [Op.in]: teamMemberIds };
+      }
+      pendingApprovals = await Timesheet.count({ where: pendingWhere });
+    }
 
-    if (role === "MANAGER") {
+    if (role === "MANAGER" && !isSelfView) {
       const teamMembers = await User.findAll({
         where: { managerId: userId, isActive: true },
         attributes: ["id", "name", "email", "department", "defaultHours"],
@@ -325,8 +386,9 @@ export const getDashboardStats = async (userId, role) => {
           const memberEntries = await TimeEntry.findAll({
             where: {
               userId: member.id,
-              status: { [Op.in]: validStatuses },
-      entryDate: { [Op.between]: [startOfWeekStr, endOfWeekStr] },
+              status: "APPROVED",
+              ...approvalFilter,
+              entryDate: { [Op.between]: [startOfWeekStr, endOfWeekStr] },
             },
           });
           const memberHours = memberEntries.reduce(
@@ -387,7 +449,8 @@ export const getDashboardStats = async (userId, role) => {
         const weekData = await TimeEntry.findAll({
           where: {
             userId: { [Op.in]: teamMemberIds },
-            status: { [Op.in]: validStatuses },
+            status: "APPROVED",
+            ...approvalFilter,
             entryDate: { [Op.between]: [weekStartStr, weekEndStr] },
           },
         });
@@ -433,7 +496,7 @@ export const getDashboardStats = async (userId, role) => {
   }
 
   const result = {
-    totalWeekHours: Math.round(totalWeekHours * 100) / 100,
+    totalWeekHours: Math.round((normalHours + weekendHours + holidayHours) * 100) / 100,
     billableWeekHours: Math.round(billableWeekHours * 100) / 100,
     nonBillableWeekHours: Math.round(nonBillableWeekHours * 100) / 100,
     totalMonthHours: Math.round(totalMonthHours * 100) / 100,
@@ -446,36 +509,91 @@ export const getDashboardStats = async (userId, role) => {
     projectDistribution,
     utilization,
     missingHours: Math.round(missingHours * 100) / 100,
+    weekendHours: Math.round(weekendHours * 100) / 100,
+    weekendEntries,
+    holidayHours: Math.round(holidayHours * 100) / 100,
+    normalHours: Math.round(normalHours * 100) / 100,
+    holidayEntries,
+    totalExtraHours: Math.round((weekendHours + holidayHours) * 100) / 100,
   };
 
-  if (role === "EMPLOYEE") {
+  if (role === "EMPLOYEE" || (role === "MANAGER" && isSelfView)) {
     result.draftEntries = draftCount;
   }
 
   return { ...result, ...adminStats };
 };
 
-export const getHourDetails = async (userId, role, type) => {
+export const getUserWorkingHours = async (userId) => {
   const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const startOfMonthStr = toDateOnlyString(startOfMonth);
+  const endOfMonthStr = toDateOnlyString(endOfMonth);
 
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+  const entries = await TimeEntry.findAll({
+    where: {
+      userId,
+      status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED"] },
+      entryDate: { [Op.between]: [startOfMonthStr, endOfMonthStr] },
+    },
+  });
 
-  const startOfWeekStr = toDateOnlyString(startOfWeek);
-  const endOfWeekStr = toDateOnlyString(endOfWeek);
+  let normalHours = 0;
+  let weekendHours = 0;
+  let holidayHours = 0;
+
+  entries.forEach((entry) => {
+    const json = entry.toJSON();
+    const dateStr = json.entryDate;
+    const hours = Number(json.hours || 0);
+    let entryType = "working";
+    try {
+      entryType = classifyEntry(dateStr);
+    } catch (e) {
+      console.warn(`[workingHours] classifyEntry failed for date "${dateStr}": ${e.message}`);
+    }
+    if (entryType === "holiday") {
+      holidayHours += hours;
+    } else if (entryType === "weekend") {
+      weekendHours += hours;
+    } else {
+      normalHours += hours;
+    }
+  });
+
+  return {
+    normalHours: Math.round(normalHours * 100) / 100,
+    weekendHours: Math.round(weekendHours * 100) / 100,
+    holidayHours: Math.round(holidayHours * 100) / 100,
+    totalHours: Math.round((normalHours + weekendHours + holidayHours) * 100) / 100,
+    totalEntries: entries.length,
+  };
+};
+
+export const getHourDetails = async (userId, role, type, startDate = null, endDate = null, isSelfView = false) => {
+  const now = new Date();
+  let startDateStr, endDateStr;
+
+  if (startDate && endDate) {
+    startDateStr = startDate;
+    endDateStr = endDate;
+  } else {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    startDateStr = toDateOnlyString(startDate);
+    endDateStr = toDateOnlyString(endDate);
+  }
 
   let whereClause = {};
-  const validStatuses = ["SUBMITTED", "APPROVED"];
+  const isSelfViewActive = role === "EMPLOYEE" || (role === "MANAGER" && isSelfView);
+  const isTeamView = role === "MANAGER" && !isSelfView;
 
-  if (role === "EMPLOYEE") {
+  if (isSelfViewActive) {
     whereClause.userId = userId;
   }
 
-  if (role === "MANAGER") {
+  if (isTeamView) {
     const teamMembers = await User.findAll({
       where: { managerId: userId, isActive: true },
       attributes: ["id"],
@@ -484,18 +602,59 @@ export const getHourDetails = async (userId, role, type) => {
     whereClause.userId = { [Op.in]: teamMemberIds };
   }
 
+  let statusFilter;
+  if (isTeamView) {
+    statusFilter = type === "draft" ? "DRAFT" : "APPROVED";
+  } else {
+    statusFilter = type === "draft" ? "DRAFT" : { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED"] };
+  }
+
+  let approvalFilter = {};
+  if (isTeamView) {
+    const sequelize = TimeEntry.sequelize;
+    const [rows] = await sequelize.query(
+      `SELECT DISTINCT timeEntryId FROM approval_history WHERE action = 'APPROVED'`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+    const entryIdsWithApproval = rows.map(r => r.timeEntryId);
+    if (entryIdsWithApproval.length > 0) {
+      approvalFilter[Op.or] = [
+        Sequelize.literal(`id IN (SELECT timeEntryId FROM approval_history WHERE action = 'APPROVED' AND actorId = ${parseInt(userId)})`),
+        { id: { [Op.notIn]: entryIdsWithApproval } },
+      ];
+    }
+  }
+
   const entries = await TimeEntry.findAll({
     where: {
       ...whereClause,
-      status: { [Op.in]: validStatuses },
-      entryDate: { [Op.between]: [startOfWeekStr, endOfWeekStr] },
+      status: statusFilter,
+      ...approvalFilter,
+      entryDate: { [Op.between]: [startDateStr, endDateStr] },
     },
     include: [
       { model: User, attributes: ["id", "name", "email"] },
+      { model: User, as: "Manager", attributes: ["id", "name", "email"] },
+      { model: Client, attributes: ["id", "name"] },
       { model: Project, attributes: ["id", "name"] },
+      { model: Task, attributes: ["id", "title"] },
     ],
     order: [["entryDate", "ASC"]],
   });
+
+  const entryIds = entries.map((e) => e.id);
+  let commentMap = {};
+  if (entryIds.length > 0) {
+    const approvalHistories = await ApprovalHistory.findAll({
+      where: { timeEntryId: { [Op.in]: entryIds }, action: "APPROVED" },
+      order: [["createdAt", "DESC"]],
+    });
+    approvalHistories.forEach((ah) => {
+      if (!commentMap[ah.timeEntryId]) {
+        commentMap[ah.timeEntryId] = ah.comment || "-";
+      }
+    });
+  }
 
   const formatDate = (dateStr) => {
     const dt = new Date(dateStr + "T00:00:00");
@@ -509,28 +668,94 @@ export const getHourDetails = async (userId, role, type) => {
   const categorized = entries.map((entry) => {
     const json = entry.toJSON();
     const dateStr = json.entryDate;
-    const entryType = classifyEntry(dateStr);
+    let entryType = "working";
+    try { entryType = classifyEntry(dateStr); } catch (e) { console.warn(`[hourDetails] classifyEntry failed: ${e.message}`); }
     return {
       entryDate: formatDate(dateStr),
       rawDate: dateStr,
       day: getDayName(dateStr),
       displayName: getDisplayName(dateStr),
+      extraWorkType: getExtraWorkType(dateStr),
       userName: json.User?.name || "-",
       projectWorked: json.Project?.name || json.project || "-",
+      clientWorked: json.Client?.name || json.client || "-",
+      taskWorked: json.Task?.title || json.task || "-",
+      description: json.description || "-",
       hoursWorked: Number(json.hours || 0),
       type: entryType,
+      reportedTo: json.Manager?.name || "-",
+      managerComment: commentMap[json.id] || "-",
+      approvalStatus: json.status || "-",
     };
   });
 
+  const weekendEntries = categorized.filter((e) => e.type === "weekend");
+  const holidayEntries = categorized.filter((e) => e.type === "holiday");
+  const normalEntries = categorized.filter((e) => e.type === "working");
+  const weekendHours = weekendEntries.reduce((sum, e) => sum + e.hoursWorked, 0);
+  const holidayHours = holidayEntries.reduce((sum, e) => sum + e.hoursWorked, 0);
+  const normalHours = normalEntries.reduce((sum, e) => sum + e.hoursWorked, 0);
+
   if (type === "working") {
-    return categorized.filter((e) => e.type === "working");
+    return {
+      entries: normalEntries,
+      normalHours: Math.round(normalHours * 100) / 100,
+      weekendHours: 0,
+      holidayHours: 0,
+      totalExtraHours: 0,
+    };
+  }
+
+  if (type === "weekend") {
+    return {
+      entries: weekendEntries,
+      normalHours: 0,
+      weekendHours: Math.round(weekendHours * 100) / 100,
+      holidayHours: 0,
+      totalExtraHours: Math.round(weekendHours * 100) / 100,
+    };
+  }
+
+  if (type === "holiday") {
+    return {
+      entries: holidayEntries,
+      normalHours: 0,
+      weekendHours: 0,
+      holidayHours: Math.round(holidayHours * 100) / 100,
+      totalExtraHours: Math.round(holidayHours * 100) / 100,
+    };
   }
 
   if (type === "extra") {
-    return categorized.filter((e) => e.type === "weekend" || e.type === "holiday");
+    const extraEntries = categorized.filter((e) => e.type === "weekend" || e.type === "holiday");
+    return {
+      entries: extraEntries,
+      normalHours: 0,
+      weekendHours: Math.round(weekendHours * 100) / 100,
+      holidayHours: Math.round(holidayHours * 100) / 100,
+      totalExtraHours: Math.round((weekendHours + holidayHours) * 100) / 100,
+    };
   }
 
-  return categorized;
+  if (type === "draft") {
+    const draftEntries = categorized.filter((e) => e.approvalStatus === "DRAFT");
+    const draftHours = draftEntries.reduce((sum, e) => sum + e.hoursWorked, 0);
+    return {
+      entries: draftEntries,
+      normalHours: Math.round(draftHours * 100) / 100,
+      weekendHours: 0,
+      holidayHours: 0,
+      totalExtraHours: 0,
+    };
+  }
+
+  return {
+    entries: categorized,
+    normalHours: Math.round(normalHours * 100) / 100,
+    weekendHours: Math.round(weekendHours * 100) / 100,
+    holidayHours: Math.round(holidayHours * 100) / 100,
+    totalExtraHours: Math.round((normalHours + weekendHours + holidayHours) * 100) / 100,
+  };
 };
 
 export const exportReportCSV = async (filters) => {

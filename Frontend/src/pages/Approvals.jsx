@@ -27,7 +27,7 @@ export const Approvals = () => {
     try {
       setIsLoading(true);
 
-      const response = await fetchTimeEntries();
+      const response = await fetchTimeEntries({ for: "approvals" });
 
       // ✅ FIX: correct backend response handling
       const data = response?.data || [];

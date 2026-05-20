@@ -1,4 +1,5 @@
 import * as timesheetService from "../services/timesheet.service.js";
+import User from "../models/user.model.js";
 
 // ================= GET ALL TIMESHEETS =================
 export const getTimesheets = async (req, res) => {
@@ -215,7 +216,7 @@ export const withdrawTimesheet = async (req, res) => {
   }
 };
 
-// ================= GET TEAM TIMESHEETS (MANAGER) =================
+// ================= GET TEAM TIMESHEETS (MANAGER/ADMIN) =================
 export const getTeamTimesheets = async (req, res) => {
   try {
     if (!["ADMIN", "MANAGER"].includes(req.user.role)) {
@@ -232,14 +233,46 @@ export const getTeamTimesheets = async (req, res) => {
       employeeId: req.query.employeeId || null,
     };
 
+    // Admin can specify a managerId to view a specific manager's team
+    // If no managerId specified and user is admin, show all teams
+    let managerId;
+    if (req.user.role === "ADMIN" && !req.query.managerId) {
+      managerId = "all";
+    } else {
+      managerId = req.query.managerId || req.user.id;
+    }
+
     const timesheets = await timesheetService.getTeamTimesheets(
-      req.user.id,
+      managerId,
       filters
     );
 
     res.json({
       success: true,
       data: timesheets,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ================= GET FILTERED TIME ENTRIES (ADMIN) =================
+export const getFilteredTimeEntries = async (req, res) => {
+  try {
+    const { employeeId, managerId, managerTeamId } = req.query;
+
+    const entries = await timesheetService.getFilteredTimeEntries({
+      employeeId: employeeId || null,
+      managerId: managerId || null,
+      managerTeamId: managerTeamId || null,
+    });
+
+    res.json({
+      success: true,
+      data: entries,
     });
   } catch (error) {
     res.status(500).json({

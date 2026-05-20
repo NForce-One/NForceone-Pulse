@@ -1,9 +1,14 @@
+import { Op } from "sequelize";
 import Timesheet from "../models/timesheet.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
 import User from "../models/user.model.js";
+import Client from "../models/client.model.js";
+import Project from "../models/project.model.js";
+import Task from "../models/task.model.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
 import * as notificationService from "../services/notification.service.js";
 import { toDateOnlyString } from "../utils/dateUtils.js";
+import { classifyEntry, getDayName, getDisplayName, getExtraWorkType } from "../utils/holidayConfig.js";
 
 // ================= GET ALL TIMESHEETS =================
 export const getAllTimesheets = async (whereClause = {}) => {
@@ -373,10 +378,20 @@ export const withdrawTimesheet = async (timesheetId, userId) => {
   return timesheet;
 };
 
-// ================= GET TEAM TIMESHEETS (MANAGER) =================
+// ================= GET TEAM TIMESHEETS (MANAGER/ADMIN) =================
 export const getTeamTimesheets = async (managerId, filters = {}) => {
-  // Build where clause for timesheets
   const whereClause = {};
+
+  // Filter by manager's team members (skip if managerId is "all" for admin)
+  if (managerId && managerId !== "all") {
+    const teamMembers = await User.findAll({
+      where: { managerId, isActive: true },
+      attributes: ["id"],
+    });
+    const teamMemberIds = teamMembers.map((u) => u.id);
+    if (teamMemberIds.length === 0) return [];
+    whereClause.userId = { [Op.in]: teamMemberIds };
+  }
 
   // Apply status filter
   if (filters.status && filters.status !== "ALL") {
@@ -394,20 +409,18 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
     }
   }
 
-  // Apply specific employee filter
+  // Apply specific employee filter (overrides team filter if set)
   if (filters.employeeId) {
     whereClause.userId = filters.employeeId;
   }
 
-  // Query timesheets with user include filtered by manager_id
+  // Query timesheets
   const timesheets = await Timesheet.findAll({
     where: whereClause,
     include: [
       {
         model: User,
         attributes: ["id", "name", "email", "defaultHours", "managerId"],
-        required: true,
-        where: { managerId: managerId },
       },
     ],
     order: [["weekStartDate", "DESC"]],
@@ -445,6 +458,89 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
       User: ts.User,
     };
   });
+};
+
+// ================= GET FILTERED TIME ENTRIES (ADMIN) =================
+export const getFilteredTimeEntries = async (filters = {}) => {
+  const { employeeId, managerId, managerTeamId } = filters;
+
+  let whereClause = {};
+
+  if (employeeId) {
+    whereClause.userId = employeeId;
+  } else if (managerTeamId) {
+    const approvedEntries = await ApprovalHistory.findAll({
+      where: { actorId: managerTeamId, action: { [Op.in]: ["APPROVED", "REJECTED"] } },
+      attributes: ["timeEntryId"],
+    });
+    const approvedEntryIds = approvedEntries.map((a) => a.timeEntryId).filter(Boolean);
+    if (approvedEntryIds.length === 0) return [];
+    whereClause.id = { [Op.in]: approvedEntryIds };
+  } else if (managerId) {
+    whereClause.managerId = managerId;
+  }
+
+  const entries = await TimeEntry.findAll({
+    where: whereClause,
+    include: [
+      { model: User, attributes: ["id", "name", "email"] },
+      { model: User, as: "Manager", attributes: ["id", "name", "email"] },
+      { model: Client, attributes: ["id", "name"] },
+      { model: Project, attributes: ["id", "name"] },
+      { model: Task, attributes: ["id", "title"] },
+    ],
+    order: [["entryDate", "DESC"], ["createdAt", "DESC"]],
+  });
+
+  const entryIds = entries.map((e) => e.id);
+  let commentMap = {};
+  if (entryIds.length > 0) {
+    const approvalHistories = await ApprovalHistory.findAll({
+      where: { timeEntryId: { [Op.in]: entryIds }, action: "APPROVED" },
+      order: [["createdAt", "DESC"]],
+    });
+    approvalHistories.forEach((ah) => {
+      if (!commentMap[ah.timeEntryId]) {
+        commentMap[ah.timeEntryId] = ah.comment || "-";
+      }
+    });
+  }
+
+  const formatDate = (dateStr) => {
+    const dt = new Date(dateStr + "T00:00:00");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const day = String(dt.getDate()).padStart(2, "0");
+    const month = months[dt.getMonth()];
+    const year = String(dt.getFullYear()).slice(-2);
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatted = entries.map((entry) => {
+    const json = entry.toJSON();
+    const dateStr = json.entryDate;
+    const entryType = classifyEntry(dateStr);
+    return {
+      id: json.id,
+      entryDate: formatDate(dateStr),
+      rawDate: dateStr,
+      day: getDayName(dateStr),
+      displayName: getDisplayName(dateStr),
+      extraWorkType: getExtraWorkType(dateStr),
+      userName: json.User?.name || "-",
+      projectWorked: json.Project?.name || json.project || "-",
+      clientWorked: json.Client?.name || json.client || "-",
+      taskWorked: json.Task?.title || json.task || "-",
+      description: json.description || "-",
+      hoursWorked: Number(json.hours || 0),
+      type: entryType,
+      reportedTo: json.Manager?.name || "-",
+      managerComment: commentMap[json.id] || "-",
+      approvalStatus: json.status || "-",
+      userId: json.userId,
+    };
+  });
+
+  return formatted;
 };
 
 // ================= GET APPROVAL HISTORY =================

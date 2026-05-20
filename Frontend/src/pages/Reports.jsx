@@ -131,13 +131,6 @@ export const Reports = () => {
     }
   };
 
-  const tabs = [
-    { id: "employee-hours", label: "Employee Hours" },
-    { id: "project-hours", label: "Project Hours" },
-    { id: "utilization", label: "Utilization" },
-    { id: "billing", label: "Billing Summary" },
-  ];
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -205,21 +198,7 @@ export const Reports = () => {
       </Card>
 
       <Card>
-        <CardHeader>
-          <div className="flex gap-2 flex-wrap">
-            {tabs.map((tab) => (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? "primary" : "secondary"}
-                size="sm"
-                onClick={() => setActiveTab(tab.id)}
-                className="rounded-full hover:scale-105 active:scale-95"
-              >
-                {tab.label}
-              </Button>
-            ))}
-          </div>
-        </CardHeader>
+
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-[#a1a1aa]">Loading...</div>

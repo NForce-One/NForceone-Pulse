@@ -7,6 +7,7 @@ import { DashboardLayout } from "../components/layout/DashboardLayout";
 
 // Pages
 import { Login } from "../pages/Login";
+import Register from "../pages/Register";
 import { ForgotPassword } from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import { Dashboard } from "../pages/Dashboard";
@@ -55,6 +56,16 @@ export const AppRoutes = () => {
         <Route path="/forgot-password" element={token ? <Navigate to="/" /> : <ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
+        {/* ADMIN REGISTER */}
+        <Route
+          path="/register"
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <Register />
+            </ProtectedRoute>
+          }
+        />
+
         {/* PROTECTED ROUTES */}
         <Route
           path="/"
@@ -65,9 +76,9 @@ export const AppRoutes = () => {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="timesheet" element={<MyTimesheet />} />
-          <Route path="my-timesheet" element={<MyTimesheet />} />
-          <Route path="timer" element={<TimerPage />} />
+          <Route path="timesheet" element={<ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER"]}><MyTimesheet /></ProtectedRoute>} />
+          <Route path="my-timesheet" element={<ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER"]}><MyTimesheet /></ProtectedRoute>} />
+          <Route path="timer" element={<ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER"]}><TimerPage /></ProtectedRoute>} />
           <Route path="reports" element={<Reports />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />

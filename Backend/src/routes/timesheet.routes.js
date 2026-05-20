@@ -10,6 +10,7 @@ import {
   withdrawTimesheet,
   getApprovalHistory,
   getTeamTimesheets,
+  getFilteredTimeEntries,
 } from "../controllers/timesheet.controller.js";
 
 import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
@@ -22,6 +23,14 @@ router.get(
   protect,
   authorizeRoles("ADMIN", "MANAGER"),
   getTeamTimesheets
+);
+
+// ================= GET FILTERED TIME ENTRIES (ADMIN) =================
+router.get(
+  "/filtered-entries",
+  protect,
+  authorizeRoles("ADMIN"),
+  getFilteredTimeEntries
 );
 
 // ================= GET ALL TIMESHEETS =================

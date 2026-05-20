@@ -1,5 +1,6 @@
 import * as timeEntryService from "../services/timeEntry.service.js";
 import * as notificationService from "../services/notification.service.js";
+import * as reportService from "../services/report.service.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
 import { parseDateSafe } from "../utils/dateUtils.js";
 
@@ -69,9 +70,12 @@ export const createTimeEntry = async (req, res) => {
 
     const entry = await timeEntryService.createTimeEntry(normalizedData);
 
+    const workingHours = await reportService.getUserWorkingHours(userId);
+
     res.status(201).json({
       success: true,
       data: entry,
+      workingHours,
     });
 
   } catch (error) {
@@ -88,15 +92,24 @@ export const createTimeEntry = async (req, res) => {
 export const getTimeEntries = async (req, res) => {
   try {
     const user = req.user;
+    const isApprovals = req.query.for === "approvals";
 
     let entries;
 
-    if (user.role === "EMPLOYEE") {
-      entries = await timeEntryService.getEntriesByUser(user.id);
-    } else if (user.role === "MANAGER") {
-      entries = await timeEntryService.getEntriesByManager(user.id);
+    if (isApprovals) {
+      if (user.role === "MANAGER") {
+        entries = await timeEntryService.getSubmittedToManager(user.id);
+      } else if (user.role === "ADMIN") {
+        entries = await timeEntryService.getManagerEntriesForAdmin();
+      } else {
+        entries = await timeEntryService.getEntriesByUser(user.id);
+      }
     } else {
-      entries = await timeEntryService.getAllTimeEntries();
+      if (user.role === "EMPLOYEE" || user.role === "MANAGER") {
+        entries = await timeEntryService.getEntriesByUser(user.id);
+      } else {
+        entries = await timeEntryService.getAllTimeEntries();
+      }
     }
 
     res.json({
@@ -152,9 +165,12 @@ export const updateTimeEntry = async (req, res) => {
 
     const entry = await timeEntryService.updateTimeEntry(id, updateData);
 
+    const workingHours = await reportService.getUserWorkingHours(user.id);
+
     res.json({
       success: true,
       data: entry,
+      workingHours,
     });
 
   } catch (error) {
@@ -170,9 +186,12 @@ export const deleteTimeEntry = async (req, res) => {
   try {
     const result = await timeEntryService.deleteTimeEntry(req.params.id);
 
+    const workingHours = await reportService.getUserWorkingHours(req.user.id);
+
     res.json({
       success: true,
       message: result.message,
+      workingHours,
     });
 
   } catch (error) {
@@ -189,7 +208,7 @@ export const submitTimeEntry = async (req, res) => {
     const user = req.user;
     const id = req.params.id;
 
-    if (user.role !== "EMPLOYEE") {
+    if (!["ADMIN", "MANAGER", "EMPLOYEE"].includes(user.role)) {
       return res.status(403).json({
         success: false,
         message: "Only employee can submit",
@@ -209,9 +228,12 @@ export const submitTimeEntry = async (req, res) => {
 
     await notificationService.notifyTimesheetSubmitted(entry);
 
+    const workingHours = await reportService.getUserWorkingHours(user.id);
+
     res.json({
       success: true,
       data: entry,
+      workingHours,
     });
 
   } catch (error) {

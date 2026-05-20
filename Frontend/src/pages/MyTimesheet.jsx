@@ -7,7 +7,9 @@ import {
   submitTimeEntry,
   updateTimeEntry,
   deleteTimeEntry,
+  getDashboardStats,
 } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 import axios from "axios";
 
@@ -24,6 +26,7 @@ import { Badge } from "../components/ui/Badge";
 import { Plus, Send, Pencil, Trash2, Save, X } from "lucide-react";
 
 export const MyTimesheet = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +34,14 @@ export const MyTimesheet = () => {
 
   const [managers, setManagers] = useState([]);
   const [selectedManager, setSelectedManager] = useState("");
+
+  const [workingHours, setWorkingHours] = useState({
+    normalHours: 0,
+    weekendHours: 0,
+    holidayHours: 0,
+    totalHours: 0,
+    totalEntries: 0,
+  });
 
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -82,6 +93,7 @@ export const MyTimesheet = () => {
   useEffect(() => {
     loadEntries();
     loadManagers();
+    loadWorkingHours();
 
     const client = searchParams.get("client") || "";
     const project = searchParams.get("project") || "";
@@ -107,6 +119,23 @@ export const MyTimesheet = () => {
       });
     }
   }, []);
+
+  const loadWorkingHours = async () => {
+    try {
+      const response = await getDashboardStats();
+      if (response) {
+        setWorkingHours({
+          normalHours: response.normalHours || 0,
+          weekendHours: response.weekendHours || 0,
+          holidayHours: response.holidayHours || 0,
+          totalHours: response.totalWeekHours || 0,
+          totalEntries: 0,
+        });
+      }
+    } catch {
+      // silent
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -156,6 +185,10 @@ export const MyTimesheet = () => {
       setSelectedManager("");
       await loadEntries();
 
+      if (result.workingHours) {
+        setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+      }
+
       alert("Entry created successfully!");
     } catch (error) {
       console.error("CREATE ERROR:", error);
@@ -168,8 +201,11 @@ export const MyTimesheet = () => {
 
   // ACTIONS
   const handleSubmitEntry = async (id) => {
-    await submitTimeEntry(id);
+    const result = await submitTimeEntry(id);
     await loadEntries();
+    if (result.workingHours) {
+      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+    }
   };
 /*
   const handleDelete = async (id) => {
@@ -183,10 +219,14 @@ const handleDelete = async (id) => {
   try {
     if (!window.confirm("Delete this entry?")) return;
 
-    await deleteTimeEntry(id);
+    const result = await deleteTimeEntry(id);
 
     // 🔥 remove from UI immediately
     setEntries((prev) => prev.filter((e) => e.id !== id));
+
+    if (result.workingHours) {
+      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+    }
 
   } catch (error) {
     console.error("DELETE ERROR:", error);
@@ -199,9 +239,12 @@ const handleDelete = async (id) => {
   };
 
   const handleSave = async (id) => {
-    await updateTimeEntry(id, editData);
+    const result = await updateTimeEntry(id, editData);
     setEditingId(null);
     await loadEntries();
+    if (result.workingHours) {
+      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+    }
   };
 
   const getEmployeeStatus = (status) => {
@@ -216,7 +259,7 @@ const handleDelete = async (id) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-bold text-white">My Timesheet</h1>
 
       {/* FORM */}
@@ -228,7 +271,7 @@ const handleDelete = async (id) => {
           </CardTitle>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pb-3">
           <form className="grid grid-cols-1 md:grid-cols-7 gap-4" onSubmit={handleCreate}>
             <Input name="client" value={formData.client} onChange={handleInputChange} placeholder="Client" />
             <Input name="project" value={formData.project} onChange={handleInputChange} placeholder="Project" />
@@ -241,7 +284,7 @@ const handleDelete = async (id) => {
               onChange={(e) => setSelectedManager(e.target.value)}
               className="h-10 w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d] focus:border-transparent transition-all duration-200"
             >
-              <option value="" className="bg-[#1a1a1a]">Select Manager</option>
+              <option value="" className="bg-[#1a1a1a]">{user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
               {managers.map((m) => (
                 <option key={m.id} value={m.id} className="bg-[#1a1a1a]">
                   {m.name}
@@ -255,6 +298,26 @@ const handleDelete = async (id) => {
         </CardContent>
       </Card>
 
+      {/* WORKING HOURS SUMMARY */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">
+          <div className="text-xs text-blue-300">Weekday Working Hours</div>
+          <div className="text-lg font-bold text-blue-400 font-mono">{workingHours.normalHours.toFixed(2)}h</div>
+        </div>
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+          <div className="text-xs text-amber-300">Weekend Working Hours</div>
+          <div className="text-lg font-bold text-amber-400 font-mono">{workingHours.weekendHours.toFixed(2)}h</div>
+        </div>
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+          <div className="text-xs text-emerald-300">Holiday Working Hours</div>
+          <div className="text-lg font-bold text-emerald-400 font-mono">{workingHours.holidayHours.toFixed(2)}h</div>
+        </div>
+        <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-3">
+          <div className="text-xs text-purple-300">Total Working Hours</div>
+          <div className="text-lg font-bold text-purple-400 font-mono">{workingHours.totalHours.toFixed(2)}h</div>
+        </div>
+      </div>
+
       {/* TABLE */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -266,11 +329,11 @@ const handleDelete = async (id) => {
                 <th className="p-3 text-left text-[#a1a1aa] font-medium">Project</th>
                 <th className="p-3 text-left text-[#a1a1aa] font-medium">Task</th>
                 <th className="p-3 text-left text-[#a1a1aa] font-medium">Description</th>
-                <th className="p-3 text-left text-[#a1a1aa] font-medium">Hours</th>
-                <th className="p-3 text-left text-[#a1a1aa] font-medium">Employee Status</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">Hour</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
                 <th className="p-3 text-left text-[#a1a1aa] font-medium">Reported To</th>
-                <th className="p-3 text-left text-[#a1a1aa] font-medium">Manager Action</th>
-                <th className="p-3 text-left text-[#a1a1aa] font-medium">Manager Comment</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
+                <th className="p-3 text-left text-[#a1a1aa] font-medium">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
                 <th className="p-3 text-left text-[#a1a1aa] font-medium">Edit</th>
               </tr>
             </thead>

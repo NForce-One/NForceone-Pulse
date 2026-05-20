@@ -77,6 +77,25 @@ export const getEntriesByManager = async (managerId) => {
   return await getEntriesWithUser({ managerId });
 };
 
+// ================= GET SUBMITTED ENTRIES FOR MANAGER APPROVAL =================
+export const getSubmittedToManager = async (managerId) => {
+  return await getEntriesWithUser({ managerId, status: "SUBMITTED" });
+};
+
+// ================= GET MANAGER ENTRIES FOR ADMIN APPROVAL =================
+export const getManagerEntriesForAdmin = async () => {
+  const managers = await User.findAll({
+    where: { role: "MANAGER", isActive: true },
+    attributes: ["id"],
+  });
+  const managerIds = managers.map((m) => m.id);
+  if (managerIds.length === 0) return [];
+  return await getEntriesWithUser({
+    userId: { [Op.in]: managerIds },
+    status: "SUBMITTED",
+  });
+};
+
 // ================= GET BY ID =================
 export const getTimeEntryById = async (id) => {
   return await TimeEntry.findByPk(id, {

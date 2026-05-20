@@ -62,6 +62,12 @@ export const resetPassword = async (data) => {
   return response.data;
 };
 
+// ✅ REGISTER
+export const registerUser = async (data) => {
+  const response = await api.post("/auth/register", data);
+  return response.data;
+};
+
 // ✅ GET MANAGERS
 export const getManagers = async () => {
   const response = await api.get("/auth/managers");
@@ -71,8 +77,8 @@ export const getManagers = async () => {
 // ================= TIME ENTRIES =================
 
 // ✅ FETCH
-export const fetchTimeEntries = async () => {
-  const response = await api.get("/time-entries");
+export const fetchTimeEntries = async (params = {}) => {
+  const response = await api.get("/time-entries", { params });
   return response.data;
 };
 
@@ -178,6 +184,15 @@ export const fetchTimesheetById = async (id) => {
   return response.data;
 };
 
+export const fetchFilteredTimeEntries = async (filters = {}) => {
+  const params = {};
+  if (filters.employeeId) params.employeeId = filters.employeeId;
+  if (filters.managerId) params.managerId = filters.managerId;
+  if (filters.managerTeamId) params.managerTeamId = filters.managerTeamId;
+  const response = await api.get("/timesheets/filtered-entries", { params });
+  return response.data?.data ?? response.data ?? [];
+};
+
 // ================= TEAM TIMESHEETS (MANAGER) =================
 
 export const fetchTeamTimesheets = async (filters = {}) => {
@@ -194,6 +209,9 @@ export const fetchTeamTimesheets = async (filters = {}) => {
   }
   if (filters.employeeId) {
     params.append("employeeId", filters.employeeId);
+  }
+  if (filters.managerId) {
+    params.append("managerId", filters.managerId);
   }
 
   const queryString = params.toString();
@@ -323,6 +341,21 @@ export const changePassword = async (data) => {
   return response.data;
 };
 
+export const fetchAllUsers = async () => {
+  const res = await fetchUsers();
+  return res?.data ?? res ?? [];
+};
+
+export const fetchAllProjects = async () => {
+  const res = await fetchProjects();
+  return res?.data ?? res ?? [];
+};
+
+export const fetchAllClients = async () => {
+  const res = await fetchClients();
+  return res?.data ?? res ?? [];
+};
+
 // ================= TEAM MEMBERS (MANAGER) =================
 
 export const fetchTeamMembers = async (managerId = null) => {
@@ -360,13 +393,13 @@ export const deleteNotification = async (id) => {
 
 // ================= REPORTS =================
 
-export const getDashboardStats = async () => {
-  const response = await api.get("/reports/dashboard");
+export const getDashboardStats = async (params = {}) => {
+  const response = await api.get("/reports/dashboard", { params });
   return response.data?.data ?? response.data;
 };
 
-export const getHourDetails = async (type) => {
-  const response = await api.get("/reports/dashboard/hour-details", { params: { type } });
+export const getHourDetails = async (params = {}) => {
+  const response = await api.get("/reports/dashboard/hour-details", { params });
   return response.data?.data ?? response.data;
 };
 
