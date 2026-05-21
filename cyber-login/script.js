@@ -234,8 +234,11 @@ if (form) {
       authButton.style.background = 'linear-gradient(135deg, #00cc00, #00ff00)';
 
       setTimeout(() => {
-        window.location.href = data.user.role === 'ADMIN' ? '/' :
-          data.user.role === 'MANAGER' ? '/approvals' : '/timesheet';
+        window.location.href = data.user.role === 'ADMIN'
+          ? 'https://nforce-timetracker.vercel.app/'
+          : data.user.role === 'MANAGER'
+          ? 'https://nforce-timetracker.vercel.app/approvals'
+          : 'https://nforce-timetracker.vercel.app/timesheet';
       }, 800);
 
     } catch (err) {

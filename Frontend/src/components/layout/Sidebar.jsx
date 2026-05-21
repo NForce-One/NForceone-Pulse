@@ -1,115 +1,115 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { LayoutDashboard, Clock, CheckSquare, Users, Building, FolderOpen, ListTodo, BarChart3, Bell, User, Timer, FileText } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  FolderOpen,
+  CheckSquare,
+  UserCircle,
+  Building,
+  BarChart3,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { cn } from "../../utils/twMerge";
-import { fetchUnreadCount } from "../../services/api";
+
+const menuGroups = [
+  {
+    title: "Main Menu",
+    items: [
+      { name: "Dashboard", path: "/", icon: LayoutDashboard },
+      { name: "Team Timesheets", path: "/manager/team-timesheets", icon: Users },
+      { name: "Projects", path: "/admin/projects", icon: FolderOpen },
+      { name: "Tasks", path: "/admin/tasks", icon: CheckSquare },
+    ],
+  },
+  {
+    title: "Management",
+    items: [
+      { name: "Users", path: "/admin/users", icon: UserCircle },
+      { name: "Clients", path: "/admin/clients", icon: Building },
+      { name: "Reports", path: "/reports", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      { name: "Settings", path: "/settings", icon: Settings },
+    ],
+  },
+];
 
 export const Sidebar = () => {
-  const { user } = useAuth();
   const location = useLocation();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const fetchUnread = async () => {
-      try {
-        const res = await fetchUnreadCount();
-        setUnreadCount(res?.data?.count || 0);
-      } catch (err) {
-        console.error("Failed to fetch unread count", err);
-      }
-    };
-
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const role = user?.role?.toUpperCase() || "EMPLOYEE";
-
-  const navItems = [
-    { name: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
-    { name: "My Timesheet", path: "/timesheet", icon: Clock, roles: ["EMPLOYEE", "MANAGER"] },
-    { name: "Timer", path: "/timer", icon: Timer, roles: ["EMPLOYEE", "MANAGER"] },
-    { name: "Team Timesheets", path: "/manager/team-timesheets", icon: FileText, roles: ["ADMIN"] },
-    { name: "Approvals", path: "/approvals", icon: CheckSquare, roles: ["MANAGER", "ADMIN"] },
-    { name: "Reports", path: "/reports", icon: BarChart3, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
-    { name: "Notifications", path: "/notifications", icon: Bell, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
-    { name: "Profile", path: "/profile", icon: User, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
-    { name: "Users", path: "/admin/users", icon: Users, roles: ["ADMIN"] },
-    { name: "Clients", path: "/admin/clients", icon: Building, roles: ["ADMIN"] },
-    { name: "Projects", path: "/admin/projects", icon: FolderOpen, roles: ["ADMIN"] },
-    { name: "Tasks", path: "/admin/tasks", icon: ListTodo, roles: ["ADMIN"] },
-  ];
-
-  const visibleItems = navItems.filter((item) => item.roles.includes(role));
-
-  const adminItems = visibleItems.filter((item) => item.path.startsWith("/admin"));
-  const mainItems = visibleItems.filter((item) => !item.path.startsWith("/admin"));
+  const isActive = (path) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
 
   return (
-    <div className="flex flex-col w-64 bg-[#1f2937] border-r border-[#374151] h-full shadow-[2px_0_10px_rgba(0,0,0,0.3)]">
-      <div className="h-16 flex items-center px-6 border-b border-[#374151] bg-[#1f2937]">
-        <span className="text-xl font-bold text-[#22c55e] flex items-center gap-2 hover:text-[#4ade80] transition-colors">
-          <Clock className="w-6 h-6 text-[#22c55e] drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-          <span className="bg-gradient-to-r from-[#22c55e] to-[#4ade80] bg-clip-text text-transparent font-extrabold">
+    <div className="flex flex-col w-64 sidebar-gradient h-full shrink-0 sidebar-glow">
+      {/* Logo */}
+      <div className="h-16 flex items-center gap-3 px-5 border-b border-white/[0.06] shrink-0">
+        <div className="relative">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#4F46E5] flex items-center justify-center shadow-lg shadow-[#6366F1]/25">
+            <div className="w-3 h-3 rounded-full bg-white" />
+            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#EF4444] animate-pulse-dot shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-base font-bold text-white tracking-tight leading-tight">
             NForce Pulse
           </span>
-        </span>
+          <span className="text-[10px] font-medium text-[#94A3B8] tracking-wide">
+            Enterprise Suite
+          </span>
+        </div>
       </div>
 
-      <div className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-        {mainItems.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={cn(
-                "flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-[#22c55e]/10 text-[#22c55e] border-l-4 border-[#22c55e] shadow-[inset_0_0_10px_rgba(34,197,94,0.1)]"
-                  : "text-[#9ca3af] hover:bg-[#374151] hover:text-white hover:border-l-4 hover:border-[#22c55e]/50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon className={cn("w-5 h-5", isActive ? "text-[#22c55e] drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]" : "text-[#9ca3af]")} />
-                {item.name}
-              </div>
-              {item.path === "/notifications" && unreadCount > 0 && (
-                <span className="bg-[#22c55e] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(34,197,94,0.5)] animate-pulse">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-
-        {adminItems.length > 0 && (
-          <>
-            <div className="pt-4 pb-2 px-3 text-xs font-semibold text-[#9ca3af] uppercase tracking-wider border-t border-[#374151] mt-4">
-              Admin
-            </div>
-            {adminItems.map((item) => {
-              const isActive = location.pathname === item.path || location.pathname.startsWith(item.path);
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto py-4 scrollbar-none">
+        {menuGroups.map((group) => (
+          <div key={group.title}>
+            <div className="nav-section-title">{group.title}</div>
+            {group.items.map((item) => {
+              const active = isActive(item.path);
               return (
                 <Link
                   key={item.name}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-[#22c55e]/10 text-[#22c55e] border-l-4 border-[#22c55e] shadow-[inset_0_0_10px_rgba(34,197,94,0.1)]"
-                      : "text-[#9ca3af] hover:bg-[#374151] hover:text-white hover:border-l-4 hover:border-[#22c55e]/50"
+                    "nav-item group",
+                    active && "active"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", isActive ? "text-[#22c55e]" : "text-[#9ca3af]")} />
-                  {item.name}
+                  <item.icon
+                    className={cn(
+                      "w-[18px] h-[18px] shrink-0 transition-colors duration-200",
+                      active
+                        ? "text-[#A5B4FC]"
+                        : "text-[#94A3B8] group-hover:text-[#E2E8F0]"
+                    )}
+                  />
+                  <span>{item.name}</span>
                 </Link>
               );
             })}
-          </>
-        )}
+          </div>
+        ))}
+      </div>
+
+      {/* Logout */}
+      <div className="p-3 border-t border-white/[0.06] shrink-0">
+        <Link
+          to="/login"
+          className="nav-item text-[#94A3B8] hover:text-[#EF4444] hover:bg-[rgba(239,68,68,0.08)]"
+          onClick={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <LogOut className="w-[18px] h-[18px] shrink-0" />
+          <span>Logout</span>
+        </Link>
       </div>
     </div>
   );

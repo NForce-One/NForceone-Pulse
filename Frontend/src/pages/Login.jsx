@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, LogIn, Mail, ShieldAlert, Lock } from "lucide-react";
+import { Eye, EyeOff, LogIn, Mail, Lock, ShieldAlert } from "lucide-react";
 
 import { loginUser } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import logoWatermark from "../assets/logo.png";
-
-const PARTICLE_COUNT = 60;
 
 export const Login = () => {
   const [email, setEmail] = useState("");
@@ -15,40 +12,9 @@ export const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const cardRef = useRef(null);
-  const rootRef = useRef(null);
 
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  const particles = useMemo(() =>
-    Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
-      id: i,
-      size: Math.random() * 3 + 1,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      delay: Math.random() * 8,
-      duration: Math.random() * 6 + 4,
-      opacity: Math.random() * 0.5 + 0.1,
-    })), []
-  );
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const x = e.clientX / window.innerWidth;
-      const y = e.clientY / window.innerHeight;
-      if (cardRef.current) {
-        cardRef.current.style.setProperty("--rx", `${(y - 0.5) * -4}deg`);
-        cardRef.current.style.setProperty("--ry", `${(x - 0.5) * 4}deg`);
-      }
-      if (rootRef.current) {
-        rootRef.current.style.setProperty("--mx", `${x * 100}%`);
-        rootRef.current.style.setProperty("--my", `${y * 100}%`);
-      }
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,366 +37,142 @@ export const Login = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-green-900/60"></div>
-
-      {/* Neon lines */}
-      <div className="lx-neon n1" />
-      <div className="lx-neon n2" />
-      <div className="lx-neon n3" />
-
-      {/* Particles */}
-      <div className="lx-particles" aria-hidden="true">
-        {particles.map((p) => (
-          <div key={p.id} className="lx-particle"
-            style={{
-              left: `${p.x}%`, top: `${p.y}%`,
-              width: p.size, height: p.size,
-              opacity: p.opacity,
-              animationDelay: `${p.delay}s`,
-              animationDuration: `${p.duration}s`,
-            }}
-          />
-        ))}
+    <div className="min-h-screen bg-[#F8FAFC] flex font-['Inter',sans-serif]">
+      {/* Left Panel - Brand */}
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#0F172A] to-[#111827] relative overflow-hidden items-center justify-center">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, #6366F1 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }} />
+        <div className="relative z-10 text-center px-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] shadow-2xl shadow-[#6366F1]/30 mb-6">
+            <div className="relative">
+              <div className="w-6 h-6 rounded-full bg-white" />
+              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#EF4444] animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold text-white tracking-tight mb-3">NForce Pulse</h1>
+          <p className="text-[#94A3B8] text-lg font-light max-w-md mx-auto leading-relaxed">
+            Enterprise time tracking and workforce management platform.
+          </p>
+          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-[#64748B]">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#6366F1]" />
+              Time Tracking
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+              Team Analytics
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+              Reporting
+            </div>
+          </div>
+        </div>
       </div>
 
-        {/* 🔥 UPDATED HEADER (NO LOGO) */}
-        <div className="text-center mb-6 animate-fadeIn">
-          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]">
-            NForce Pulse
-          </h1>
-
-      {/* Grid overlay */}
-      <div className="lx-grid" />
-
-      {/* Mouse glow */}
-      <div className="lx-mglow" />
-
-      {/* ===== WATERMARK LOGO ===== */}
-      <div className="lx-watermark" aria-hidden="true">
-        <img src={logoWatermark} alt="" className="lx-watermark-img" />
-        <span className="lx-watermark-text">Let's Do IT!</span>
-      </div>
-
-      {/* Card */}
-      <div className="lx-cwrap">
-        <div className="lx-card" ref={cardRef}>
-          <div className="lx-card-shine" />
-          <div className="lx-card-border" />
-
-          <div style={{textAlign:"center",marginBottom:4}}><span className="lx-logo-text">NforceOne</span></div>
-          <div className="lx-header">
-            <h1 className="lx-title">Welcome Back</h1>
-            <p className="lx-sub">Sign in to your account to continue</p>
+      {/* Right Panel - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+        <div className="w-full max-w-[400px]">
+          {/* Logo (mobile) */}
+          <div className="flex lg:hidden items-center gap-3 mb-10 justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] flex items-center justify-center shadow-lg shadow-[#6366F1]/25">
+              <div className="relative">
+                <div className="w-3.5 h-3.5 rounded-full bg-white" />
+                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#EF4444] animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
+              </div>
+            </div>
+            <div>
+              <span className="text-lg font-bold text-[#111827] tracking-tight">NForce Pulse</span>
+              <span className="block text-[10px] font-medium text-[#94A3B8] tracking-wide">Enterprise Suite</span>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="lx-form">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-[#111827] tracking-tight">Welcome back</h2>
+            <p className="text-sm text-[#6B7280] mt-1.5">Sign in to your account to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="lx-err">
-                <ShieldAlert size={16} />
+              <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600 font-medium">
+                <ShieldAlert size={16} className="shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
-            <div className="lx-fld" style={{ animationDelay: "0.15s" }}>
-              <label className="lx-lbl">EMAIL ADDRESS</label>
-              <div className="lx-iwrap">
-                <Mail size={16} className="lx-icn" />
-                <input type="email" placeholder="you@company.com"
-                  value={email} onChange={(e) => setEmail(e.target.value)}
-                  required className="lx-inp" />
+            <div>
+              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1.5">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+                <input
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-[#D1D5DB] bg-white text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] transition-all"
+                />
               </div>
             </div>
 
-            <div className="lx-fld" style={{ animationDelay: "0.25s" }}>
-              <label className="lx-lbl">PASSWORD</label>
-              <div className="lx-iwrap">
-                <Lock size={16} className="lx-icn" />
-                <input type={showPassword ? "text" : "password"} placeholder="Enter your password"
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  required className="lx-inp" />
-                <button type="button" className="lx-eye"
-                  onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+            <div>
+              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full h-11 pl-10 pr-10 rounded-lg border border-[#D1D5DB] bg-white text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+                  tabIndex={-1}
+                >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            {/* FORGOT */}
-            <div className="text-right delay-2 field-anim">
-              <span
-                className="text-sm text-green-400 cursor-pointer hover:text-green-300 transition"
-                onClick={() => navigate("/forgot-password")}
-              >
-                Forgot Password?
-              </span>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-[#D1D5DB] text-[#6366F1] focus:ring-[#6366F1] accent-[#6366F1]"
+                />
+                <span className="text-sm text-[#6B7280]">Remember me</span>
+              </label>
+              <Link to="/forgot-password" className="text-sm font-medium text-[#6366F1] hover:text-[#4F46E5] transition-colors">
+                Forgot password?
+              </Link>
             </div>
 
-            <button type="submit" disabled={isLoading}
-              className="lx-btn" style={{ animationDelay: "0.45s" }}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-[#6366F1] text-white text-sm font-semibold hover:bg-[#4F46E5] active:scale-[0.98] transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {isLoading ? (
-                <div className="lx-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <><LogIn size={18} /><span>LOGIN</span></>
+                <><LogIn size={16} /><span>LOGIN</span></>
               )}
             </button>
-
           </form>
         </div>
       </div>
-
-      <style>{`
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-.lx-root {
-  min-height: 100vh;
-  background: #0a0a0a;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-  font-family: 'Inter', sans-serif;
-}
-
-/* ===== BACKGROUND MESH ===== */
-.lx-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
-.lx-mesh { position: absolute; border-radius: 50%; filter: blur(140px); animation: meshDrift 20s infinite alternate ease-in-out; }
-.m1 { width: 700px; height: 700px; top: -25%; left: -15%; background: radial-gradient(circle, rgba(255,30,30,0.12), rgba(100,0,0,0.05) 40%, transparent 70%); }
-.m2 { width: 600px; height: 600px; bottom: -20%; right: -15%; background: radial-gradient(circle, rgba(200,0,0,0.1), rgba(50,0,0,0.03) 40%, transparent 70%); animation-delay: -7s; }
-.m3 { width: 500px; height: 500px; top: 40%; left: 50%; background: radial-gradient(circle, rgba(255,50,50,0.06), transparent 70%); animation-delay: -14s; }
-.m4 { width: 400px; height: 400px; top: 10%; right: 20%; background: radial-gradient(circle, rgba(150,0,0,0.08), transparent 70%); animation-delay: -4s; }
-@keyframes meshDrift { 0% { transform: scale(1) translate(0,0); } 100% { transform: scale(1.2) translate(60px,-40px); } }
-
-/* ===== NEON LINES ===== */
-.lx-neon { position: absolute; height: 1px; z-index: 1; pointer-events: none; opacity: 0.3; }
-.lx-neon::before, .lx-neon::after {
-  content: ''; position: absolute; top: -2px; width: 6px; height: 6px;
-  border-radius: 50%; background: #ff1e1e; box-shadow: 0 0 12px #ff1e1e, 0 0 30px rgba(255,30,30,0.3);
-}
-.n1 { top: 15%; left: -10%; right: 60%; background: linear-gradient(90deg, transparent, #ff1e1e, transparent); animation: neonDrift1 8s infinite linear; }
-.n2 { top: 70%; left: 40%; right: -10%; background: linear-gradient(90deg, transparent, #ff1e1e, transparent); animation: neonDrift2 10s infinite linear; animation-delay: -3s; }
-.n3 { top: 45%; left: 50%; right: 20%; background: linear-gradient(90deg, transparent, rgba(255,30,30,0.4), transparent); animation: neonDrift1 12s infinite linear; animation-delay: -6s; opacity: 0.15; }
-@keyframes neonDrift1 { 0% { transform: translateX(0); } 100% { transform: translateX(100vw); } }
-@keyframes neonDrift2 { 0% { transform: translateX(0); } 100% { transform: translateX(-100vw); } }
-
-/* ===== PARTICLES ===== */
-.lx-particles { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.lx-particle { position: absolute; border-radius: 50%; background: #ff1e1e;
-  box-shadow: 0 0 6px rgba(255,30,30,0.4), 0 0 20px rgba(255,30,30,0.1);
-  animation: particleFloat 6s infinite ease-in-out; }
-@keyframes particleFloat {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0; }
-  20% { opacity: 1; }
-  80% { opacity: 0.5; }
-  100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
-}
-
-/* ===== AMBIENT GLOW ===== */
-.lx-ambient { position: absolute; bottom: -200px; left: 50%; transform: translateX(-50%);
-  width: 600px; height: 400px; z-index: 1; pointer-events: none;
-  background: radial-gradient(ellipse, rgba(255,30,30,0.08), transparent 60%); }
-
-        .card-modern {
-          background: rgba(0,0,0,0.5);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          border: 1px solid rgba(34,197,94,0.2);
-          box-shadow: 0 0 30px rgba(34,197,94,0.2);
-          transition: transform 0.3s;
-        }
-
-/* ===== MOUSE GLOW ===== */
-.lx-mglow { position: absolute; inset: 0; z-index: 3; pointer-events: none;
-  background: radial-gradient(800px circle at var(--mx,50%) var(--my,50%), rgba(255,30,30,0.04), transparent 50%); }
-
-/* ===== WATERMARK ===== */
-.lx-watermark {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  user-select: none;
-  z-index: 3;
-  animation: watermarkIn 2.5s ease-out forwards;
-}
-@keyframes watermarkIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-.lx-watermark-img {
-  width: min(50vw, 380px);
-  height: auto;
-  opacity: 0.04;
-  filter: drop-shadow(0 0 120px rgba(255,30,30,0.06));
-  transform: translateY(-10px);
-}
-.lx-watermark-text {
-  font-size: clamp(0.7rem, 1.5vw, 1rem);
-  letter-spacing: 8px;
-  color: rgba(255,255,255,0.03);
-  text-transform: uppercase;
-  font-weight: 300;
-  margin-top: -4px;
-}
-
-        .input-modern:focus {
-          border-color: #22c55e;
-          box-shadow: 0 0 10px rgba(34,197,94,0.5);
-        }
-
-        .btn-modern {
-          background: linear-gradient(90deg, #22c55e, #16a34a);
-          color: white;
-          font-weight: 600;
-          transition: all 0.3s;
-        }
-
-        .btn-modern:hover {
-          transform: scale(1.03);
-          box-shadow: 0 0 20px #22c55e;
-        }
-
-.lx-card-border { position: absolute; inset: -1px; border-radius: 24px; pointer-events: none;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(255,30,30,0.4), rgba(255,30,30,0.05) 30%, rgba(255,30,30,0.02) 50%, rgba(255,30,30,0.08) 70%, rgba(255,30,30,0.3) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: borderPulse 4s infinite alternate ease-in-out;
-}
-@keyframes borderPulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
-
-/* ===== LOGO TEXT ===== */
-.lx-logo-text {
-  font-size: 1.6rem; font-weight: 800; letter-spacing: 3px;
-  background: linear-gradient(135deg, #fff, #ccc);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-        .light-beam {
-          position: absolute;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(34,197,94,0.15), transparent);
-          animation: beamMove 6s linear infinite;
-        }
-
-/* ===== FORM ===== */
-.lx-form { width: 100%; display: flex; flex-direction: column; gap: 16px; }
-
-.lx-err { display: flex; align-items: center; gap: 8px;
-  background: rgba(255,30,30,0.08); border: 1px solid rgba(255,30,30,0.2);
-  border-radius: 10px; padding: 10px 14px; color: #ff4444;
-  font-size: 0.82rem; font-weight: 500; animation: shake 0.4s ease; }
-@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
-
-.lx-fld { display: flex; flex-direction: column; gap: 6px;
-  animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
-@keyframes fldIn { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: translateY(0); } }
-
-.lx-lbl { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.5px;
-  color: rgba(255,255,255,0.5); }
-
-.lx-iwrap { position: relative; display: flex; align-items: center; }
-.lx-icn { position: absolute; left: 14px; color: rgba(255,255,255,0.2); pointer-events: none; transition: color 0.3s; }
-
-.lx-inp {
-  width: 100%;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
-  padding: 14px 16px 14px 44px;
-  color: #fff; font-size: 0.9rem; font-family: 'Inter', sans-serif;
-  outline: none; transition: all 0.3s ease;
-}
-.lx-inp::placeholder { color: rgba(255,255,255,0.15); font-weight: 400; }
-.lx-inp:focus {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,30,30,0.35);
-  box-shadow: 0 0 0 1px rgba(255,30,30,0.1), 0 0 30px rgba(255,30,30,0.04);
-}
-.lx-inp:focus ~ .lx-icn { color: rgba(255,30,30,0.6); }
-
-.lx-eye { position: absolute; right: 14px; background: none; border: none;
-  color: rgba(255,255,255,0.2); cursor: pointer; padding: 4px;
-  display: flex; align-items: center; transition: all 0.3s; }
-.lx-eye:hover { color: rgba(255,255,255,0.5); }
-
-.lx-meta { display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.8rem; animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
-.lx-rem { display: flex; align-items: center; gap: 8px; cursor: pointer;
-  color: rgba(255,255,255,0.35); user-select: none; transition: color 0.3s; }
-.lx-rem:hover { color: rgba(255,255,255,0.55); }
-.lx-rem input { display: none; }
-.lx-cbox { width: 16px; height: 16px; border: 1.5px solid rgba(255,255,255,0.15);
-  border-radius: 4px; position: relative; transition: all 0.3s; flex-shrink: 0; }
-.lx-rem input:checked + .lx-cbox { background: #ff1e1e; border-color: #ff1e1e;
-  box-shadow: 0 0 12px rgba(255,30,30,0.3); }
-.lx-rem input:checked + .lx-cbox::after { content: ''; position: absolute; top: 2px; left: 4px;
-  width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-
-.lx-forgot { color: rgba(255,30,30,0.5); text-decoration: none; font-weight: 500;
-  transition: all 0.3s; font-size: 0.8rem; }
-.lx-forgot:hover { color: #ff1e1e; text-shadow: 0 0 12px rgba(255,30,30,0.2); }
-
-/* ===== BUTTON ===== */
-.lx-btn {
-  width: 100%; display: flex; align-items: center; justify-content: center;
-  gap: 8px; padding: 16px 24px; border-radius: 12px; border: none;
-  background: linear-gradient(135deg, #cc0000, #ff1e1e, #ff3333, #ff1e1e, #cc0000);
-  background-size: 300% 300%;
-  color: #fff; font-family: 'Inter', sans-serif; font-size: 0.95rem;
-  font-weight: 600; letter-spacing: 0.5px; cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-  box-shadow: 0 4px 24px rgba(255,30,30,0.2), 0 0 40px rgba(255,30,30,0.04);
-  position: relative; overflow: hidden;
-  animation: fldIn 0.7s cubic-bezier(0.16,1,0.3,1) both, btnGrad 3s infinite ease-in-out;
-}
-@keyframes btnGrad { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-
-.lx-btn::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.04) 50%, transparent 70%);
-  background-size: 200% 200%;
-  animation: btnShine 3s infinite ease-in-out;
-  pointer-events: none;
-}
-@keyframes btnShine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-.lx-btn:hover { transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 8px 32px rgba(255,30,30,0.35), 0 0 80px rgba(255,30,30,0.1); }
-.lx-btn:active { transform: translateY(0) scale(0.98); }
-.lx-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-
-.lx-spin { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 500px) {
-  .lx-card { padding: 36px 24px 28px; border-radius: 20px; }
-  .lx-title { font-size: 1.35rem; }
-  .lx-sub { font-size: 0.8rem; }
-  .lx-logo-text { font-size: 1.3rem; }
-  .lx-btn { padding: 14px 20px; font-size: 0.9rem; }
-  .lx-meta { flex-direction: column; gap: 10px; align-items: flex-start; }
-  .lx-cwrap { padding: 12px; }
-}
-`}</style>
     </div>
   );
 };

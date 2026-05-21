@@ -7,9 +7,7 @@ import {
   submitTimeEntry,
   updateTimeEntry,
   deleteTimeEntry,
-  getDashboardStats,
 } from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 import axios from "axios";
 
@@ -26,7 +24,6 @@ import { Badge } from "../components/ui/Badge";
 import { Plus, Send, Pencil, Trash2, Save, X } from "lucide-react";
 
 export const MyTimesheet = () => {
-  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,14 +31,6 @@ export const MyTimesheet = () => {
 
   const [managers, setManagers] = useState([]);
   const [selectedManager, setSelectedManager] = useState("");
-
-  const [workingHours, setWorkingHours] = useState({
-    normalHours: 0,
-    weekendHours: 0,
-    holidayHours: 0,
-    totalHours: 0,
-    totalEntries: 0,
-  });
 
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -93,7 +82,6 @@ export const MyTimesheet = () => {
   useEffect(() => {
     loadEntries();
     loadManagers();
-    loadWorkingHours();
 
     const client = searchParams.get("client") || "";
     const project = searchParams.get("project") || "";
@@ -119,23 +107,6 @@ export const MyTimesheet = () => {
       });
     }
   }, []);
-
-  const loadWorkingHours = async () => {
-    try {
-      const response = await getDashboardStats();
-      if (response) {
-        setWorkingHours({
-          normalHours: response.normalHours || 0,
-          weekendHours: response.weekendHours || 0,
-          holidayHours: response.holidayHours || 0,
-          totalHours: response.totalWeekHours || 0,
-          totalEntries: 0,
-        });
-      }
-    } catch {
-      // silent
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -185,10 +156,6 @@ export const MyTimesheet = () => {
       setSelectedManager("");
       await loadEntries();
 
-      if (result.workingHours) {
-        setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
-      }
-
       alert("Entry created successfully!");
     } catch (error) {
       console.error("CREATE ERROR:", error);
@@ -201,11 +168,8 @@ export const MyTimesheet = () => {
 
   // ACTIONS
   const handleSubmitEntry = async (id) => {
-    const result = await submitTimeEntry(id);
+    await submitTimeEntry(id);
     await loadEntries();
-    if (result.workingHours) {
-      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
-    }
   };
 /*
   const handleDelete = async (id) => {
@@ -219,14 +183,10 @@ const handleDelete = async (id) => {
   try {
     if (!window.confirm("Delete this entry?")) return;
 
-    const result = await deleteTimeEntry(id);
+    await deleteTimeEntry(id);
 
     // 🔥 remove from UI immediately
     setEntries((prev) => prev.filter((e) => e.id !== id));
-
-    if (result.workingHours) {
-      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
-    }
 
   } catch (error) {
     console.error("DELETE ERROR:", error);
@@ -239,39 +199,34 @@ const handleDelete = async (id) => {
   };
 
   const handleSave = async (id) => {
-    const result = await updateTimeEntry(id, editData);
+    await updateTimeEntry(id, editData);
     setEditingId(null);
     await loadEntries();
-    if (result.workingHours) {
-      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
-    }
   };
 
-  const getEmployeeStatus = (status) => {
-    return status === "DRAFT" ? "Draft" : "Sent";
-  };
-
-  const getStatusBadgeVariant = (displayStatus) => {
+  const getStatusBadgeVariant = (status) => {
     return {
-      Draft: "default",
-      Sent: "warning",
-    }[displayStatus] || "default";
+      DRAFT: "default",
+      SUBMITTED: "warning",
+      APPROVED: "success",
+      REJECTED: "danger",
+    }[status] || "default";
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold text-[#111827]">My Timesheet</h1>
 
       {/* FORM */}
       <Card>
         <CardHeader>
           <CardTitle className="text-[#111827] flex items-center gap-2">
-            <Plus className="w-5 h-5 text-[#22c55e]" />
+            <Plus className="w-5 h-5 text-[#6366F1]" />
             Log Time
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="pb-3">
+        <CardContent>
           <form className="grid grid-cols-1 md:grid-cols-7 gap-4" onSubmit={handleCreate}>
             <Input name="client" value={formData.client} onChange={handleInputChange} placeholder="Client" />
             <Input name="project" value={formData.project} onChange={handleInputChange} placeholder="Project" />
@@ -282,11 +237,11 @@ const handleDelete = async (id) => {
             <select
               value={selectedManager || ""}
               onChange={(e) => setSelectedManager(e.target.value)}
-              className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] focus:border-transparent transition-all duration-200"
+              className="h-10 rounded-lg border border-[#D1D5DB] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1]"
             >
-              <option value="" className="bg-white">{user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
+              <option value="">Select Manager</option>
               {managers.map((m) => (
-                <option key={m.id} value={m.id} className="bg-white">
+                <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
               ))}
@@ -302,27 +257,26 @@ const handleDelete = async (id) => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+            <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
               <tr>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Client</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Date</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Project</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Task</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Description</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Hour</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Reported To</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Edit</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Client</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Date</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Project</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Task</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Description</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Hours</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Status</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Reported To</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Manager Action</th>
+                <th className="p-3 text-left text-[#6B7280] font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry) => {
                 return (
-                  <tr key={entry.id} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                  <tr key={entry.id}>
                     <td className="p-3 text-[#111827]">{entry.client || "-"}</td>
-                    <td className="p-3 text-[#6b7280]">
+                    <td className="p-3 text-[#6B7280]">
                       {format(new Date(entry.entryDate), "MMM dd, yyyy")}
                     </td>
 
@@ -341,7 +295,7 @@ const handleDelete = async (id) => {
 
                     <td className="p-3 text-[#111827]">{entry.task}</td>
 
-                    <td className="p-3 text-[#6b7280]">
+                    <td className="p-3 text-[#6B7280]">
                       {editingId === entry.id ? (
                         <Input
                           value={editData.description}
@@ -360,12 +314,12 @@ const handleDelete = async (id) => {
                     <td className="p-3 text-[#111827] font-medium">{entry.hours} h</td>
 
                     <td className="p-3">
-                      <Badge variant={getStatusBadgeVariant(getEmployeeStatus(entry.status))}>
-                        {getEmployeeStatus(entry.status)}
+                      <Badge variant={getStatusBadgeVariant(entry.status)}>
+                        {entry.status}
                       </Badge>
                     </td>
 
-                    <td className="p-3 text-[#6b7280]">
+                    <td className="p-3 text-[#6B7280]">
                       {entry.Manager?.name || "-"}
                     </td>
 
@@ -378,10 +332,6 @@ const handleDelete = async (id) => {
                       )}
                       {(entry.status === "DRAFT" ||
                         entry.status === "SUBMITTED") && "-"}
-                    </td>
-
-                    <td className="p-3 text-[#6b7280] max-w-[200px]">
-                      {entry.managerComment || "-"}
                     </td>
 
                     <td className="p-3">
@@ -427,7 +377,7 @@ const handleDelete = async (id) => {
               })}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan="11" className="p-8 text-center text-[#6b7280]">
+                  <td colSpan="10" className="p-8 text-center text-[#6B7280]">
                     No time entries found. Start by adding your first entry above.
                   </td>
                 </tr>

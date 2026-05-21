@@ -60,7 +60,7 @@ function getNotificationIcon(type) {
 }
 
 function getNotificationBg(type, isRead) {
-  if (isRead) return "bg-white border-[#e5e7eb]";
+  if (isRead) return "bg-white border-[#E5E7EB]";
   switch (type) {
     case "MISSING_ENTRY":
       return "bg-orange-500/10 border-orange-500/30";
@@ -75,7 +75,7 @@ function getNotificationBg(type, isRead) {
     case "MANAGER_REMINDER":
       return "bg-purple-500/10 border-purple-500/30";
     default:
-      return "bg-white border-[#e5e7eb]";
+      return "bg-white border-[#E5E7EB]";
   }
 }
 
@@ -166,10 +166,10 @@ export const Notifications = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] flex items-center gap-2">
-            <Bell className="w-6 h-6 text-[#22c55e] drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+            <Bell className="w-6 h-6 text-[#6366F1] drop-shadow-[0_0_10px_rgba(255,45,45,0.5)]" />
             Notifications
           </h1>
-          <p className="text-[#6b7280]">
+          <p className="text-[#6B7280]">
             {unreadCount > 0 ? `${unreadCount} unread` : "All caught up!"}
           </p>
         </div>
@@ -212,14 +212,14 @@ export const Notifications = () => {
         <CardContent className="pt-6">
           {isLoading ? (
             <div className="text-center py-12">
-              <Clock className="w-8 h-8 mx-auto text-[#6b7280] animate-spin" />
-              <p className="text-[#6b7280] mt-2">Loading notifications...</p>
+              <Clock className="w-8 h-8 mx-auto text-[#6B7280] animate-spin" />
+              <p className="text-[#6B7280] mt-2">Loading notifications...</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-12">
-              <Bell className="w-16 h-16 mx-auto mb-4 text-[#6b7280]" />
-              <p className="text-[#6b7280] text-lg">No notifications</p>
-              <p className="text-[#6b7280] text-sm mt-1">
+              <Bell className="w-16 h-16 mx-auto mb-4 text-[#2a2a2a]" />
+              <p className="text-[#6B7280] text-lg">No notifications</p>
+              <p className="text-[#6B7280] text-sm mt-1">
                 {filter === "all"
                   ? "You're all caught up!"
                   : `No ${filter} notifications`}
@@ -230,7 +230,7 @@ export const Notifications = () => {
               {filtered.map((n) => (
                 <div
                   key={n.id}
-                  className={`flex items-start gap-4 p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(34,197,94,0.1)] ${getNotificationBg(
+                  className={`flex items-start gap-4 p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(255,45,45,0.1)] ${getNotificationBg(
                     n.type,
                     n.isRead
                   )}`}
@@ -239,19 +239,19 @@ export const Notifications = () => {
                   <div className="mt-0.5">{getNotificationIcon(n.type)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className={`font-medium text-sm ${n.isRead ? "text-[#6b7280]" : "text-[#111827]"}`}>
+                      <p className={`font-medium text-sm ${n.isRead ? "text-[#6B7280]" : "text-[#111827]"}`}>
                         {n.title}
                       </p>
                       {!n.isRead && <Badge variant="primary" className="animate-pulse">New</Badge>}
                       <Badge variant={getTypeBadge(n.type).variant}>
                         {getTypeBadge(n.type).label}
                       </Badge>
-                      <span className="text-xs text-[#6b7280] flex items-center gap-1">
+                      <span className="text-xs text-[#6B7280] flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {timeAgo(n.createdAt)}
                       </span>
                     </div>
-                    <p className={`text-sm mt-1 ${n.isRead ? "text-[#6b7280]" : "text-[#111827]"}`}>{n.message}</p>
+                    <p className={`text-sm mt-1 ${n.isRead ? "text-[#6B7280]" : "text-[#111827]"}`}>{n.message}</p>
                   </div>
                   <div className="flex gap-1 shrink-0">
                     {!n.isRead && (
