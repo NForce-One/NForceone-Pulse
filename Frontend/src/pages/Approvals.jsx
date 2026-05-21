@@ -80,11 +80,11 @@ export const Approvals = () => {
 
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Check className="w-6 h-6 text-[#ff2d2d]" />
+        <h1 className="text-2xl font-bold text-[#111827] flex items-center gap-2">
+          <Check className="w-6 h-6 text-[#22c55e]" />
           Approvals
         </h1>
-        <p className="text-[#a1a1aa]">
+        <p className="text-[#6b7280]">
           Review and approve submitted time entries.
         </p>
       </div>
@@ -95,59 +95,59 @@ export const Approvals = () => {
 
           <table className="w-full text-sm whitespace-nowrap">
 
-            <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
               <tr>
-                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">EmpID</th>
-                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Name</th>
-                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Client</th>
-                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Project</th>
-                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Task</th>
-                <th className="px-3 py-3 text-left text-[#a1a1aa] font-medium">Description</th>
-                <th className="px-3 py-3 text-center text-[#a1a1aa] font-medium">Status</th>
-                <th className="px-3 py-3 text-right text-[#a1a1aa] font-medium">Action</th>
+                <th className="px-3 py-3 text-left text-[#6b7280] font-medium">EmpID</th>
+                <th className="px-3 py-3 text-left text-[#6b7280] font-medium">Name</th>
+                <th className="px-3 py-3 text-left text-[#6b7280] font-medium">Client</th>
+                <th className="px-3 py-3 text-left text-[#6b7280] font-medium">Project</th>
+                <th className="px-3 py-3 text-left text-[#6b7280] font-medium">Task</th>
+                <th className="px-3 py-3 text-left text-[#6b7280] font-medium">Description</th>
+                <th className="px-3 py-3 text-center text-[#6b7280] font-medium">Status</th>
+                <th className="px-3 py-3 text-right text-[#6b7280] font-medium">Action</th>
               </tr>
             </thead>
 
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-8 text-[#a1a1aa]">
+                  <td colSpan="8" className="text-center py-8 text-[#6b7280]">
                     Loading entries...
                   </td>
                 </tr>
 
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-8 text-[#a1a1aa]">
+                  <td colSpan="8" className="text-center py-8 text-[#6b7280]">
                     No pending approvals
                   </td>
                 </tr>
 
               ) : (
                 entries.map((entry) => (
-                  <tr key={entry.id} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
+                  <tr key={entry.id} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
 
-                    <td className="px-3 py-3 text-white font-medium">
+                    <td className="px-3 py-3 text-[#111827] font-medium">
                       {entry.userId}
                     </td>
 
-                    <td className="px-3 py-3 text-white">
+                    <td className="px-3 py-3 text-[#111827]">
                       {entry.User?.name || entry.user?.name || "Unknown"}
                     </td>
 
-                    <td className="px-3 py-3 text-[#a1a1aa]">
+                    <td className="px-3 py-3 text-[#6b7280]">
                       {entry.client || "-"}
                     </td>
 
-                    <td className="px-3 py-3 text-[#a1a1aa]">
+                    <td className="px-3 py-3 text-[#6b7280]">
                       {entry.project || "-"}
                     </td>
 
-                    <td className="px-3 py-3 text-[#a1a1aa]">
+                    <td className="px-3 py-3 text-[#6b7280]">
                       {entry.task || "-"}
                     </td>
 
-                    <td className="px-3 py-3 text-[#a1a1aa] max-w-[200px] truncate" title={entry.description || ""}>
+                    <td className="px-3 py-3 text-[#6b7280] max-w-[200px] truncate" title={entry.description || ""}>
                       {entry.description || "-"}
                     </td>
 
@@ -202,13 +202,13 @@ export const Approvals = () => {
       {modal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal}></div>
-          <div className="relative w-full max-w-lg bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#2a2a2a] bg-[#0f0f0f]">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#ff2d2d]" />
+          <div className="relative w-full max-w-lg bg-white border border-[#e5e7eb] rounded-xl shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb] bg-[#f9fafb]">
+              <h2 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-[#22c55e]" />
                 {modal.action === "approve" ? "Approve Entry" : modal.action === "reject" ? "Reject Entry" : "Comment on Entry"}
               </h2>
-              <p className="text-sm text-[#a1a1aa] mt-1">
+              <p className="text-sm text-[#6b7280] mt-1">
                 {modal.action === "approve"
                   ? "Add an optional note to the employee."
                   : modal.action === "reject"
@@ -217,7 +217,7 @@ export const Approvals = () => {
               </p>
             </div>
             <div className="p-6">
-              <label className="block text-sm font-medium text-[#a1a1aa] mb-2">
+              <label className="block text-sm font-medium text-[#6b7280] mb-2">
                 Manager Comment / Note
               </label>
               <textarea
@@ -225,7 +225,7 @@ export const Approvals = () => {
                 onChange={(e) => setModal((prev) => ({ ...prev, comment: e.target.value }))}
                 placeholder={modal.action === "approve" ? "e.g. Good work on login module (optional)" : modal.action === "reject" ? "e.g. Please improve API validation (optional)" : "e.g. Please update the description."}
                 rows={4}
-                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-[#ff2d2d] focus:ring-1 focus:ring-[#ff2d2d]/30 transition-colors resize-none"
+                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] placeholder-[#6b7280] focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/30 transition-colors resize-none"
               />
               <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={closeModal}>

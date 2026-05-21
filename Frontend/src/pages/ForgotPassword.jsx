@@ -42,7 +42,7 @@ export const ForgotPassword = () => {
     >
       {/* 🔴 OVERLAY */}
       <div className="absolute inset-0 bg-black/70"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-red-900/40 via-black/60 to-black/90"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-green-900/40 via-black/60 to-black/90"></div>
 
       {/* ✨ FLOATING PARTICLES */}
       <div className="particles"></div>
@@ -51,7 +51,7 @@ export const ForgotPassword = () => {
 
         {/* 🔥 LOGO */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="logo-glow w-12 h-12 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+          <div className="logo-glow w-12 h-12 rounded-full bg-[#22c55e] flex items-center justify-center overflow-hidden">
             <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-wide">
@@ -98,7 +98,7 @@ export const ForgotPassword = () => {
 
               <div className="text-center text-sm mt-2">
                 <span
-                  className="text-red-400 cursor-pointer hover:underline hover:text-red-500 transition"
+                  className="text-green-400 cursor-pointer hover:underline hover:text-green-500 transition"
                   onClick={() => navigate("/login")}
                 >
                   Back to Login
@@ -128,8 +128,8 @@ export const ForgotPassword = () => {
         .glass-card {
           background: rgba(0,0,0,0.7);
           backdrop-filter: blur(15px);
-          border: 1px solid rgba(255,0,0,0.2);
-          box-shadow: 0 0 25px rgba(255,0,0,0.15);
+          border: 1px solid rgba(34,197,94,0.2);
+          box-shadow: 0 0 25px rgba(34,197,94,0.15);
         }
 
         /* 🔴 GLOW BORDER */
@@ -138,7 +138,7 @@ export const ForgotPassword = () => {
           position: absolute;
           inset: -1px;
           border-radius: 16px;
-          background: linear-gradient(90deg, transparent, red, transparent);
+          background: linear-gradient(90deg, transparent, #22c55e, transparent);
           animation: borderGlow 4s linear infinite;
           z-index: -1;
         }
@@ -151,14 +151,14 @@ export const ForgotPassword = () => {
 
         /* LOGO GLOW */
         .logo-glow {
-          box-shadow: 0 0 20px rgba(255,0,0,0.7);
+          box-shadow: 0 0 20px rgba(34,197,94,0.7);
           animation: pulseGlow 2s infinite;
         }
 
         @keyframes pulseGlow {
-          0% { box-shadow: 0 0 10px red; }
-          50% { box-shadow: 0 0 25px red; }
-          100% { box-shadow: 0 0 10px red; }
+          0% { box-shadow: 0 0 10px #22c55e; }
+          50% { box-shadow: 0 0 25px #22c55e; }
+          100% { box-shadow: 0 0 10px #22c55e; }
         }
 
         /* INPUT */
@@ -169,13 +169,13 @@ export const ForgotPassword = () => {
         }
 
         .input-modern:focus {
-          border-color: red;
-          box-shadow: 0 0 8px rgba(255,0,0,0.5);
+          border-color: #22c55e;
+          box-shadow: 0 0 8px rgba(34,197,94,0.5);
         }
 
         /* BUTTON */
         .btn-modern {
-          background: linear-gradient(90deg, #ff0000, #cc0000);
+          background: linear-gradient(90deg, #22c55e, #16a34a);
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -183,7 +183,7 @@ export const ForgotPassword = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 15px rgba(255,0,0,0.6);
+          box-shadow: 0 0 15px rgba(34,197,94,0.6);
         }
 
         /* SUCCESS ANIMATION */
@@ -207,7 +207,7 @@ export const ForgotPassword = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background-image: radial-gradient(red 1px, transparent 1px);
+          background-image: radial-gradient(#22c55e 1px, transparent 1px);
           background-size: 40px 40px;
           animation: moveParticles 20s linear infinite;
           opacity: 0.2;

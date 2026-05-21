@@ -107,8 +107,8 @@ export const Projects = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Project Management</h1>
-          <p className="text-gray-500">Manage projects and budgets</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Project Management</h1>
+          <p className="text-[#6b7280]">Manage projects and budgets</p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", description: "", clientId: "", managerId: "", startDate: "", endDate: "", budgetHours: "", budgetAmount: "", status: "ACTIVE" }); }}>
           <Plus className="w-4 h-4 mr-2" />
@@ -125,11 +125,11 @@ export const Projects = () => {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Project Name" required />
               <Input name="code" value={formData.code} onChange={handleInputChange} placeholder="Project Code" />
-              <select name="clientId" value={formData.clientId} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="clientId" value={formData.clientId} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="">Select Client</option>
                 {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              <select name="managerId" value={formData.managerId} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="managerId" value={formData.managerId} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="">Select Manager</option>
                 {managers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
@@ -137,7 +137,7 @@ export const Projects = () => {
               <Input name="endDate" type="date" value={formData.endDate} onChange={handleInputChange} />
               <Input name="budgetHours" type="number" value={formData.budgetHours} onChange={handleInputChange} placeholder="Budget Hours" />
               <Input name="budgetAmount" type="number" value={formData.budgetAmount} onChange={handleInputChange} placeholder="Budget Amount" />
-              <select name="status" value={formData.status} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="status" value={formData.status} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
                 <option value="COMPLETED">Completed</option>
@@ -157,31 +157,31 @@ export const Projects = () => {
       <Card>
         <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-100 border-b">
+                <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Client</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Project</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Code</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Assigned Manager</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Budget Hours</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Budget Amount</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Status</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">Actions</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Client</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Project</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Code</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Assigned Manager</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Budget Hours</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Budget Amount</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Status</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan="8" className="text-center py-8">Loading...</td></tr>
+                    <tr><td colSpan="8" className="text-center py-8 text-[#6b7280]">Loading...</td></tr>
                   ) : projects.length === 0 ? (
-                    <tr><td colSpan="8" className="text-center py-8">No projects found</td></tr>
+                    <tr><td colSpan="8" className="text-center py-8 text-[#6b7280]">No projects found</td></tr>
                   ) : (
                     projects.map((project) => (
-                      <tr key={project.id} className="border-b">
-                        <td className="px-4 py-3 font-medium">{project.Client?.name || "-"}</td>
-                        <td className="px-4 py-3">{project.name}</td>
-                        <td className="px-4 py-3">{project.code || "-"}</td>
-                        <td className="px-4 py-3">{project.Manager?.name || "-"}</td>
-                        <td className="px-4 py-3">{project.budgetHours || "-"}</td>
+                      <tr key={project.id} className="border-b border-[#e5e7eb]">
+                        <td className="px-4 py-3 text-[#111827] font-medium">{project.Client?.name || "-"}</td>
+                        <td className="px-4 py-3 text-[#111827]">{project.name}</td>
+                        <td className="px-4 py-3 text-[#111827]">{project.code || "-"}</td>
+                        <td className="px-4 py-3 text-[#111827]">{project.Manager?.name || "-"}</td>
+                        <td className="px-4 py-3 text-[#111827]">{project.budgetHours || "-"}</td>
                         <td className="px-4 py-3">
                           {project.budgetAmount != null ? `$${Number(project.budgetAmount).toLocaleString()}` : "-"}
                         </td>

@@ -125,7 +125,7 @@ export const AppRoutes = () => {
           <Route
             path="manager/team-timesheets"
             element={
-              <ProtectedRoute allowedRoles={["MANAGER", "ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <TeamTimesheets />
               </ProtectedRoute>
             }

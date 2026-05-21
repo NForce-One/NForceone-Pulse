@@ -31,7 +31,7 @@ export const Sidebar = () => {
     { name: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
     { name: "My Timesheet", path: "/timesheet", icon: Clock, roles: ["EMPLOYEE", "MANAGER"] },
     { name: "Timer", path: "/timer", icon: Timer, roles: ["EMPLOYEE", "MANAGER"] },
-    { name: "Team Timesheets", path: "/manager/team-timesheets", icon: FileText, roles: ["MANAGER", "ADMIN"] },
+    { name: "Team Timesheets", path: "/manager/team-timesheets", icon: FileText, roles: ["ADMIN"] },
     { name: "Approvals", path: "/approvals", icon: CheckSquare, roles: ["MANAGER", "ADMIN"] },
     { name: "Reports", path: "/reports", icon: BarChart3, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
     { name: "Notifications", path: "/notifications", icon: Bell, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
@@ -48,11 +48,11 @@ export const Sidebar = () => {
   const mainItems = visibleItems.filter((item) => !item.path.startsWith("/admin"));
 
   return (
-    <div className="flex flex-col w-64 bg-[#1a1a1a] border-r border-[#2a2a2a] h-full shadow-[2px_0_10px_rgba(0,0,0,0.3)]">
-      <div className="h-16 flex items-center px-6 border-b border-[#2a2a2a] bg-[#1a1a1a]">
-        <span className="text-xl font-bold text-[#ff2d2d] flex items-center gap-2 hover:text-[#ff4444] transition-colors">
-          <Clock className="w-6 h-6 text-[#ff2d2d] drop-shadow-[0_0_8px_rgba(255,45,45,0.5)]" />
-          <span className="bg-gradient-to-r from-[#ff2d2d] to-[#ff6b6b] bg-clip-text text-transparent font-extrabold">
+    <div className="flex flex-col w-64 bg-[#1f2937] border-r border-[#374151] h-full shadow-[2px_0_10px_rgba(0,0,0,0.3)]">
+      <div className="h-16 flex items-center px-6 border-b border-[#374151] bg-[#1f2937]">
+        <span className="text-xl font-bold text-[#22c55e] flex items-center gap-2 hover:text-[#4ade80] transition-colors">
+          <Clock className="w-6 h-6 text-[#22c55e] drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+          <span className="bg-gradient-to-r from-[#22c55e] to-[#4ade80] bg-clip-text text-transparent font-extrabold">
             NForce Pulse
           </span>
         </span>
@@ -68,16 +68,16 @@ export const Sidebar = () => {
               className={cn(
                 "flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-[#ff2d2d]/10 text-[#ff2d2d] border-l-4 border-[#ff2d2d] shadow-[inset_0_0_10px_rgba(255,45,45,0.1)]"
-                  : "text-[#a1a1aa] hover:bg-[#2a2a2a] hover:text-white hover:border-l-4 hover:border-[#ff2d2d]/50"
+                  ? "bg-[#22c55e]/10 text-[#22c55e] border-l-4 border-[#22c55e] shadow-[inset_0_0_10px_rgba(34,197,94,0.1)]"
+                  : "text-[#9ca3af] hover:bg-[#374151] hover:text-white hover:border-l-4 hover:border-[#22c55e]/50"
               )}
             >
               <div className="flex items-center gap-3">
-                <item.icon className={cn("w-5 h-5", isActive ? "text-[#ff2d2d] drop-shadow-[0_0_5px_rgba(255,45,45,0.5)]" : "text-[#a1a1aa]")} />
+                <item.icon className={cn("w-5 h-5", isActive ? "text-[#22c55e] drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]" : "text-[#9ca3af]")} />
                 {item.name}
               </div>
               {item.path === "/notifications" && unreadCount > 0 && (
-                <span className="bg-[#ff2d2d] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(255,45,45,0.5)] animate-pulse">
+                <span className="bg-[#22c55e] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(34,197,94,0.5)] animate-pulse">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
@@ -87,7 +87,7 @@ export const Sidebar = () => {
 
         {adminItems.length > 0 && (
           <>
-            <div className="pt-4 pb-2 px-3 text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider border-t border-[#2a2a2a] mt-4">
+            <div className="pt-4 pb-2 px-3 text-xs font-semibold text-[#9ca3af] uppercase tracking-wider border-t border-[#374151] mt-4">
               Admin
             </div>
             {adminItems.map((item) => {
@@ -99,11 +99,11 @@ export const Sidebar = () => {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-[#ff2d2d]/10 text-[#ff2d2d] border-l-4 border-[#ff2d2d] shadow-[inset_0_0_10px_rgba(255,45,45,0.1)]"
-                      : "text-[#a1a1aa] hover:bg-[#2a2a2a] hover:text-white hover:border-l-4 hover:border-[#ff2d2d]/50"
+                      ? "bg-[#22c55e]/10 text-[#22c55e] border-l-4 border-[#22c55e] shadow-[inset_0_0_10px_rgba(34,197,94,0.1)]"
+                      : "text-[#9ca3af] hover:bg-[#374151] hover:text-white hover:border-l-4 hover:border-[#22c55e]/50"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", isActive ? "text-[#ff2d2d]" : "text-[#a1a1aa]")} />
+                  <item.icon className={cn("w-5 h-5", isActive ? "text-[#22c55e]" : "text-[#9ca3af]")} />
                   {item.name}
                 </Link>
               );

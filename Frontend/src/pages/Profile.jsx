@@ -119,11 +119,11 @@ export const Profile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <User className="w-6 h-6 text-[#ff2d2d]" />
+        <h1 className="text-2xl font-bold text-[#111827] flex items-center gap-2">
+          <User className="w-6 h-6 text-[#22c55e]" />
           Profile
         </h1>
-        <p className="text-[#a1a1aa]">Manage your account settings</p>
+        <p className="text-[#6b7280]">Manage your account settings</p>
       </div>
 
       {message && (
@@ -140,15 +140,15 @@ export const Profile = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <User className="w-5 h-5 text-[#ff2d2d]" />
+            <CardTitle className="flex items-center gap-2 text-[#111827]">
+              <User className="w-5 h-5 text-[#22c55e]" />
               Personal Information
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleProfileSubmit} className="space-y-4">
               <div>
-                <label className="text-sm text-[#a1a1aa]">Name *</label>
+                <label className="text-sm text-[#6b7280]">Name *</label>
                 <Input
                   name="name"
                   value={profileForm.name}
@@ -163,15 +163,15 @@ export const Profile = () => {
                 )}
               </div>
               <div>
-                <label className="text-sm text-[#a1a1aa]">Email</label>
-                <Input value={profile?.email || ""} disabled className="bg-[#0f0f0f] cursor-not-allowed" />
+                <label className="text-sm text-[#6b7280]">Email</label>
+                <Input value={profile?.email || ""} disabled className="bg-[#f9fafb] cursor-not-allowed" />
               </div>
               <div>
-                <label className="text-sm text-[#a1a1aa]">Role</label>
-                <Input value={profile?.role || ""} disabled className="bg-[#0f0f0f] cursor-not-allowed" />
+                <label className="text-sm text-[#6b7280]">Role</label>
+                <Input value={profile?.role || ""} disabled className="bg-[#f9fafb] cursor-not-allowed" />
               </div>
               <div>
-                <label className="text-sm text-[#a1a1aa]">Department *</label>
+                <label className="text-sm text-[#6b7280]">Department *</label>
                 <Input
                   name="department"
                   value={profileForm.department}
@@ -185,7 +185,7 @@ export const Profile = () => {
                 )}
               </div>
               <div>
-                <label className="text-sm text-[#a1a1aa]">Default Hours *</label>
+                <label className="text-sm text-[#6b7280]">Default Hours *</label>
                 <Input
                   type="number"
                   name="defaultHours"
@@ -215,15 +215,15 @@ export const Profile = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Key className="w-5 h-5 text-[#ff2d2d]" />
+            <CardTitle className="flex items-center gap-2 text-[#111827]">
+              <Key className="w-5 h-5 text-[#22c55e]" />
               Change Password
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
-                <label className="text-sm text-[#a1a1aa]">Current Password *</label>
+                <label className="text-sm text-[#6b7280]">Current Password *</label>
                 <Input
                   type="password"
                   value={passwordForm.currentPassword}
@@ -237,7 +237,7 @@ export const Profile = () => {
                 )}
               </div>
               <div>
-                <label className="text-sm text-[#a1a1aa]">New Password * (min 6 chars)</label>
+                <label className="text-sm text-[#6b7280]">New Password * (min 6 chars)</label>
                 <Input
                   type="password"
                   value={passwordForm.newPassword}
@@ -251,7 +251,7 @@ export const Profile = () => {
                 )}
               </div>
               <div>
-                <label className="text-sm text-[#a1a1aa]">Confirm New Password *</label>
+                <label className="text-sm text-[#6b7280]">Confirm New Password *</label>
                 <Input
                   type="password"
                   value={passwordForm.confirmPassword}

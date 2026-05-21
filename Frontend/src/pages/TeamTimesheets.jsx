@@ -210,7 +210,7 @@ export const TeamTimesheets = () => {
       case "SUBMITTED":
         return `${base} bg-blue-500/20 text-blue-300 border border-blue-500/30`;
       default:
-        return `${base} bg-[#2a2a2a] text-[#a1a1aa] border border-[#3a3a3a]`;
+        return `${base} bg-[#e5e7eb] text-[#6b7280] border border-[#d1d5db]`;
     }
   };
 
@@ -219,75 +219,75 @@ export const TeamTimesheets = () => {
 
       {/* ================= TEAM TIMESHEETS SECTION (shown to both admin and manager) ================= */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-white">Team Timesheets</h2>
+        <h2 className="text-xl font-bold text-[#111827]">Team Timesheets</h2>
 
         <Card>
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-4">
               {isAdmin && (
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-[#a1a1aa] whitespace-nowrap">Team Manager:</label>
+                  <label className="text-sm text-[#6b7280] whitespace-nowrap">Team Manager:</label>
                   <select
                     value={selectedManagerId}
                     onChange={(e) => {
                       setSelectedManagerId(e.target.value);
                       setEmployeeFilter("ALL");
                     }}
-                    className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                    className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                   >
-                    <option value="" className="bg-[#1a1a1a]">My Team</option>
+                    <option value="" className="bg-white">My Team</option>
                     {allManagerList.map((u) => (
-                      <option key={u.id} value={u.id} className="bg-[#1a1a1a]">{u.name}</option>
+                      <option key={u.id} value={u.id} className="bg-white">{u.name}</option>
                     ))}
                   </select>
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-[#a1a1aa] whitespace-nowrap">Employee:</label>
+                <label className="text-sm text-[#6b7280] whitespace-nowrap">Employee:</label>
                 <select
                   value={employeeFilter}
                   onChange={(e) => setEmployeeFilter(e.target.value)}
-                  className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                  className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                 >
-                  <option value="ALL" className="bg-[#1a1a1a]">All Employees</option>
+                  <option value="ALL" className="bg-white">All Employees</option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id} className="bg-[#1a1a1a]">{emp.name}</option>
+                    <option key={emp.id} value={emp.id} className="bg-white">{emp.name}</option>
                   ))}
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-[#a1a1aa] whitespace-nowrap">Status:</label>
+                <label className="text-sm text-[#6b7280] whitespace-nowrap">Status:</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                  className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                 >
-                  <option value="ALL" className="bg-[#1a1a1a]">All Status</option>
-                  <option value="DRAFT" className="bg-[#1a1a1a]">Draft</option>
-                  <option value="SUBMITTED" className="bg-[#1a1a1a]">Submitted</option>
-                  <option value="APPROVED" className="bg-[#1a1a1a]">Approved</option>
-                  <option value="REJECTED" className="bg-[#1a1a1a]">Rejected</option>
+                  <option value="ALL" className="bg-white">All Status</option>
+                  <option value="DRAFT" className="bg-white">Draft</option>
+                  <option value="SUBMITTED" className="bg-white">Submitted</option>
+                  <option value="APPROVED" className="bg-white">Approved</option>
+                  <option value="REJECTED" className="bg-white">Rejected</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-[#a1a1aa] whitespace-nowrap">From:</label>
+                <label className="text-sm text-[#6b7280] whitespace-nowrap">From:</label>
                 <input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                  className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-[#a1a1aa] whitespace-nowrap">To:</label>
+                <label className="text-sm text-[#6b7280] whitespace-nowrap">To:</label>
                 <input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                  className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                 />
               </div>
             </div>
@@ -297,40 +297,40 @@ export const TeamTimesheets = () => {
         <Card className="overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-48">
-              <div className="flex items-center gap-2 text-[#a1a1aa]">
+              <div className="flex items-center gap-2 text-[#6b7280]">
                 <Loader className="w-5 h-5 animate-spin" />
                 Loading team timesheets...
               </div>
             </div>
           ) : timesheets.length === 0 ? (
-            <CardContent className="py-8 text-center text-[#a1a1aa]">
+            <CardContent className="py-8 text-center text-[#6b7280]">
               No team timesheets found. Ensure employees are assigned to you as their manager and have created timesheets.
             </CardContent>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
-                <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+                <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Employee</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Week Start</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Week End</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Total Hours</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Billable</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Non-Billable</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Missing</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3 text-right text-[#a1a1aa] font-medium whitespace-nowrap">Actions</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Employee</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Week Start</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Week End</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Total Hours</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Billable</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Non-Billable</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Missing</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right text-[#6b7280] font-medium whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {timesheets.map((ts) => (
-                    <tr key={ts.id} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                      <td className="px-4 py-3 text-white whitespace-nowrap">
+                    <tr key={ts.id} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[#111827] whitespace-nowrap">
                         {ts.first_name} {ts.last_name}
                       </td>
-                      <td className="px-4 py-3 text-[#a1a1aa] whitespace-nowrap">{ts.week_start_date}</td>
-                      <td className="px-4 py-3 text-[#a1a1aa] whitespace-nowrap">{ts.week_end_date}</td>
-                      <td className="px-4 py-3 text-white font-medium whitespace-nowrap">
+                      <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap">{ts.week_start_date}</td>
+                      <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap">{ts.week_end_date}</td>
+                      <td className="px-4 py-3 text-[#111827] font-medium whitespace-nowrap">
                         {(ts.total_minutes / 60).toFixed(2)}h
                       </td>
                       <td className="px-4 py-3 text-emerald-400 whitespace-nowrap">
@@ -351,7 +351,7 @@ export const TeamTimesheets = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleViewDetails(ts)}
-                            className="p-1.5 rounded-md text-[#a1a1aa] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+                            className="p-1.5 rounded-md text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
@@ -387,14 +387,14 @@ export const TeamTimesheets = () => {
 
       {/* ================= ADMIN TIME ENTRIES SECTION ================= */}
       {isAdmin && (
-        <div className="space-y-4 pt-6 border-t border-[#2a2a2a]">
-          <h2 className="text-xl font-bold text-white">Time Entry Details</h2>
+        <div className="space-y-4 pt-6 border-t border-[#e5e7eb]">
+          <h2 className="text-xl font-bold text-[#111827]">Time Entry Details</h2>
 
           <Card>
             <CardContent className="py-4">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-[#a1a1aa] whitespace-nowrap">Employee:</label>
+                  <label className="text-sm text-[#6b7280] whitespace-nowrap">Employee:</label>
                   <select
                     value={entryEmployeeId}
                     onChange={(e) => {
@@ -404,17 +404,17 @@ export const TeamTimesheets = () => {
                       setEntryManagerTeamId("");
                       loadTimeEntries("employee", val);
                     }}
-                    className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                    className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                   >
-                    <option value="" className="bg-[#1a1a1a]">Select Employee</option>
+                    <option value="" className="bg-white">Select Employee</option>
                     {allEmployeeList.map((u) => (
-                      <option key={u.id} value={u.id} className="bg-[#1a1a1a]">{u.name}</option>
+                      <option key={u.id} value={u.id} className="bg-white">{u.name}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-[#a1a1aa] whitespace-nowrap">Manager:</label>
+                  <label className="text-sm text-[#6b7280] whitespace-nowrap">Manager:</label>
                   <select
                     value={entryManagerId}
                     onChange={(e) => {
@@ -424,17 +424,17 @@ export const TeamTimesheets = () => {
                       setEntryManagerTeamId("");
                       loadTimeEntries("manager", val);
                     }}
-                    className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                    className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                   >
-                    <option value="" className="bg-[#1a1a1a]">Select Manager</option>
+                    <option value="" className="bg-white">Select Manager</option>
                     {allManagerList.map((u) => (
-                      <option key={u.id} value={u.id} className="bg-[#1a1a1a]">{u.name}</option>
+                      <option key={u.id} value={u.id} className="bg-white">{u.name}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-[#a1a1aa] whitespace-nowrap">Approved By Manager:</label>
+                  <label className="text-sm text-[#6b7280] whitespace-nowrap">Approved By Manager:</label>
                   <select
                     value={entryManagerTeamId}
                     onChange={(e) => {
@@ -444,11 +444,11 @@ export const TeamTimesheets = () => {
                       setEntryManagerId("");
                       loadTimeEntries("managerTeam", val);
                     }}
-                    className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d]"
+                    className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
                   >
-                    <option value="" className="bg-[#1a1a1a]">Select Manager</option>
+                    <option value="" className="bg-white">Select Manager</option>
                     {allManagerList.map((u) => (
-                      <option key={u.id} value={u.id} className="bg-[#1a1a1a]">{u.name}</option>
+                      <option key={u.id} value={u.id} className="bg-white">{u.name}</option>
                     ))}
                   </select>
                 </div>
@@ -476,45 +476,45 @@ export const TeamTimesheets = () => {
           <Card className="overflow-hidden">
             {entriesLoading ? (
               <div className="flex items-center justify-center h-48">
-                <div className="flex items-center gap-2 text-[#a1a1aa]">
+                <div className="flex items-center gap-2 text-[#6b7280]">
                   <Loader className="w-5 h-5 animate-spin" />
                   Loading entries...
                 </div>
               </div>
             ) : !activeFilterType ? (
-              <CardContent className="py-8 text-center text-[#a1a1aa]">
+              <CardContent className="py-8 text-center text-[#6b7280]">
                 Select an employee or manager above to view time entries.
               </CardContent>
             ) : timeEntries.length === 0 ? (
-              <CardContent className="py-8 text-center text-[#a1a1aa]">
+              <CardContent className="py-8 text-center text-[#6b7280]">
                 No time entries found for the selected criteria.
               </CardContent>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm border-collapse">
-                  <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+                  <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Date</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Day</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Employee Name</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Work Type</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Holiday Name</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Client</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Project</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Task</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Description</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Hours Worked</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Reported To</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Manager Comment</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium whitespace-nowrap">Approval Status</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Date</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Day</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Employee Name</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Work Type</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Holiday Name</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Client</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Project</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Task</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Description</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Hours Worked</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Reported To</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Manager Comment</th>
+                      <th className="px-4 py-3 text-left text-[#6b7280] font-medium whitespace-nowrap">Approval Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {timeEntries.map((entry, idx) => (
-                      <tr key={entry.id || idx} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                        <td className="px-4 py-3 text-white whitespace-nowrap">{entry.entryDate}</td>
-                        <td className="px-4 py-3 text-[#a1a1aa] whitespace-nowrap">{entry.day}</td>
-                        <td className="px-4 py-3 text-white whitespace-nowrap">{entry.userName}</td>
+                      <tr key={entry.id || idx} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                        <td className="px-4 py-3 text-[#111827] whitespace-nowrap">{entry.entryDate}</td>
+                        <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap">{entry.day}</td>
+                        <td className="px-4 py-3 text-[#111827] whitespace-nowrap">{entry.userName}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {entry.extraWorkType === "HOLIDAY" ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Holiday</span>
@@ -524,20 +524,20 @@ export const TeamTimesheets = () => {
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">Normal</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-[#a1a1aa] whitespace-nowrap">{entry.displayName || "-"}</td>
-                        <td className="px-4 py-3 text-white whitespace-nowrap">{entry.clientWorked}</td>
-                        <td className="px-4 py-3 text-white whitespace-nowrap">{entry.projectWorked}</td>
-                        <td className="px-4 py-3 text-white whitespace-nowrap">{entry.taskWorked}</td>
-                        <td className="px-4 py-3 text-[#a1a1aa] whitespace-nowrap max-w-[200px] truncate">{entry.description}</td>
-                        <td className="px-4 py-3 text-white font-medium whitespace-nowrap">{Number(entry.hoursWorked || 0).toFixed(2)}h</td>
-                        <td className="px-4 py-3 text-[#a1a1aa] whitespace-nowrap">{entry.reportedTo}</td>
-                        <td className="px-4 py-3 text-[#a1a1aa] whitespace-nowrap">{entry.managerComment}</td>
+                        <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap">{entry.displayName || "-"}</td>
+                        <td className="px-4 py-3 text-[#111827] whitespace-nowrap">{entry.clientWorked}</td>
+                        <td className="px-4 py-3 text-[#111827] whitespace-nowrap">{entry.projectWorked}</td>
+                        <td className="px-4 py-3 text-[#111827] whitespace-nowrap">{entry.taskWorked}</td>
+                        <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap max-w-[200px] truncate">{entry.description}</td>
+                        <td className="px-4 py-3 text-[#111827] font-medium whitespace-nowrap">{Number(entry.hoursWorked || 0).toFixed(2)}h</td>
+                        <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap">{entry.reportedTo}</td>
+                        <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap">{entry.managerComment}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                             entry.approvalStatus === "APPROVED" ? "bg-emerald-500/20 text-emerald-300" :
                             entry.approvalStatus === "REJECTED" ? "bg-red-500/20 text-red-300" :
                             entry.approvalStatus === "SUBMITTED" ? "bg-blue-500/20 text-blue-300" :
-                            "bg-[#2a2a2a] text-[#a1a1aa]"
+                            "bg-[#e5e7eb] text-[#6b7280]"
                           }`}>{entry.approvalStatus}</span>
                         </td>
                       </tr>
@@ -549,8 +549,8 @@ export const TeamTimesheets = () => {
           </Card>
 
           {activeFilterType && timeEntries.length > 0 && (
-            <div className="text-sm text-[#a1a1aa] text-right">
-              Total: <span className="text-white font-semibold font-mono">{timeEntries.reduce((sum, e) => sum + Number(e.hoursWorked || 0), 0).toFixed(2)}h</span>
+            <div className="text-sm text-[#6b7280] text-right">
+              Total: <span className="text-[#111827] font-semibold font-mono">{timeEntries.reduce((sum, e) => sum + Number(e.hoursWorked || 0), 0).toFixed(2)}h</span>
             </div>
           )}
         </div>
@@ -559,14 +559,14 @@ export const TeamTimesheets = () => {
       {/* ================= VIEW DETAILS MODAL ================= */}
       {showDetails && selectedTimesheet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-[#2a2a2a]">
-              <h3 className="text-lg font-semibold text-white">
+          <div className="bg-white border border-[#e5e7eb] rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-[#e5e7eb]">
+              <h3 className="text-lg font-semibold text-[#111827]">
                 Timesheet Details - {selectedTimesheet.first_name} {selectedTimesheet.last_name}
               </h3>
               <button
                 onClick={() => setShowDetails(false)}
-                className="p-1.5 rounded-md text-[#a1a1aa] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+                className="p-1.5 rounded-md text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -574,58 +574,58 @@ export const TeamTimesheets = () => {
             <div className="p-6">
               {detailsLoading ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader className="w-5 h-5 animate-spin text-[#a1a1aa]" />
+                  <Loader className="w-5 h-5 animate-spin text-[#6b7280]" />
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider">Employee</label>
-                      <p className="text-white font-medium">{details.User?.name || `${selectedTimesheet.first_name} ${selectedTimesheet.last_name}`}</p>
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider">Employee</label>
+                      <p className="text-[#111827] font-medium">{details.User?.name || `${selectedTimesheet.first_name} ${selectedTimesheet.last_name}`}</p>
                     </div>
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider">Status</label>
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider">Status</label>
                       <p><span className={getStatusBadge(details.status || selectedTimesheet.submission_status)}>{details.status || selectedTimesheet.submission_status}</span></p>
                     </div>
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider">Week Start</label>
-                      <p className="text-white">{details.weekStartDate || selectedTimesheet.week_start_date}</p>
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider">Week Start</label>
+                      <p className="text-[#111827]">{details.weekStartDate || selectedTimesheet.week_start_date}</p>
                     </div>
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider">Week End</label>
-                      <p className="text-white">{details.weekEndDate || selectedTimesheet.week_end_date}</p>
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider">Week End</label>
+                      <p className="text-[#111827]">{details.weekEndDate || selectedTimesheet.week_end_date}</p>
                     </div>
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider">Total Hours</label>
-                      <p className="text-white font-mono">{(details.totalHours || selectedTimesheet.total_minutes / 60 || 0).toFixed(2)}h</p>
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider">Total Hours</label>
+                      <p className="text-[#111827] font-mono">{(details.totalHours || selectedTimesheet.total_minutes / 60 || 0).toFixed(2)}h</p>
                     </div>
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider">Billable Hours</label>
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider">Billable Hours</label>
                       <p className="text-emerald-400 font-mono">{(details.billableHours || selectedTimesheet.total_billable_minutes / 60 || 0).toFixed(2)}h</p>
                     </div>
                   </div>
 
                   {details.TimeEntries && details.TimeEntries.length > 0 && (
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider mb-2 block">Time Entries</label>
-                      <div className="overflow-x-auto rounded-lg border border-[#2a2a2a]">
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider mb-2 block">Time Entries</label>
+                      <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
                         <table className="w-full text-sm">
-                          <thead className="bg-[#0f0f0f]">
+                          <thead className="bg-[#f9fafb]">
                             <tr>
-                              <th className="px-3 py-2 text-left text-[#a1a1aa] font-medium">Date</th>
-                              <th className="px-3 py-2 text-left text-[#a1a1aa] font-medium">Project</th>
-                              <th className="px-3 py-2 text-left text-[#a1a1aa] font-medium">Task</th>
-                              <th className="px-3 py-2 text-left text-[#a1a1aa] font-medium">Hours</th>
-                              <th className="px-3 py-2 text-left text-[#a1a1aa] font-medium">Status</th>
+                              <th className="px-3 py-2 text-left text-[#6b7280] font-medium">Date</th>
+                              <th className="px-3 py-2 text-left text-[#6b7280] font-medium">Project</th>
+                              <th className="px-3 py-2 text-left text-[#6b7280] font-medium">Task</th>
+                              <th className="px-3 py-2 text-left text-[#6b7280] font-medium">Hours</th>
+                              <th className="px-3 py-2 text-left text-[#6b7280] font-medium">Status</th>
                             </tr>
                           </thead>
                           <tbody>
                             {details.TimeEntries.map((entry) => (
-                              <tr key={entry.id} className="border-t border-[#2a2a2a]">
-                                <td className="px-3 py-2 text-white">{entry.entryDate}</td>
-                                <td className="px-3 py-2 text-[#a1a1aa]">{entry.project || "-"}</td>
-                                <td className="px-3 py-2 text-[#a1a1aa]">{entry.task || "-"}</td>
-                                <td className="px-3 py-2 text-white font-mono">{entry.hours || 0}h</td>
+                              <tr key={entry.id} className="border-t border-[#e5e7eb]">
+                                <td className="px-3 py-2 text-[#111827]">{entry.entryDate}</td>
+                                <td className="px-3 py-2 text-[#6b7280]">{entry.project || "-"}</td>
+                                <td className="px-3 py-2 text-[#6b7280]">{entry.task || "-"}</td>
+                                <td className="px-3 py-2 text-[#111827] font-mono">{entry.hours || 0}h</td>
                                 <td className="px-3 py-2"><span className={getStatusBadge(entry.status)}>{entry.status}</span></td>
                               </tr>
                             ))}
@@ -637,8 +637,8 @@ export const TeamTimesheets = () => {
 
                   {details.comment && (
                     <div>
-                      <label className="text-xs text-[#a1a1aa] uppercase tracking-wider">Comment</label>
-                      <p className="text-white bg-[#0f0f0f] rounded-lg p-3 mt-1">{details.comment}</p>
+                      <label className="text-xs text-[#6b7280] uppercase tracking-wider">Comment</label>
+                      <p className="text-[#111827] bg-[#f9fafb] rounded-lg p-3 mt-1">{details.comment}</p>
                     </div>
                   )}
                 </div>
@@ -651,24 +651,24 @@ export const TeamTimesheets = () => {
       {/* ================= REJECT MODAL ================= */}
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-[#2a2a2a]">
-              <h3 className="text-lg font-semibold text-white">Reject Timesheet</h3>
+          <div className="bg-white border border-[#e5e7eb] rounded-xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-[#e5e7eb]">
+              <h3 className="text-lg font-semibold text-[#111827]">Reject Timesheet</h3>
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="p-1.5 rounded-md text-[#a1a1aa] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+                className="p-1.5 rounded-md text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-sm text-[#a1a1aa]">Please provide a reason for rejecting this timesheet.</p>
+              <p className="text-sm text-[#6b7280]">Please provide a reason for rejecting this timesheet.</p>
               <textarea
                 value={rejectComment}
                 onChange={(e) => setRejectComment(e.target.value)}
                 placeholder="Enter rejection reason..."
                 rows={4}
-                className="w-full rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-3 py-2 text-sm text-white placeholder-[#555] focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                className="w-full rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-3 py-2 text-sm text-[#111827] placeholder-[#6b7280] focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
               />
               <div className="flex justify-end gap-3">
                 <Button

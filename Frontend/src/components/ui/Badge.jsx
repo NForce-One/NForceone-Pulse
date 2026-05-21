@@ -3,8 +3,8 @@ import { cn } from "../../utils/twMerge";
 
 const Badge = React.forwardRef(({ className, variant = "default", ...props }, ref) => {
   const variants = {
-    default: "bg-[#2a2a2a] text-[#a1a1aa] border border-[#3a3a3a]",
-    primary: "bg-[#ff2d2d]/20 text-[#ff2d2d] border border-[#ff2d2d]/30",
+    default: "bg-[#e5e7eb] text-[#6b7280] border border-[#d1d5db]",
+    primary: "bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30",
     info: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
     success: "bg-green-500/20 text-green-400 border border-green-500/30",
     warning: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",

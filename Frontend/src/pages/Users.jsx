@@ -108,8 +108,8 @@ export const Users = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white">User Management</h1>
-          <p className="text-[#a1a1aa]">Manage system users and roles</p>
+          <h1 className="text-2xl font-bold text-[#111827]">User Management</h1>
+          <p className="text-[#6b7280]">Manage system users and roles</p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", department: "", managerId: "", defaultHours: 8 }); }}>
           <UserPlus className="w-4 h-4 mr-2" />
@@ -125,26 +125,37 @@ export const Users = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-[#a1a1aa] focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200" />
+                className="bg-white border border-[#e5e7eb] text-[#111827] placeholder-[#6b7280] focus:ring-2 focus:ring-[#22c55e] transition-all duration-200" />
               <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-[#a1a1aa] focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200" />
+                className="bg-white border border-[#e5e7eb] text-[#111827] placeholder-[#6b7280] focus:ring-2 focus:ring-[#22c55e] transition-all duration-200" />
               <Input name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-[#a1a1aa] focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200" />
+                className="bg-white border border-[#e5e7eb] text-[#111827] placeholder-[#6b7280] focus:ring-2 focus:ring-[#22c55e] transition-all duration-200" />
               <select name="role" value={formData.role} onChange={handleInputChange}
-                className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200">
-                <option value="EMPLOYEE" className="bg-[#1a1a1a] text-white">Employee</option>
-                <option value="MANAGER" className="bg-[#1a1a1a] text-white">Manager</option>
-                <option value="ADMIN" className="bg-[#1a1a1a] text-white">Admin</option>
+                className="h-10 rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition-all duration-200">
+                <option value="EMPLOYEE" className="bg-white text-[#111827]">Employee</option>
+                <option value="MANAGER" className="bg-white text-[#111827]">Manager</option>
+                <option value="ADMIN" className="bg-white text-[#111827]">Admin</option>
               </select>
               <Input name="department" value={formData.department} onChange={handleInputChange} placeholder="Department"
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-[#a1a1aa] focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200" />
+                className="bg-white border border-[#d1d5db] text-[#111827] placeholder-[#9ca3af] focus:ring-2 focus:ring-[#22c55e] transition-all duration-200" />
               <Input name="defaultHours" type="number" value={formData.defaultHours} onChange={handleInputChange} placeholder="Default Hours"
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-[#a1a1aa] focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200" />
+                className="bg-white border border-[#d1d5db] text-[#111827] placeholder-[#9ca3af] focus:ring-2 focus:ring-[#22c55e] transition-all duration-200" />
               <select name="managerId" value={formData.managerId} onChange={handleInputChange}
-                className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200">
-                <option value="" className="bg-[#1a1a1a] text-white">Select Manager</option>
+                className="h-10 rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition-all duration-200">
+                <option value="" className="bg-white text-[#111827]">Select Manager</option>
                 {managers.map((m) => (
-                  <option key={m.id} value={m.id} className="bg-[#1a1a1a] text-white">{m.name}</option>
+                  <option key={m.id} value={m.id} className="bg-white text-[#111827]">{m.name}</option>
+                ))}
+              </select>
+              <Input name="department" value={formData.department} onChange={handleInputChange} placeholder="Department"
+                className="bg-white border border-[#e5e7eb] text-[#111827] placeholder-[#6b7280] focus:ring-2 focus:ring-[#22c55e] transition-all duration-200" />
+              <Input name="defaultHours" type="number" value={formData.defaultHours} onChange={handleInputChange} placeholder="Default Hours"
+                className="bg-white border border-[#e5e7eb] text-[#111827] placeholder-[#6b7280] focus:ring-2 focus:ring-[#22c55e] transition-all duration-200" />
+              <select name="managerId" value={formData.managerId} onChange={handleInputChange}
+                className="h-10 rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition-all duration-200">
+                <option value="" className="bg-white text-[#111827]">Select Manager</option>
+                {managers.map((m) => (
+                  <option key={m.id} value={m.id} className="bg-white text-[#111827]">{m.name}</option>
                 ))}
               </select>
               <div className="flex gap-2">
@@ -159,34 +170,34 @@ export const Users = () => {
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
               <tr>
-                <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Name</th>
-                <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Email</th>
-                <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Role</th>
-                <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Department</th>
-                <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Manager</th>
-                <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Status</th>
-                <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Actions</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Name</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Email</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Role</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Department</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Manager</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Status</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="7" className="text-center py-8 text-[#a1a1aa]">Loading...</td></tr>
+                <tr><td colSpan="7" className="text-center py-8 text-[#6b7280]">Loading...</td></tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan="7" className="text-center py-8 text-[#a1a1aa]">No users found</td></tr>
+                <tr><td colSpan="7" className="text-center py-8 text-[#6b7280]">No users found</td></tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                    <td className="px-4 py-3 text-white font-medium">{user.name}</td>
-                    <td className="px-4 py-3 text-[#a1a1aa]">{user.email}</td>
+                  <tr key={user.id} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                    <td className="px-4 py-3 text-[#111827] font-medium">{user.name}</td>
+                    <td className="px-4 py-3 text-[#6b7280]">{user.email}</td>
                     <td className="px-4 py-3">
                       <Badge variant={user.role === "ADMIN" ? "danger" : user.role === "MANAGER" ? "warning" : "default"}>
                         {user.role}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-[#a1a1aa]">{user.department || "-"}</td>
-                    <td className="px-4 py-3 text-[#a1a1aa]">{user.Manager?.name || "-"}</td>
+                    <td className="px-4 py-3 text-[#6b7280]">{user.department || "-"}</td>
+                    <td className="px-4 py-3 text-[#6b7280]">{user.Manager?.name || "-"}</td>
                     <td className="px-4 py-3">
                       <Badge variant={user.isActive ? "success" : "danger"}>
                         {user.isActive ? "Active" : "Inactive"}

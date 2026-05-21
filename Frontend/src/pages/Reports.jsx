@@ -135,11 +135,11 @@ export const Reports = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-[#ff2d2d]" />
+          <h1 className="text-2xl font-bold text-[#111827] flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-[#22c55e]" />
             Reports
           </h1>
-          <p className="text-[#a1a1aa]">View and export time tracking reports</p>
+          <p className="text-[#6b7280]">View and export time tracking reports</p>
         </div>
         <Button onClick={exportCSV} disabled={!data.length} className="hover:scale-105 active:scale-95">
           <Download className="w-4 h-4 mr-2" />
@@ -149,9 +149,9 @@ export const Reports = () => {
 
       {message.text && (
         <div className={`p-3 rounded-lg text-sm ${
-          message.type === "success" ? "bg-green-900/50 text-green-300 border border-green-700" :
-          message.type === "error" ? "bg-red-900/50 text-red-300 border border-red-700" :
-          "bg-blue-900/50 text-blue-300 border border-blue-700"
+          message.type === "success" ? "bg-green-500/10 text-green-400 border border-green-500/30" :
+          message.type === "error" ? "bg-red-500/10 text-red-400 border border-red-500/30" :
+          "bg-blue-500/10 text-blue-400 border border-blue-500/30"
         }`}>
           {message.text}
         </div>
@@ -166,7 +166,7 @@ export const Reports = () => {
               name="projectId"
               value={filters.projectId}
               onChange={handleFilterChange}
-              className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200"
+              className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition-all duration-200"
             >
               <option value="">All Projects</option>
               {projects.map((p) => (
@@ -179,7 +179,7 @@ export const Reports = () => {
               name="clientId"
               value={filters.clientId}
               onChange={handleFilterChange}
-              className="h-10 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#ff2d2d] transition-all duration-200"
+              className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition-all duration-200"
             >
               <option value="">All Clients</option>
               {clients.map((c) => (
@@ -201,61 +201,61 @@ export const Reports = () => {
 
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-[#a1a1aa]">Loading...</div>
+            <div className="text-center py-8 text-[#6b7280]">Loading...</div>
           ) : data.length === 0 ? (
-            <div className="text-center py-8 text-[#a1a1aa]">No data found. Adjust filters and generate report.</div>
+            <div className="text-center py-8 text-[#6b7280]">No data found. Adjust filters and generate report.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+                <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
                   <tr>
                     {activeTab === "employee-hours" && (
                       <>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Employee</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Project</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Task</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Date</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Hours</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Billable</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Status</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Employee</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Project</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Task</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Date</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Hours</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Billable</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Status</th>
                       </>
                     )}
                     {activeTab === "project-hours" && (
                       <>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Project</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Client</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Employee</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Date</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Hours</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Project</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Client</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Employee</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Date</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Hours</th>
                       </>
                     )}
                     {activeTab === "utilization" && (
                       <>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Employee</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Department</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Total Hours</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Working</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Extra</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Utilization %</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Employee</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Department</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Total Hours</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Working</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Extra</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Utilization %</th>
                       </>
                     )}
                     {activeTab === "billing" && (
                       <>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Client</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Project</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Total Working Hours</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Client</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Project</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Total Working Hours</th>
                       </>
                     )}
                   </tr>
                 </thead>
                 <tbody>
                   {activeTab === "employee-hours" && data.map((entry, i) => (
-                    <tr key={i} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                      <td className="px-4 py-3 text-white">{entry.User?.name || "-"}</td>
-                      <td className="px-4 py-3 text-white">{entry.projectName || entry.Project?.name || "-"}</td>
-                      <td className="px-4 py-3 text-white">{entry.taskTitle || entry.Task?.title || "-"}</td>
-                      <td className="px-4 py-3 text-[#a1a1aa]">{entry.entryDate}</td>
-                      <td className="px-4 py-3 text-white font-medium">{entry.hours}h</td>
+                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[#111827]">{entry.User?.name || "-"}</td>
+                      <td className="px-4 py-3 text-[#111827]">{entry.projectName || entry.Project?.name || "-"}</td>
+                      <td className="px-4 py-3 text-[#111827]">{entry.taskTitle || entry.Task?.title || "-"}</td>
+                      <td className="px-4 py-3 text-[#6b7280]">{entry.entryDate}</td>
+                      <td className="px-4 py-3 text-[#111827] font-medium">{entry.hours}h</td>
                       <td className="px-4 py-3">
                         <Badge variant={entry.isBillable ? "success" : "warning"}>
                           {entry.isBillable ? "Yes" : "No"}
@@ -269,21 +269,21 @@ export const Reports = () => {
                     </tr>
                   ))}
                   {activeTab === "project-hours" && data.map((entry, i) => (
-                    <tr key={i} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                      <td className="px-4 py-3 text-white">{entry.projectName || entry.Project?.name || "-"}</td>
-                      <td className="px-4 py-3 text-white">{entry.clientName || entry.Client?.name || "-"}</td>
-                      <td className="px-4 py-3 text-white">{entry.User?.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#a1a1aa]">{entry.entryDate}</td>
-                      <td className="px-4 py-3 text-white font-medium">{entry.hours}h</td>
+                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[#111827]">{entry.projectName || entry.Project?.name || "-"}</td>
+                      <td className="px-4 py-3 text-[#111827]">{entry.clientName || entry.Client?.name || "-"}</td>
+                      <td className="px-4 py-3 text-[#111827]">{entry.User?.name || "-"}</td>
+                      <td className="px-4 py-3 text-[#6b7280]">{entry.entryDate}</td>
+                      <td className="px-4 py-3 text-[#111827] font-medium">{entry.hours}h</td>
                     </tr>
                   ))}
                   {activeTab === "utilization" && data.map((u, i) => (
-                    <tr key={i} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                      <td className="px-4 py-3 text-white">{u.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#a1a1aa]">{u.department || "-"}</td>
-                      <td className="px-4 py-3 text-white">{(u.totalHours ?? 0)}h</td>
-                      <td className="px-4 py-3 text-white">{(u.billableHours ?? 0)}h</td>
-                      <td className="px-4 py-3 text-white">{(u.nonBillableHours ?? 0)}h</td>
+                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[#111827]">{u.name || "-"}</td>
+                      <td className="px-4 py-3 text-[#6b7280]">{u.department || "-"}</td>
+                      <td className="px-4 py-3 text-[#111827]">{(u.totalHours ?? 0)}h</td>
+                      <td className="px-4 py-3 text-[#111827]">{(u.billableHours ?? 0)}h</td>
+                      <td className="px-4 py-3 text-[#111827]">{(u.nonBillableHours ?? 0)}h</td>
                       <td className="px-4 py-3">
                         <Badge variant={u.utilizationPercent >= 70 ? "success" : u.utilizationPercent >= 50 ? "warning" : "danger"}>
                           {(u.utilizationPercent ?? 0)}%
@@ -292,10 +292,10 @@ export const Reports = () => {
                     </tr>
                   ))}
                   {activeTab === "billing" && data.map((b, i) => (
-                    <tr key={i} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                      <td className="px-4 py-3 text-white">{b.clientName}</td>
-                      <td className="px-4 py-3 text-white">{b.projectName}</td>
-                      <td className="px-4 py-3 text-white font-medium">{b.totalHours}h</td>
+                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[#111827]">{b.clientName}</td>
+                      <td className="px-4 py-3 text-[#111827]">{b.projectName}</td>
+                      <td className="px-4 py-3 text-[#111827] font-medium">{b.totalHours}h</td>
                     </tr>
                   ))}
                 </tbody>

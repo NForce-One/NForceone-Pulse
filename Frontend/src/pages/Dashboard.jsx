@@ -126,11 +126,39 @@ export const Dashboard = () => {
         return { startDate: fromDate, endDate: toDate };
       }
       default:
-        return {};
+        return { startDate: "", endDate: "" };
     }
   }, [filterPeriod, customMonth, customYear, fromDate, toDate]);
 
-  const openHourDetails = useCallback(async (title, type, date = "") => {
+  const openHourDetails = async (title, type, date = "") => {
+    const entries = stats?.dashboardEntries;
+    console.log(`[DEBUG] openHourDetails invoked: title="${title}" type="${type}" date="${date}" entries=${Array.isArray(entries) ? entries.length : typeof entries} statsKeys=${Object.keys(stats).join(',')}`);
+    if (Array.isArray(entries) && entries.length > 0 && !date) {
+      let filteredEntries = [];
+      if (type === "total") {
+        filteredEntries = entries;
+      } else if (type === "working") {
+        filteredEntries = entries.filter(e => e.type === "working");
+      } else if (type === "weekend") {
+        filteredEntries = entries.filter(e => e.type === "weekend");
+      } else if (type === "holiday") {
+        filteredEntries = entries.filter(e => e.type === "holiday");
+      } else if (type === "draft") {
+        filteredEntries = entries.filter(e => e.approvalStatus === "DRAFT");
+      }
+      const totalHours = filteredEntries.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+      const nHours = filteredEntries.filter(e => e.type === "working").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+      const wHours = filteredEntries.filter(e => e.type === "weekend").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+      const hHours = filteredEntries.filter(e => e.type === "holiday").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+      console.log(`[DEBUG Dashboard] Modal "${title}" (${type}): ${filteredEntries.length} entries, ${totalHours.toFixed(2)}h from dashboardEntries`);
+      setModalState({
+        isOpen: true, title, type,
+        data: filteredEntries,
+        totals: { normalHours: nHours, weekendHours: wHours, holidayHours: hHours, totalExtraHours: wHours + hHours },
+        isLoading: false, date,
+      });
+      return;
+    }
     setModalState({ isOpen: true, title, type, data: [], totals: { normalHours: 0, weekendHours: 0, holidayHours: 0, totalExtraHours: 0 }, isLoading: true, date });
     try {
       let startDate, endDate;
@@ -146,25 +174,35 @@ export const Dashboard = () => {
       if (user?.role === "MANAGER" && dashboardView === "self") {
         params.self = true;
       }
+      if (!startDate || !endDate) {
+        setModalState((prev) => ({ ...prev, data: [], isLoading: false }));
+        return;
+      }
       const response = await getHourDetails(params);
-      const entries = response?.entries ?? (Array.isArray(response) ? response : []);
+      if (!response || typeof response !== "object") {
+        setModalState((prev) => ({ ...prev, data: [], isLoading: false }));
+        return;
+      }
+      const respEntries = response?.entries ?? (Array.isArray(response) ? response : []);
+      console.log(`[DEBUG Dashboard] Fetched ${respEntries.length} entries from API for "${title}" (${type})`);
       const totals = {
         normalHours: response?.normalHours ?? 0,
         weekendHours: response?.weekendHours ?? 0,
         holidayHours: response?.holidayHours ?? 0,
         totalExtraHours: response?.totalExtraHours ?? 0,
       };
-      setModalState((prev) => ({ ...prev, data: Array.isArray(entries) ? entries : [], totals, isLoading: false }));
-    } catch {
+      setModalState((prev) => ({ ...prev, data: Array.isArray(respEntries) ? respEntries : [], totals, isLoading: false }));
+    } catch (err) {
+      console.error("Failed to load hour details:", err);
       setModalState((prev) => ({ ...prev, data: [], isLoading: false }));
     }
-  }, [getFilterDateRange, dashboardView, user]);
+  };
 
-  const handleDateChange = useCallback((date) => {
+  const handleDateChange = (date) => {
     if (modalState.isOpen) {
       openHourDetails(modalState.title, modalState.type, date);
     }
-  }, [modalState.isOpen, modalState.title, modalState.type, openHourDetails]);
+  };
 
   const closeModal = useCallback(() => {
     setModalState((prev) => ({ ...prev, isOpen: false }));
@@ -284,6 +322,7 @@ export const Dashboard = () => {
       }
       const response = await getDashboardStats(params);
       setStats(response || {});
+      console.log(`[DEBUG Dashboard] Stats loaded. totalWeekHours=${response?.totalWeekHours}, normalHours=${response?.normalHours}, dashboardEntries count=${Array.isArray(response?.dashboardEntries) ? response.dashboardEntries.length : 'N/A'}`);
     } catch (error) {
       console.error("Failed to load dashboard data", error);
     } finally {
@@ -420,8 +459,8 @@ export const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-[#a1a1aa]">Welcome back, {user?.name || "User"}!</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Dashboard</h1>
+          <p className="text-[#6b7280]">Welcome back, {user?.name || "User"}!</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
       {user?.role === "MANAGER" && (
@@ -429,32 +468,32 @@ export const Dashboard = () => {
               <select
                 value={dashboardView}
                 onChange={(e) => setDashboardView(e.target.value)}
-                className="appearance-none bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#ff2d2d]/50 focus:ring-1 focus:ring-[#ff2d2d]/20 cursor-pointer hover:border-[#3a3a3a] transition-colors"
+                className="appearance-none bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#22c55e]/50 focus:ring-1 focus:ring-[#22c55e]/20 cursor-pointer hover:border-[#9ca3af] transition-colors"
               >
                 <option value="self">Self Dashboard</option>
                 <option value="team">Team Dashboard</option>
               </select>
-              <ChevronDown className="w-4 h-4 text-[#a1a1aa] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <ChevronDown className="w-4 h-4 text-[#6b7280] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           )}
           <div className="relative">
             <select
               value={filterPeriod}
               onChange={(e) => setFilterPeriod(e.target.value)}
-              className="appearance-none bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#ff2d2d]/50 focus:ring-1 focus:ring-[#ff2d2d]/20 cursor-pointer hover:border-[#3a3a3a] transition-colors"
+              className="appearance-none bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#22c55e]/50 focus:ring-1 focus:ring-[#22c55e]/20 cursor-pointer hover:border-[#9ca3af] transition-colors"
             >
               {FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="w-4 h-4 text-[#a1a1aa] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-[#6b7280] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
           {filterPeriod === "customMonth" && (
             <>
               <select
                 value={customMonth}
                 onChange={(e) => setCustomMonth(Number(e.target.value))}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff2d2d]/50 cursor-pointer hover:border-[#3a3a3a] transition-colors"
+                className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors"
               >
                 {MONTHS.map((name, idx) => (
                   <option key={idx} value={idx}>{name}</option>
@@ -463,7 +502,7 @@ export const Dashboard = () => {
               <select
                 value={customYear}
                 onChange={(e) => setCustomYear(Number(e.target.value))}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff2d2d]/50 cursor-pointer hover:border-[#3a3a3a] transition-colors"
+                className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors"
               >
                 {YEARS.map((year) => (
                   <option key={year} value={year}>{year}</option>
@@ -474,21 +513,21 @@ export const Dashboard = () => {
           {filterPeriod === "customRange" && (
             <>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-[#a1a1aa]">From:</span>
+                <span className="text-xs text-[#6b7280]">From:</span>
                 <input
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#ff2d2d]/50 cursor-pointer hover:border-[#3a3a3a] transition-colors w-[140px]"
+                  className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors w-[140px]"
                 />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-[#a1a1aa]">To:</span>
+                <span className="text-xs text-[#6b7280]">To:</span>
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#ff2d2d]/50 cursor-pointer hover:border-[#3a3a3a] transition-colors w-[140px]"
+                  className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors w-[140px]"
                 />
               </div>
             </>
@@ -499,13 +538,13 @@ export const Dashboard = () => {
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (
-            <Card key={n} className="animate-pulse border-[#2a2a2a] bg-[#1a1a1a]">
+            <Card key={n} className="animate-pulse border-[#e5e7eb] bg-white">
               <CardHeader className="flex justify-between pb-2">
-                <div className="h-4 w-1/2 bg-[#2a2a2a] rounded"></div>
-                <div className="h-4 w-4 bg-[#2a2a2a] rounded-full"></div>
+                <div className="h-4 w-1/2 bg-[#e5e7eb] rounded"></div>
+                <div className="h-4 w-4 bg-[#e5e7eb] rounded-full"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-8 w-1/3 bg-[#2a2a2a] rounded mb-2"></div>
+                <div className="h-8 w-1/3 bg-[#e5e7eb] rounded mb-2"></div>
               </CardContent>
             </Card>
           ))}
@@ -515,14 +554,14 @@ export const Dashboard = () => {
           {statCards.map((card, index) => (
             <Card
               key={card.title}
-              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(255,45,45,0.1)] hover:border-[#ff2d2d]/30 transition-all duration-300 hover:scale-[1.02] group ${card.clickable ? "cursor-pointer" : ""}`}
+              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(34,197,94,0.1)] hover:border-[#22c55e]/30 transition-all duration-300 hover:scale-[1.02] group ${card.clickable ? "cursor-pointer" : ""}`}
               style={{
                 animationDelay: `${index * 100}ms`,
               }}
               onClick={card.clickable ? card.onClick : undefined}
             >
               <CardHeader className="flex justify-between pb-2">
-                <CardTitle className="text-sm text-[#a1a1aa] group-hover:text-white transition-colors">
+                <CardTitle className="text-sm text-[#6b7280] group-hover:text-[#111827] transition-colors">
                   {card.title}
                 </CardTitle>
                 <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
@@ -542,29 +581,29 @@ export const Dashboard = () => {
       {user?.role === "MANAGER" && dashboardView === "team" && stats.teamData && stats.teamData.length > 0 && (
         <Card className="overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#ff2d2d]" />
+            <CardTitle className="text-[#111827] flex items-center gap-2">
+              <Users className="w-5 h-5 text-[#22c55e]" />
               Team Overview
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+                <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Name</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Email</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Week Hours</th>
-                    <th className="px-4 py-3 text-left text-[#a1a1aa] font-medium">Entries</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Name</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Email</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Week Hours</th>
+                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Entries</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.teamData.map((member) => (
-                    <tr key={member.userId} className="border-b border-[#2a2a2a] hover:bg-[#2a2a2a]/50 transition-colors duration-150">
-                      <td className="px-4 py-3 text-white font-medium">{member.name}</td>
-                      <td className="px-4 py-3 text-[#a1a1aa]">{member.email}</td>
-                      <td className="px-4 py-3 text-white">{member.weekHours}h</td>
-                      <td className="px-4 py-3 text-[#a1a1aa]">{member.entriesCount}</td>
+                    <tr key={member.userId} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[#111827] font-medium">{member.name}</td>
+                      <td className="px-4 py-3 text-[#6b7280]">{member.email}</td>
+                      <td className="px-4 py-3 text-[#111827]">{member.weekHours}h</td>
+                      <td className="px-4 py-3 text-[#6b7280]">{member.entriesCount}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -579,15 +618,15 @@ export const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-white">Top 5 Employees by Hours</CardTitle>
+                <CardTitle className="text-[#111827]">Top 5 Employees by Hours</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+                    <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa]">Name</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa]">Hours</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280]">Name</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280]">Hours</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -600,7 +639,7 @@ export const Dashboard = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={2} className="px-4 py-6 text-center text-[#a1a1aa]">
+                          <td colSpan={2} className="px-4 py-6 text-center text-[#6b7280]">
                             No employee hours available yet.
                           </td>
                         </tr>
@@ -613,30 +652,30 @@ export const Dashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-white">Employees with Missing Time</CardTitle>
+                <CardTitle className="text-[#111827]">Employees with Missing Time</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
+                    <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa]">Name</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa]">Hours Logged</th>
-                        <th className="px-4 py-3 text-left text-[#a1a1aa]">Missing</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280]">Name</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280]">Hours Logged</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280]">Missing</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(stats.missingEmployees || []).length > 0 ? (
                         stats.missingEmployees.map((emp) => (
-                          <tr key={emp.userId} className="border-b border-[#2a2a2a]">
-                            <td className="px-4 py-3 text-white">{emp.name}</td>
-                            <td className="px-4 py-3 text-white">{emp.weekHours}h</td>
+                          <tr key={emp.userId} className="border-b border-[#e5e7eb]">
+                            <td className="px-4 py-3 text-[#111827]">{emp.name}</td>
+                            <td className="px-4 py-3 text-[#111827]">{emp.weekHours}h</td>
                             <td className="px-4 py-3 text-red-400">{emp.missingHours}h</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-4 py-6 text-center text-[#a1a1aa]">
+                          <td colSpan={3} className="px-4 py-6 text-center text-[#6b7280]">
                             No missing time records available yet.
                           </td>
                         </tr>
@@ -650,28 +689,28 @@ export const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-white">Top Projects by Hours</CardTitle>
+              <CardTitle className="text-[#111827]">Top Projects by Hours</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-[#0f0f0f] border-b border-[#2a2a2a]">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa]">Project</th>
-                      <th className="px-4 py-3 text-left text-[#a1a1aa]">Hours</th>
+                     <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-[#6b7280]">Name</th>
+                        <th className="px-4 py-3 text-left text-[#6b7280]">Hours</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(stats.topProjects || []).length > 0 ? (
                       stats.topProjects.map((proj, idx) => (
-                        <tr key={idx} className="border-b border-[#2a2a2a]">
-                          <td className="px-4 py-3 text-white">{proj.name}</td>
-                          <td className="px-4 py-3 text-white">{proj.hours}h</td>
+                         <tr key={idx} className="border-b border-[#e5e7eb]">
+                           <td className="px-4 py-3 text-[#111827]">{proj.name}</td>
+                           <td className="px-4 py-3 text-[#111827]">{proj.hours}h</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={2} className="px-4 py-6 text-center text-[#a1a1aa]">
+                        <td colSpan={2} className="px-4 py-6 text-center text-[#6b7280]">
                           No project hours data available yet.
                         </td>
                       </tr>
@@ -685,7 +724,7 @@ export const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-white">Working vs Extra</CardTitle>
+                <CardTitle className="text-[#111827]">Working vs Extra</CardTitle>
               </CardHeader>
               <CardContent>
                 {((stats.billableWeekHours || 0) > 0 || (stats.nonBillableWeekHours || 0) > 0) ? (
@@ -697,17 +736,17 @@ export const Dashboard = () => {
                         nonBillable: stats.nonBillableWeekHours || 0,
                       }]}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                      <XAxis dataKey="name" stroke="#a1a1aa" />
-                      <YAxis stroke="#a1a1aa" />
-                      <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="name" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", color: "#111827" }} />
                       <Legend />
                       <Bar dataKey="billable" fill="#a855f7" name="Working" />
                       <Bar dataKey="nonBillable" fill="#6b7280" name="Extra" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex h-[300px] items-center justify-center text-[#a1a1aa]">
+                  <div className="flex h-[300px] items-center justify-center text-[#6b7280]">
                     No working/extra data available yet.
                   </div>
                 )}
@@ -730,12 +769,12 @@ export const Dashboard = () => {
                           <Cell key={`cell-${index}`} fill={["#a855f7", "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e"][index % 5]} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
+                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", color: "#111827" }} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex h-[300px] items-center justify-center text-[#a1a1aa]">
+                  <div className="flex h-[300px] items-center justify-center text-[#6b7280]">
                     No project distribution data available yet.
                   </div>
                 )}
@@ -745,16 +784,16 @@ export const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-white">Weekly Trend (Last 4 Weeks)</CardTitle>
+              <CardTitle className="text-[#111827]">Weekly Trend (Last 4 Weeks)</CardTitle>
             </CardHeader>
             <CardContent>
               {(stats.weeklyTrend || []).length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={stats.weeklyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                    <XAxis dataKey="week" stroke="#a1a1aa" />
-                    <YAxis stroke="#a1a1aa" />
-                    <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="week" stroke="#6b7280" />
+                    <YAxis stroke="#6b7280" />
+                    <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", color: "#111827" }} />
                     <Legend />
                     <Line type="monotone" dataKey="totalHours" stroke="#3b82f6" name="Total Hours" />
                     <Line type="monotone" dataKey="billableHours" stroke="#a855f7" name="Working Hours" />
@@ -762,8 +801,8 @@ export const Dashboard = () => {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex h-[300px] items-center justify-center text-[#a1a1aa]">
-                  No weekly trend data available yet.
+                  <div className="flex h-[300px] items-center justify-center text-[#6b7280]">
+                    No weekly trend data available yet.
                 </div>
               )}
             </CardContent>

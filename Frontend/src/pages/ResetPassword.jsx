@@ -65,7 +65,7 @@ const ResetPassword = () => {
       }}
     >
       {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-red-900/60"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-green-900/60"></div>
 
       {/* ✨ LIGHT EFFECT */}
       <div className="light-beam"></div>
@@ -76,7 +76,7 @@ const ResetPassword = () => {
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-3 text-white">
 
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-red-500 logo-glow">
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#22c55e] logo-glow">
               <img src={logo} alt="logo" className="w-full h-full object-cover" />
             </div>
 
@@ -168,8 +168,8 @@ const ResetPassword = () => {
           background: rgba(0,0,0,0.5);
           backdrop-filter: blur(20px);
           border-radius: 20px;
-          border: 1px solid rgba(255,0,0,0.2);
-          box-shadow: 0 0 30px rgba(255,0,0,0.2);
+          border: 1px solid rgba(34,197,94,0.2);
+          box-shadow: 0 0 30px rgba(34,197,94,0.2);
           transition: transform 0.3s;
         }
 
@@ -178,14 +178,14 @@ const ResetPassword = () => {
         }
 
         .logo-glow {
-          box-shadow: 0 0 20px red;
+          box-shadow: 0 0 20px #22c55e;
           animation: pulseGlow 2s infinite;
         }
 
         @keyframes pulseGlow {
-          0% { box-shadow: 0 0 10px red; }
-          50% { box-shadow: 0 0 25px red; }
-          100% { box-shadow: 0 0 10px red; }
+          0% { box-shadow: 0 0 10px #22c55e; }
+          50% { box-shadow: 0 0 25px #22c55e; }
+          100% { box-shadow: 0 0 10px #22c55e; }
         }
 
         .input-modern {
@@ -195,12 +195,12 @@ const ResetPassword = () => {
         }
 
         .input-modern:focus {
-          border-color: red;
-          box-shadow: 0 0 10px rgba(255,0,0,0.5);
+          border-color: #22c55e;
+          box-shadow: 0 0 10px rgba(34,197,94,0.5);
         }
 
         .btn-modern {
-          background: linear-gradient(90deg, #ff0000, #cc0000);
+          background: linear-gradient(90deg, #22c55e, #16a34a);
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -208,7 +208,7 @@ const ResetPassword = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 20px red;
+          box-shadow: 0 0 20px #22c55e;
         }
 
         .error-anim {
@@ -241,7 +241,7 @@ const ResetPassword = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(255,0,0,0.15), transparent);
+          background: linear-gradient(120deg, transparent, rgba(34,197,94,0.15), transparent);
           animation: beamMove 6s linear infinite;
         }
 

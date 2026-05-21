@@ -97,8 +97,8 @@ export const Tasks = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Task Management</h1>
-          <p className="text-gray-500">Manage tasks and categories</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Task Management</h1>
+          <p className="text-[#6b7280]">Manage tasks and categories</p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ title: "", description: "", category: "", projectId: "", isBillableDefault: true, status: "PENDING" }); }}>
           <Plus className="w-4 h-4 mr-2" />
@@ -114,16 +114,16 @@ export const Tasks = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input name="title" value={formData.title} onChange={handleInputChange} placeholder="Task Title" required />
-              <select name="projectId" value={formData.projectId} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="projectId" value={formData.projectId} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="">Select Project</option>
                 {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
               <Input name="category" value={formData.category} onChange={handleInputChange} placeholder="Category" />
-              <select name="isBillableDefault" value={formData.isBillableDefault} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="isBillableDefault" value={formData.isBillableDefault} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="true">Billable</option>
                 <option value="false">Non-Billable</option>
               </select>
-              <select name="status" value={formData.status} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="status" value={formData.status} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="PENDING">Pending</option>
                 <option value="IN_PROGRESS">In Progress</option>
                 <option value="COMPLETED">Completed</option>
@@ -143,27 +143,27 @@ export const Tasks = () => {
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
               <tr>
-                <th className="px-4 py-3 text-left">Title</th>
-                <th className="px-4 py-3 text-left">Project</th>
-                <th className="px-4 py-3 text-left">Category</th>
-                <th className="px-4 py-3 text-left">Billable</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Actions</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Title</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Project</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Category</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Billable</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Status</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="6" className="text-center py-8">Loading...</td></tr>
+                <tr><td colSpan="6" className="text-center py-8 text-[#6b7280]">Loading...</td></tr>
               ) : tasks.length === 0 ? (
-                <tr><td colSpan="6" className="text-center py-8">No tasks found</td></tr>
+                <tr><td colSpan="6" className="text-center py-8 text-[#6b7280]">No tasks found</td></tr>
               ) : (
                 tasks.map((task) => (
-                  <tr key={task.id} className="border-b">
-                    <td className="px-4 py-3 font-medium">{task.title}</td>
-                    <td className="px-4 py-3">{task.Project?.name || "-"}</td>
-                    <td className="px-4 py-3">{task.category || "-"}</td>
+                  <tr key={task.id} className="border-b border-[#e5e7eb]">
+                    <td className="px-4 py-3 text-[#111827] font-medium">{task.title}</td>
+                    <td className="px-4 py-3 text-[#111827]">{task.Project?.name || "-"}</td>
+                    <td className="px-4 py-3 text-[#111827]">{task.category || "-"}</td>
                     <td className="px-4 py-3">
                       <Badge variant={task.isBillableDefault ? "success" : "warning"}>
                         {task.isBillableDefault ? "Billable" : "Non-Billable"}

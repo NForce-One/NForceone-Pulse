@@ -86,8 +86,8 @@ export const Clients = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Client Management</h1>
-          <p className="text-gray-500">Manage clients and billing types</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Client Management</h1>
+          <p className="text-[#6b7280]">Manage clients and billing types</p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE", billingType: "HOURLY" }); }}>
           <Plus className="w-4 h-4 mr-2" />
@@ -107,11 +107,11 @@ export const Clients = () => {
               <Input name="company" value={formData.company} onChange={handleInputChange} placeholder="Company" />
               <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" />
               <Input name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Phone" />
-              <select name="status" value={formData.status} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="status" value={formData.status} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
               </select>
-              <select name="billingType" value={formData.billingType} onChange={handleInputChange} className="border p-2 rounded">
+              <select name="billingType" value={formData.billingType} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
                 <option value="HOURLY">Hourly</option>
                 <option value="FIXED">Fixed</option>
               </select>
@@ -127,29 +127,29 @@ export const Clients = () => {
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-100 border-b">
+            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
               <tr>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold">Name</th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold">Code</th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold">Company</th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold">Email</th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold">Billing Type</th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold">Status</th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold">Actions</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Name</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Code</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Company</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Email</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Billing Type</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Status</th>
+                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="7" className="text-center py-8">Loading...</td></tr>
+                <tr><td colSpan="7" className="text-center py-8 text-[#6b7280]">Loading...</td></tr>
               ) : clients.length === 0 ? (
-                <tr><td colSpan="7" className="text-center py-8">No clients found</td></tr>
+                <tr><td colSpan="7" className="text-center py-8 text-[#6b7280]">No clients found</td></tr>
               ) : (
                 clients.map((client) => (
-                  <tr key={client.id} className="border-b">
-                    <td className="px-4 py-3 font-medium">{client.name}</td>
-                    <td className="px-4 py-3">{client.code || "-"}</td>
-                    <td className="px-4 py-3">{client.company || "-"}</td>
-                    <td className="px-4 py-3">{client.email || "-"}</td>
+                  <tr key={client.id} className="border-b border-[#e5e7eb]">
+                    <td className="px-4 py-3 text-[#111827] font-medium">{client.name}</td>
+                    <td className="px-4 py-3 text-[#111827]">{client.code || "-"}</td>
+                    <td className="px-4 py-3 text-[#111827]">{client.company || "-"}</td>
+                    <td className="px-4 py-3 text-[#111827]">{client.email || "-"}</td>
                     <td className="px-4 py-3"><Badge variant="primary">{client.billingType}</Badge></td>
                     <td className="px-4 py-3">
                       <Badge variant={client.status === "ACTIVE" ? "success" : "danger"}>{client.status}</Badge>

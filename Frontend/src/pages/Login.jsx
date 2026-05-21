@@ -67,7 +67,7 @@ export const Login = () => {
       }}
     >
       {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-red-900/60"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-green-900/60"></div>
 
       {/* ✨ MOVING LIGHT EFFECT */}
       <div className="light-beam"></div>
@@ -76,7 +76,7 @@ export const Login = () => {
 
         {/* 🔥 UPDATED HEADER (NO LOGO) */}
         <div className="text-center mb-6 animate-fadeIn">
-          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(255,0,0,0.6)]">
+          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]">
             NForce Pulse
           </h1>
 
@@ -133,7 +133,7 @@ export const Login = () => {
             {/* FORGOT */}
             <div className="text-right delay-2 field-anim">
               <span
-                className="text-sm text-red-400 cursor-pointer hover:text-red-300 transition"
+                className="text-sm text-green-400 cursor-pointer hover:text-green-300 transition"
                 onClick={() => navigate("/forgot-password")}
               >
                 Forgot Password?
@@ -190,8 +190,8 @@ export const Login = () => {
           background: rgba(0,0,0,0.5);
           backdrop-filter: blur(20px);
           border-radius: 20px;
-          border: 1px solid rgba(255,0,0,0.2);
-          box-shadow: 0 0 30px rgba(255,0,0,0.2);
+          border: 1px solid rgba(34,197,94,0.2);
+          box-shadow: 0 0 30px rgba(34,197,94,0.2);
           transition: transform 0.3s;
         }
 
@@ -206,12 +206,12 @@ export const Login = () => {
         }
 
         .input-modern:focus {
-          border-color: red;
-          box-shadow: 0 0 10px rgba(255,0,0,0.5);
+          border-color: #22c55e;
+          box-shadow: 0 0 10px rgba(34,197,94,0.5);
         }
 
         .btn-modern {
-          background: linear-gradient(90deg, #ff0000, #cc0000);
+          background: linear-gradient(90deg, #22c55e, #16a34a);
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -219,7 +219,7 @@ export const Login = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 20px red;
+          box-shadow: 0 0 20px #22c55e;
         }
 
         .error-anim {
@@ -243,7 +243,7 @@ export const Login = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(255,0,0,0.15), transparent);
+          background: linear-gradient(120deg, transparent, rgba(34,197,94,0.15), transparent);
           animation: beamMove 6s linear infinite;
         }
 
