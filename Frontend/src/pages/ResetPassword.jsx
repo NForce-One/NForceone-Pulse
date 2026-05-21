@@ -56,14 +56,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
       {/* 🔥 OVERLAY */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-green-900/60"></div>
 
@@ -85,7 +78,7 @@ const ResetPassword = () => {
         </div>
 
         {/* CARD */}
-        <div className="card-modern p-8">
+        <div className="glass-card p-8 hover:scale-[1.02] transition-transform duration-300">
 
           <div className="text-center mb-6">
             <h2 className="text-2xl text-white animate-slideDown">
@@ -105,7 +98,6 @@ const ResetPassword = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="input-modern"
               />
             </div>
 
@@ -116,7 +108,6 @@ const ResetPassword = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="input-modern"
               />
             </div>
 
@@ -203,6 +194,8 @@ const ResetPassword = () => {
           background: linear-gradient(90deg, #22c55e, #16a34a);
           color: white;
           font-weight: 600;
+          padding: 10px;
+          border-radius: 8px;
           transition: all 0.3s;
         }
 

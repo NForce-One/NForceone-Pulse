@@ -57,6 +57,32 @@ const getEntriesWithUser = async (whereClause = {}) => {
   return entries;
 };
 
+// ✅ HELPER FUNCTION TO GET ENTRIES WITH USER DATA
+const getEntriesWithUser = async (whereClause = {}) => {
+  const entries = await TimeEntry.findAll({
+    where: whereClause,
+    include: [
+      {
+        model: User,
+        attributes: ["id", "name", "email"], // ✅ FETCH USER NAME
+        required: false,
+      },
+      {
+        model: User,
+        as: "Manager",
+        attributes: ["id", "name", "email"], // ✅ FETCH MANAGER NAME
+        required: false,
+      },
+    ],
+    order: [["createdAt", "DESC"]],
+  });
+  
+  // 🔥 DEBUG LOG
+  console.log("📊 ENTRIES WITH USER:", JSON.stringify(entries, null, 2));
+  
+  return entries;
+};
+
 // ================= CREATE =================
 export const createTimeEntry = async (data) => {
   return await TimeEntry.create(data);
