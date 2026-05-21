@@ -297,6 +297,7 @@ const startServer = async () => {
 
   } catch (error) {
     console.error("Startup error", error);
+    process.exit(1);
   }
 };
 

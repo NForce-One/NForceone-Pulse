@@ -106,7 +106,7 @@ const allowedOrigins = process.env.CORS_ORIGINS
   : [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://cyber-login-eta.vercel.app",
+      "https://nforcepulse-frontend.vercel.app",
     ];
 
 app.use(
@@ -114,9 +114,10 @@ app.use(
     origin: (origin, cb) => {
       if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) {
         cb(null, true);
-      } else {
-        cb(null, true);
-      }
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      cb(null, true);
+    }
     },
     credentials: true,
   })
