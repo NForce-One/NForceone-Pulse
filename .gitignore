@@ -1,6 +1,11 @@
 node_modules/
 .env
+.env.vercel*
 *.log
 dist/
 build/
 .DS_Store
+.vercel/
+.opencode/
+tidb-ca.pem
+cyber-login/
