@@ -16,6 +16,7 @@ import "./models/notification.model.js";
 import "./models/auditLog.model.js";
 import "./models/billingRate.model.js";
 import "./models/projectUser.model.js";
+import "./models/holiday.model.js";
 
 // Import models for associations
 import User from "./models/user.model.js";
