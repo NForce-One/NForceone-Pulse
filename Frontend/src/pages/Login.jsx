@@ -1,15 +1,18 @@
+// 🔥 ONLY UI ENHANCEMENTS ADDED (NO LOGIC CHANGED)
+
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, LogIn, Mail, Lock, ShieldAlert } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { loginUser } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
+import { Input } from "../components/ui/Input";
+
+import bg from "../assets/now.png";
+
 export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,159 +23,236 @@ export const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
     try {
       const response = await loginUser({ email, password });
+
       const user = response?.user;
       const token = response?.token;
-      if (!user || !token) { setError("Invalid response from server"); return; }
+
+      if (!user || !token) {
+        setError("Invalid response from server");
+        return;
+      }
+
       login(token, user);
+
       switch (user.role) {
-        case "ADMIN": navigate("/"); break;
-        case "MANAGER": navigate("/approvals"); break;
-        default: navigate("/timesheet");
+        case "ADMIN":
+          navigate("/");
+          break;
+        case "MANAGER":
+          navigate("/approvals");
+          break;
+        default:
+          navigate("/timesheet");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to log in. Please check your credentials.");
-    } finally { setIsLoading(false); }
+      setError(
+        err.response?.data?.message ||
+        "Failed to log in. Please check your credentials."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-['Inter',sans-serif]">
-      {/* Left Panel - Brand */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#0F172A] to-[#111827] relative overflow-hidden items-center justify-center">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, #6366F1 1px, transparent 0)`,
-          backgroundSize: '40px 40px'
-        }} />
-        <div className="relative z-10 text-center px-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] shadow-2xl shadow-[#6366F1]/30 mb-6">
-            <div className="relative">
-              <div className="w-6 h-6 rounded-full bg-white" />
-              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#EF4444] animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight mb-3">NForce Pulse</h1>
-          <p className="text-[#94A3B8] text-lg font-light max-w-md mx-auto leading-relaxed">
-            Enterprise time tracking and workforce management platform.
+    <div
+      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${bg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* 🔥 OVERLAY */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-green-900/60"></div>
+
+      {/* ✨ MOVING LIGHT EFFECT */}
+      <div className="light-beam"></div>
+
+      <div className="relative w-full max-w-md z-10 animate-fadeIn">
+
+        {/* 🔥 UPDATED HEADER (NO LOGO) */}
+        <div className="text-center mb-6 animate-fadeIn">
+          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]">
+            NForce Pulse
+          </h1>
+
+          <p className="text-sm text-gray-300 mt-1 tracking-wide">
+            Time tracking tool
           </p>
-          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-[#64748B]">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#6366F1]" />
-              Time Tracking
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              Team Analytics
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-              Reporting
-            </div>
-          </div>
         </div>
-      </div>
 
-      {/* Right Panel - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-        <div className="w-full max-w-[400px]">
-          {/* Logo (mobile) */}
-          <div className="flex lg:hidden items-center gap-3 mb-10 justify-center">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] flex items-center justify-center shadow-lg shadow-[#6366F1]/25">
-              <div className="relative">
-                <div className="w-3.5 h-3.5 rounded-full bg-white" />
-                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#EF4444] animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
-              </div>
-            </div>
-            <div>
-              <span className="text-lg font-bold text-[#111827] tracking-tight">NForce Pulse</span>
-              <span className="block text-[10px] font-medium text-[#94A3B8] tracking-wide">Enterprise Suite</span>
-            </div>
-          </div>
+        {/* 🔥 CARD */}
+        <div className="card-modern p-8">
 
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#111827] tracking-tight">Welcome back</h2>
-            <p className="text-sm text-[#6B7280] mt-1.5">Sign in to your account to continue</p>
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-semibold text-white animate-slideDown">
+              Welcome back
+            </h2>
+            <p className="text-gray-400 text-sm mt-1">
+              Enter your credentials to access your account
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+
             {error && (
-              <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600 font-medium">
-                <ShieldAlert size={16} className="shrink-0" />
-                <span>{error}</span>
+              <div className="error-anim">
+                {error}
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
-                <input
-                  type="email"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-[#D1D5DB] bg-white text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] transition-all"
-                />
-              </div>
+            {/* EMAIL */}
+            <div className="field-anim">
+              <label className="text-sm text-gray-300">Email</label>
+              <Input
+                type="email"
+                placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="input-modern"
+              />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full h-11 pl-10 pr-10 rounded-lg border border-[#D1D5DB] bg-white text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-[#6366F1] transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+            {/* PASSWORD */}
+            <div className="field-anim delay-1">
+              <label className="text-sm text-gray-300">Password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="input-modern"
+              />
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-[#D1D5DB] text-[#6366F1] focus:ring-[#6366F1] accent-[#6366F1]"
-                />
-                <span className="text-sm text-[#6B7280]">Remember me</span>
-              </label>
-              <Link to="/forgot-password" className="text-sm font-medium text-[#6366F1] hover:text-[#4F46E5] transition-colors">
-                Forgot password?
-              </Link>
+            {/* FORGOT */}
+            <div className="text-right delay-2 field-anim">
+              <span
+                className="text-sm text-green-400 cursor-pointer hover:text-green-300 transition"
+                onClick={() => navigate("/forgot-password")}
+              >
+                Forgot Password?
+              </span>
             </div>
 
+            {/* BUTTON */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-[#6366F1] text-white text-sm font-semibold hover:bg-[#4F46E5] active:scale-[0.98] transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-modern w-full"
             >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <><LogIn size={16} /><span>LOGIN</span></>
-              )}
+              {isLoading ? "Signing in..." : "Sign in"}
             </button>
+
           </form>
         </div>
       </div>
+
+      {/* 🔥 ANIMATIONS */}
+      <style>
+        {`
+        .animate-fadeIn {
+          animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-slideDown {
+          animation: slideDown 0.6s ease;
+        }
+
+        @keyframes slideDown {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+
+        .field-anim {
+          animation: fadeUp 0.6s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-modern {
+          background: rgba(0,0,0,0.5);
+          backdrop-filter: blur(20px);
+          border-radius: 20px;
+          border: 1px solid rgba(34,197,94,0.2);
+          box-shadow: 0 0 30px rgba(34,197,94,0.2);
+          transition: transform 0.3s;
+        }
+
+        .card-modern:hover {
+          transform: scale(1.02);
+        }
+
+        .input-modern {
+          background: rgba(255,255,255,0.1);
+          border: 1px solid #444;
+          color: white;
+        }
+
+        .input-modern:focus {
+          border-color: #22c55e;
+          box-shadow: 0 0 10px rgba(34,197,94,0.5);
+        }
+
+        .btn-modern {
+          background: linear-gradient(90deg, #22c55e, #16a34a);
+          color: white;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+
+        .btn-modern:hover {
+          transform: scale(1.03);
+          box-shadow: 0 0 20px #22c55e;
+        }
+
+        .error-anim {
+          background: rgba(255,0,0,0.1);
+          border: 1px solid red;
+          color: #ff6b6b;
+          padding: 10px;
+          border-radius: 8px;
+          animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          50% { transform: translateX(5px); }
+          75% { transform: translateX(-5px); }
+          100% { transform: translateX(0); }
+        }
+
+        .light-beam {
+          position: absolute;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(120deg, transparent, rgba(34,197,94,0.15), transparent);
+          animation: beamMove 6s linear infinite;
+        }
+
+        @keyframes beamMove {
+          from { transform: translateX(-50%) translateY(-50%); }
+          to { transform: translateX(50%) translateY(50%); }
+        }
+        `}
+      </style>
     </div>
   );
 };

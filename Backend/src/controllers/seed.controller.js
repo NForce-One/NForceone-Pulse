@@ -15,40 +15,58 @@ export const seedDemoData = async (req, res) => {
     const log = (msg) => result.created.push(msg);
 
     // ── Users ──
-    const admin = await User.findOne({ where: { email: "admin@nforce.com" } });
+
+    // Admin (skip if already exists)
+    let admin = await User.findOne({ where: { email: "venkateshkodithyala44@gmail.com" } });
     if (!admin) {
-      const hp = await bcrypt.hash("Admin@Password123", 10);
-      await User.create({ name: "System Admin", email: "admin@nforce.com", password: hp, role: "ADMIN", isActive: true });
-      log("Admin created");
-    }
-
-    const manager = await User.findOne({ where: { email: "manager@nforce.com" } });
-    let managerId;
-    if (!manager) {
-      const hp = await bcrypt.hash("Manager@Password123", 10);
-      const m = await User.create({ name: "Sarah Manager", email: "manager@nforce.com", password: hp, role: "MANAGER", isActive: true });
-      managerId = m.id;
-      log("Manager created");
+      const hp = await bcrypt.hash("QnsAdmin2024", 10);
+      admin = await User.create({ name: "Venkatesh", email: "venkateshkodithyala44@gmail.com", password: hp, role: "ADMIN", isActive: true });
+      log("Admin Venkatesh created");
     } else {
-      managerId = manager.id;
+      log("Admin Venkatesh already exists");
     }
 
+    // Managers
+    const managerList = [
+      { name: "Arun", email: "arun@gmail.com", password: "Arun@6446" },
+      { name: "Ali", email: "Ali@gmail.com", password: "Ali@6446" },
+      { name: "Karthik", email: "Karthik@gmail.com", password: "Kalayan@6446" },
+      { name: "Suresh Kumar", email: "suresh.manager@gmail.com", password: "Suresh@6446" },
+      { name: "Priya Sharma", email: "priya.manager@gmail.com", password: "Priya@6446" },
+    ];
+
+    const managerIds = {};
+    for (const m of managerList) {
+      let user = await User.findOne({ where: { email: m.email } });
+      if (!user) {
+        const hp = await bcrypt.hash(m.password, 10);
+        user = await User.create({ name: m.name, email: m.email, password: hp, role: "MANAGER", isActive: true });
+        log(`Manager ${m.name} created`);
+      } else {
+        log(`Manager ${m.name} already exists`);
+      }
+      managerIds[m.email] = user.id;
+    }
+
+    // Default manager for employees (first manager: Arun)
+    const defaultManagerId = managerIds["arun@gmail.com"];
+
+    // Employees
     const employees = [
-      { name: "Alice Johnson", email: "alice@nforce.com", dept: "Engineering" },
-      { name: "Bob Smith", email: "bob@nforce.com", dept: "Engineering" },
-      { name: "Carol Williams", email: "carol@nforce.com", dept: "Design" },
-      { name: "David Brown", email: "david@nforce.com", dept: "Marketing" },
-      { name: "Eve Davis", email: "eve@nforce.com", dept: "Engineering" },
-      { name: "Frank Miller", email: "frank@nforce.com", dept: "Sales" },
+      { name: "Reamesh", email: "ReameshManger@gmail.com", password: "Now@ramesh" },
+      { name: "Kalayan", email: "Kalayan@gmail.com", password: "Kalayan@6446" },
+      { name: "Vamshi", email: "Vamshi@gmail.com", password: "Vamshi@6446" },
     ];
 
     const empIds = [];
     for (const e of employees) {
       let user = await User.findOne({ where: { email: e.email } });
       if (!user) {
-        const hp = await bcrypt.hash("Nforce@123", 10);
-        user = await User.create({ name: e.name, email: e.email, password: hp, role: "EMPLOYEE", department: e.dept, managerId, isActive: true, defaultHours: 8 });
+        const hp = await bcrypt.hash(e.password, 10);
+        user = await User.create({ name: e.name, email: e.email, password: hp, role: "EMPLOYEE", managerId: defaultManagerId, isActive: true, defaultHours: 8 });
         log(`Employee ${e.name} created`);
+      } else {
+        log(`Employee ${e.name} already exists`);
       }
       empIds.push(user.id);
     }
@@ -84,7 +102,7 @@ export const seedDemoData = async (req, res) => {
       let proj = await Project.findOne({ where: { code: p.code } });
       if (!proj) {
         proj = await Project.create({
-          name: p.name, code: p.code, clientId: clientIds[p.clientIdx], managerId,
+          name: p.name, code: p.code, clientId: clientIds[p.clientIdx], managerId: defaultManagerId,
           budgetHours: p.budgetHours, status: "ACTIVE",
         });
         log(`Project ${p.name} created`);
@@ -159,7 +177,7 @@ export const seedDemoData = async (req, res) => {
           const hours = Math.round((4 + Math.random() * 4) * 100) / 100;
           const status = statuses[Math.floor(Math.random() * statuses.length)];
           await TimeEntry.create({
-            userId: uid, managerId, clientId: clientIds[cIdx], projectId: projectIds[pIdx], taskId: taskIds[tIdx],
+            userId: uid, managerId: defaultManagerId, clientId: clientIds[cIdx], projectId: projectIds[pIdx], taskId: taskIds[tIdx],
             client: clientData[cIdx].name, project: projectData[pIdx].name, task: taskData[tIdx].title,
             entryDate: dateStr, hours, description: `Work on ${taskData[tIdx].title} for ${projectData[pIdx].name}`,
             isBillable: Math.random() > 0.2, status,

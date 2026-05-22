@@ -253,4 +253,16 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Auto-sync database tables on module load (for Vercel)
+(async () => {
+  try {
+    await sequelize.authenticate();
+    await sequelize.sync();
+    const { seedDefaultHolidays } = await import("./utils/holidayConfig.js");
+    await seedDefaultHolidays();
+  } catch (error) {
+    console.error("DB sync error:", error.message);
+  }
+})();
+
 export { sequelize, app };

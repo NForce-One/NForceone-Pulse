@@ -1,3 +1,4 @@
+import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import sequelize from "./config/db.js";
@@ -105,128 +106,57 @@ const app = express();
    GLOBAL MIDDLEWARE
 ====================== */
 
-// 🔥 VERY IMPORTANT FIX (CORS)
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "https://nforcepulse-frontend.vercel.app",
-  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",") : []),
-];
 app.use(cors({
-  origin: allowedOrigins,
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://nforcepulse-frontend.vercel.app",
+    ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",") : []),
+  ],
   credentials: true
 }));
 
 app.use(express.json());
 
 /* ======================
-   HEALTH CHECK ROUTE
+   HEALTH CHECK ROUTE (must be first)
 ====================== */
 app.get("/", (req, res) => {
-  res.send("Backend running 🚀");
+  res.send("Backend Working");
 });
 
 /* ======================
    AUTH ROUTES
 ====================== */
 app.use("/api/auth", authRoutes);
-
-/* ======================
-   USER ROUTES (ADMIN)
-====================== */
 app.use("/api/users", userRoutes);
-
-/* ======================
-   CLIENT ROUTES
-====================== */
 app.use("/api/clients", clientRoutes);
-
-/* ======================
-   PROJECT ROUTES
-====================== */
 app.use("/api/projects", projectRoutes);
-
-/* ======================
-   TASK ROUTES
-====================== */
 app.use("/api/tasks", taskRoutes);
-
-/* ======================
-    TIME ENTRY ROUTES
-====================== */
 app.use("/api/time-entries", timeEntryRoutes);
-
-/* ======================
-    TIMER ROUTES
-====================== */
 app.use("/api/timers", timerRoutes);
-
-/* ======================
-    TIMESHEET ROUTES
-====================== */
 app.use("/api/timesheets", timesheetRoutes);
-
-/* ======================
-    NOTIFICATION ROUTES
-====================== */
 app.use("/api/notifications", notificationRoutes);
-
-/* ======================
-    REPORT ROUTES
-====================== */
 app.use("/api/reports", reportRoutes);
 
 /* ======================
    PROTECTED TEST ROUTE
 ====================== */
 app.get("/api/test", protect, (req, res) => {
-  res.json({
-    success: true,
-    message: "Protected route accessed ✅",
-    user: req.user,
-  });
+  res.json({ success: true, message: "Protected route accessed ✅", user: req.user });
 });
-
-/* ======================
-   ROLE-BASED TEST ROUTES
-====================== */
-
-// ADMIN ONLY
-app.get(
-  "/api/admin",
-  protect,
-  authorizeRoles("ADMIN"),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: "Welcome Admin 👑",
-      user: req.user,
-    });
-  }
-);
-
-// MANAGER + ADMIN
-app.get(
-  "/api/manager",
-  protect,
-  authorizeRoles("MANAGER", "ADMIN"),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: "Welcome Manager 👨‍💼",
-      user: req.user,
-    });
-  }
-);
+app.get("/api/admin", protect, authorizeRoles("ADMIN"), (req, res) => {
+  res.json({ success: true, message: "Welcome Admin 👑", user: req.user });
+});
+app.get("/api/manager", protect, authorizeRoles("MANAGER", "ADMIN"), (req, res) => {
+  res.json({ success: true, message: "Welcome Manager 👨‍💼", user: req.user });
+});
 
 /* ======================
    404 HANDLER
 ====================== */
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found ❌",
-  });
+  res.status(404).json({ success: false, message: "Route not found ❌" });
 });
 
 /* ======================
@@ -234,71 +164,62 @@ app.use((req, res) => {
 ====================== */
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  res.status(err.status || 500).json({ success: false, message: err.message || "Something went wrong ❌" });
+});
 
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Something went wrong ❌",
-  });
+/* ======================
+   CATCH UNHANDLED ERRORS
+====================== */
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason?.message || reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err.message);
 });
 
 /* ======================
    SERVER START
 ====================== */
-const startServer = async () => {
+const PORT = process.env.PORT || 8080;
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT} 🚀`);
+});
+
+/* ======================
+   DB CONNECTION (non-blocking)
+====================== */
+(async () => {
   try {
-    await sequelize.authenticate();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("DB connection timed out after 12s")), 12000)
+    );
+    await Promise.race([sequelize.authenticate(), timeout]);
+    console.log("Database connected successfully");
+    await sequelize.sync({ alter: false });
+    console.log("Database synced successfully");
 
-    // Using sync without alter to avoid "too many keys" error
-    // The notification model is already correctly defined
-    await sequelize.sync();
-
-    // ================= INIT HOLIDAYS FROM DATABASE =================
     const { initHolidays, seedDefaultHolidays } = await import("./utils/holidayConfig.js");
     await seedDefaultHolidays();
     await initHolidays();
 
-    // ================= SCHEDULED NOTIFICATION JOBS =================
-
-    // Check missing daily entries at 9:00 AM every day
-    cron.schedule("0 9 * * *", async () => {
-      await notificationService.checkMissingDailyEntries();
-    });
-
-    // Check weekly pending submissions on Friday at 5:00 PM
-    cron.schedule("0 17 * * 5", async () => {
-      await notificationService.checkWeeklyPendingSubmissions();
-    });
-
-    // Check pending approvals for managers every Monday at 10:00 AM
+    cron.schedule("0 9 * * *", () => { notificationService.checkMissingDailyEntries().catch(() => {}); });
+    cron.schedule("0 17 * * 5", () => { notificationService.checkWeeklyPendingSubmissions().catch(() => {}); });
     cron.schedule("0 10 * * 1", async () => {
-      const managers = await (async () => {
-        const User = (await import("./models/user.model.js")).default;
-        return await User.findAll({ where: { role: "MANAGER", isActive: true } });
-      })();
-
-      const TimeEntry = (await import("./models/timeEntry.model.js")).default;
-      const { Op } = await import("sequelize");
-
-      for (const mgr of managers) {
-        const pendingCount = await TimeEntry.count({
-          where: { managerId: mgr.id, status: "SUBMITTED" },
-        });
-        if (pendingCount > 0) {
-          await notificationService.notifyPendingApprovals(mgr.id, pendingCount);
+      try {
+        const managers = await User.findAll({ where: { role: "MANAGER", isActive: true } });
+        const { Op } = await import("sequelize");
+        for (const mgr of managers) {
+          const pendingCount = await TimeEntry.count({
+            where: { managerId: mgr.id, status: "SUBMITTED" },
+          });
+          if (pendingCount > 0) {
+            await notificationService.notifyPendingApprovals(mgr.id, pendingCount);
+          }
         }
-      }
+      } catch (e) { console.error("Cron error:", e.message); }
     });
-
-    const PORT = process.env.PORT || 5000;
-
-    app.listen(PORT, () => {
-       console.log(`Server running on port ${PORT} 🚀`);
-     });
-
   } catch (error) {
-    console.error("Startup error", error);
-    process.exit(1);
+    console.error("DB sync failed (server still running):", error.message);
   }
-};
-
-startServer();
+})();

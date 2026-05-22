@@ -1,11 +1,11 @@
 node_modules/
+dist/
 .env
 .env.vercel*
+.env.production
 *.log
-dist/
-build/
+backend.err
 .DS_Store
 .vercel/
 .opencode/
 tidb-ca.pem
-cyber-login/

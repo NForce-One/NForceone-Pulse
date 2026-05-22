@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   startTimer,
@@ -33,8 +33,8 @@ export const TimerPage = () => {
 
   // Form state
   const [form, setForm] = useState({
-    client: "",
-    project: "",
+    clientId: "",
+    projectId: "",
     task: "",
     description: "",
   });
@@ -74,9 +74,9 @@ export const TimerPage = () => {
       if (existingTimer) {
         setTimer(existingTimer);
         setForm({
-          client: clients.find((c) => c.id === existingTimer.clientId)?.name || "",
-          project: projects.find((p) => p.id === existingTimer.projectId)?.name || "",
-          task: tasks.find((t) => t.id === existingTimer.taskId)?.title || "",
+          clientId: existingTimer.clientId || "",
+          projectId: existingTimer.projectId || "",
+          task: tasks.find((t) => t.id === existingTimer.taskId)?.title || existingTimer.taskName || "",
           description: existingTimer.description || "",
         });
 
@@ -189,23 +189,28 @@ export const TimerPage = () => {
   // ================= HANDLE INPUT CHANGE =================
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "clientId" ? { projectId: "" } : {}),
+    }));
     setError("");
   };
 
-  // ================= FILTER PROJECTS BY CLIENT =================
-  // No longer needed — manual input mode
-  // ================= FILTER TASKS BY PROJECT =================
-  // No longer needed — manual input mode
+  // ================= FILTERED PROJECTS BY SELECTED CLIENT =================
+  const filteredProjects = useMemo(() => {
+    if (!form.clientId) return [];
+    return projects.filter((p) => Number(p.clientId) === Number(form.clientId));
+  }, [form.clientId, projects]);
 
   // ================= VALIDATE FORM =================
   const validateForm = () => {
-    if (!form.client || form.client.trim() === "") {
-      setError("Please enter a Client name");
+    if (!form.clientId) {
+      setError("Please select a Client");
       return false;
     }
-    if (!form.project || form.project.trim() === "") {
-      setError("Please enter a Project name");
+    if (!form.projectId) {
+      setError("Please select a Project");
       return false;
     }
     if (!form.task || form.task.trim() === "") {
@@ -228,17 +233,16 @@ export const TimerPage = () => {
     setSuccessMsg("");
 
     try {
-      // Resolve IDs from dropdown data
-      const matchedClient = clients.find((c) => c.name.toLowerCase() === form.client.toLowerCase());
-      const matchedProject = projects.find((p) => p.name.toLowerCase() === form.project.toLowerCase());
+      const matchedClient = clients.find((c) => Number(c.id) === Number(form.clientId));
+      const matchedProject = projects.find((p) => Number(p.id) === Number(form.projectId));
       const matchedTask = tasks.find((t) => t.title.toLowerCase() === form.task.toLowerCase());
 
       const payload = {
-        clientId: matchedClient ? matchedClient.id : null,
-        projectId: matchedProject ? matchedProject.id : null,
+        clientId: Number(form.clientId),
+        projectId: Number(form.projectId),
         taskId: matchedTask ? matchedTask.id : null,
-        client: form.client.trim(),
-        project: form.project.trim(),
+        client: matchedClient?.name || form.clientId,
+        project: matchedProject?.name || form.projectId,
         task: form.task.trim(),
         description: form.description.trim(),
       };
@@ -333,7 +337,7 @@ export const TimerPage = () => {
       setElapsedSeconds(0);
       setIsRunning(false);
       setIsPaused(false);
-      setForm({ client: "", project: "", task: "", description: "" });
+      setForm({ clientId: "", projectId: "", task: "", description: "" });
 
       const params = new URLSearchParams({
         client: data.clientName || "",
@@ -360,7 +364,7 @@ export const TimerPage = () => {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-[#111827]">Timer</h1>
-        <div className="text-center py-12 text-[#6B7280]">Restoring timer state...</div>
+        <div className="text-center py-12 text-[#6b7280]">Restoring timer state...</div>
       </div>
     );
   }
@@ -369,28 +373,28 @@ export const TimerPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#111827] flex items-center gap-2">
-          <Play className="w-6 h-6 text-[#6366F1]" />
+          <Play className="w-6 h-6 text-[#22c55e]" />
           Timer
         </h1>
-        <p className="text-[#6B7280]">Track time with start, pause, resume, and stop controls</p>
+        <p className="text-[#6b7280]">Track time with start, pause, resume, and stop controls</p>
       </div>
 
       {/* ERROR / SUCCESS MESSAGES */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center gap-2 backdrop-blur-sm">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg flex items-center gap-2 backdrop-blur-sm">
           <AlertCircle className="w-4 h-4" />
           {error}
         </div>
       )}
       {successMsg && (
-        <div className="bg-green-50 border border-green-500/20 text-green-600 px-4 py-3 rounded-lg backdrop-blur-sm">
+        <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg backdrop-blur-sm">
           {successMsg}
         </div>
       )}
 
       {/* ACTIVE TIMER DISPLAY */}
       {timer && (
-        <Card className="border-[#6366F1]/20 shadow-[0_0_20px_rgba(99,102,241,0.08)]">
+        <Card className="border-[#22c55e]/30 shadow-[0_0_30px_rgba(34,197,94,0.1)]">
           <CardContent className="pt-6">
             <div className="text-center">
               <div className="flex justify-center mb-4">
@@ -398,18 +402,18 @@ export const TimerPage = () => {
                   {isRunning ? "⏱ Running" : "⏸ Paused"}
                 </Badge>
               </div>
-              <div className="text-7xl font-mono font-bold text-[#111827] mb-4 tracking-wider drop-shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+              <div className="text-7xl font-mono font-bold text-[#111827] mb-4 tracking-wider drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                 {formatTime(elapsedSeconds)}
               </div>
 
               {/* Timer context info */}
-              <div className="flex justify-center gap-4 text-sm text-[#6B7280] mb-6 flex-wrap">
-                <span className="bg-[#F9FAFB] px-3 py-1 rounded-lg border border-[#E5E7EB]">Client: {timer.Client?.name || form.client || "-"}</span>
-                <span className="bg-[#F9FAFB] px-3 py-1 rounded-lg border border-[#E5E7EB]">Project: {timer.Project?.name || form.project || "-"}</span>
-                <span className="bg-[#F9FAFB] px-3 py-1 rounded-lg border border-[#E5E7EB]">Task: {timer.Task?.title || form.task || "-"}</span>
+              <div className="flex justify-center gap-4 text-sm text-[#6b7280] mb-6 flex-wrap">
+                <span className="bg-[#e5e7eb] px-3 py-1 rounded-lg">Client: {timer.clientName || (clients.find((c) => Number(c.id) === Number(form.clientId))?.name) || "-"}</span>
+                <span className="bg-[#e5e7eb] px-3 py-1 rounded-lg">Project: {timer.projectName || (projects.find((p) => Number(p.id) === Number(form.projectId))?.name) || "-"}</span>
+                <span className="bg-[#e5e7eb] px-3 py-1 rounded-lg">Task: {timer.taskName || form.task || "-"}</span>
               </div>
               {timer.description && (
-                <p className="text-sm text-[#6B7280] mb-6 italic">"{timer.description}"</p>
+                <p className="text-sm text-[#6b7280] mb-6 italic">"{timer.description}"</p>
               )}
 
               {/* CONTROLS */}
@@ -418,7 +422,7 @@ export const TimerPage = () => {
                   <Button
                     onClick={handlePause}
                     disabled={isLoading}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-[#111827] shadow-lg shadow-yellow-500/30 hover:scale-105 active:scale-95"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-500/30 hover:scale-105 active:scale-95"
                   >
                     <Pause className="w-4 h-4 mr-2" />
                     Pause
@@ -446,7 +450,7 @@ export const TimerPage = () => {
                 <Button
                   onClick={handleConvertToEntry}
                   disabled={isLoading}
-                  className="bg-[#6366F1] hover:bg-[#4F46E5] shadow-lg shadow-[#6366F1]/30 hover:scale-105 active:scale-95"
+                  className="bg-[#22c55e] hover:bg-[#16a34a] shadow-lg shadow-[#22c55e]/30 hover:scale-105 active:scale-95"
                 >
                   <ArrowRight className="w-4 h-4 mr-2" />
                   Stop & Add to Timesheet
@@ -476,36 +480,57 @@ export const TimerPage = () => {
             >
               {/* CLIENT */}
               <div>
-                <label className="block text-sm font-medium text-[#6B7280] mb-1">
-                  Client <span className="text-[#6366F1]">*</span>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">
+                  Client <span className="text-[#22c55e]">*</span>
                 </label>
-                <Input
-                  name="client"
-                  value={form.client}
+                <select
+                  name="clientId"
+                  value={form.clientId}
                   onChange={handleInputChange}
-                  placeholder="Enter client name"
                   required
-                />
+                  className="w-full bg-white border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] placeholder-[#6b7280] focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/30 transition-colors"
+                >
+                  <option value="">-- Select Client --</option>
+                  {clients
+                    .filter((c) => c.status === "ACTIVE")
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               {/* PROJECT */}
               <div>
-                <label className="block text-sm font-medium text-[#6B7280] mb-1">
-                  Project <span className="text-[#6366F1]">*</span>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">
+                  Project <span className="text-[#22c55e]">*</span>
                 </label>
-                <Input
-                  name="project"
-                  value={form.project}
+                <select
+                  name="projectId"
+                  value={form.projectId}
                   onChange={handleInputChange}
-                  placeholder="Enter project name"
                   required
-                />
+                  disabled={!form.clientId}
+                  className="w-full bg-white border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] placeholder-[#6b7280] focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {form.clientId ? "-- Select Project --" : "-- Select a client first --"}
+                  </option>
+                  {filteredProjects
+                    .filter((p) => p.status === "ACTIVE")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               {/* TASK */}
               <div>
-                <label className="block text-sm font-medium text-[#6B7280] mb-1">
-                  Task <span className="text-[#6366F1]">*</span>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">
+                  Task <span className="text-[#22c55e]">*</span>
                 </label>
                 <Input
                   name="task"
@@ -518,8 +543,8 @@ export const TimerPage = () => {
 
               {/* DESCRIPTION */}
               <div>
-                <label className="block text-sm font-medium text-[#6B7280] mb-1">
-                  Description <span className="text-[#6366F1]">*</span>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">
+                  Description <span className="text-[#22c55e]">*</span>
                 </label>
                 <Input
                   name="description"

@@ -32,7 +32,14 @@ export const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${bg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       {/* 🔴 OVERLAY */}
       <div className="absolute inset-0 bg-black/70"></div>
       <div className="absolute inset-0 bg-gradient-to-r from-green-900/40 via-black/60 to-black/90"></div>
@@ -53,12 +60,12 @@ export const ForgotPassword = () => {
         </div>
 
         {/* 🔥 CARD */}
-        <Card className="glass-card relative rounded-2xl overflow-hidden shadow-2xl">
+        <Card className="glass-card relative rounded-2xl">
           <CardHeader>
             <CardTitle className="text-2xl text-center text-white">
               Forgot Password
             </CardTitle>
-            <CardDescription className="text-center text-gray-200">
+            <CardDescription className="text-center text-gray-400">
               Enter your email to receive a reset link
             </CardDescription>
           </CardHeader>
@@ -79,6 +86,7 @@ export const ForgotPassword = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="input-modern"
               />
 
               <Button
@@ -170,8 +178,6 @@ export const ForgotPassword = () => {
           background: linear-gradient(90deg, #22c55e, #16a34a);
           color: white;
           font-weight: 600;
-          padding: 10px;
-          border-radius: 8px;
           transition: all 0.3s;
         }
 
