@@ -41,8 +41,8 @@ export const ForgotPassword = () => {
       }}
     >
       {/* 🔴 OVERLAY */}
-      <div className="absolute inset-0 bg-black/70"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-red-900/40 via-black/60 to-black/90"></div>
+      <div className="absolute inset-0 bg-white/70"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-100/40 via-white/60 to-white/90"></div>
 
       {/* ✨ FLOATING PARTICLES */}
       <div className="particles"></div>
@@ -51,10 +51,10 @@ export const ForgotPassword = () => {
 
         {/* 🔥 LOGO */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="logo-glow w-12 h-12 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+          <div className="w-12 h-12 rounded-full bg-[#5B3CC4] flex items-center justify-center overflow-hidden">
             <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-wide">
+          <h1 className="text-3xl font-bold text-[#1E293B] tracking-wide">
             NForce Pulse
           </h1>
         </div>
@@ -62,10 +62,10 @@ export const ForgotPassword = () => {
         {/* 🔥 CARD */}
         <Card className="glass-card relative rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-center text-white">
+            <CardTitle className="text-2xl text-center text-[#1E293B]">
               Forgot Password
             </CardTitle>
-            <CardDescription className="text-center text-gray-400">
+            <CardDescription className="text-center text-[#64748B]">
               Enter your email to receive a reset link
             </CardDescription>
           </CardHeader>
@@ -98,7 +98,7 @@ export const ForgotPassword = () => {
 
               <div className="text-center text-sm mt-2">
                 <span
-                  className="text-red-400 cursor-pointer hover:underline hover:text-red-500 transition"
+                  className="text-[#5B3CC4] cursor-pointer hover:underline hover:text-[#4A2FA0] transition"
                   onClick={() => navigate("/login")}
                 >
                   Back to Login
@@ -126,10 +126,10 @@ export const ForgotPassword = () => {
 
         /* GLASS CARD */
         .glass-card {
-          background: rgba(0,0,0,0.7);
+          background: white;
           backdrop-filter: blur(15px);
-          border: 1px solid rgba(255,0,0,0.2);
-          box-shadow: 0 0 25px rgba(255,0,0,0.15);
+          border: 1px solid #E2E8F0;
+          box-shadow: 0 0 25px rgba(91,60,196,0.15);
         }
 
         /* 🔴 GLOW BORDER */
@@ -138,7 +138,7 @@ export const ForgotPassword = () => {
           position: absolute;
           inset: -1px;
           border-radius: 16px;
-          background: linear-gradient(90deg, transparent, red, transparent);
+          background: linear-gradient(90deg, transparent, #5B3CC4, transparent);
           animation: borderGlow 4s linear infinite;
           z-index: -1;
         }
@@ -149,33 +149,22 @@ export const ForgotPassword = () => {
           100% { opacity: 0.2; }
         }
 
-        /* LOGO GLOW */
-        .logo-glow {
-          box-shadow: 0 0 20px rgba(255,0,0,0.7);
-          animation: pulseGlow 2s infinite;
-        }
-
-        @keyframes pulseGlow {
-          0% { box-shadow: 0 0 10px red; }
-          50% { box-shadow: 0 0 25px red; }
-          100% { box-shadow: 0 0 10px red; }
-        }
 
         /* INPUT */
         .input-modern {
-          background: rgba(255,255,255,0.1);
-          border: 1px solid #444;
-          color: white;
+          background: white;
+          border: 1px solid #E2E8F0;
+          color: #1E293B;
         }
 
         .input-modern:focus {
-          border-color: red;
-          box-shadow: 0 0 8px rgba(255,0,0,0.5);
+          border-color: #5B3CC4;
+          box-shadow: 0 0 8px rgba(91,60,196,0.3);
         }
 
         /* BUTTON */
         .btn-modern {
-          background: linear-gradient(90deg, #ff0000, #cc0000);
+          background: #5B3CC4;
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -183,7 +172,7 @@ export const ForgotPassword = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 15px rgba(255,0,0,0.6);
+          box-shadow: 0 0 15px rgba(91,60,196,0.3);
         }
 
         /* SUCCESS ANIMATION */
@@ -207,7 +196,7 @@ export const ForgotPassword = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background-image: radial-gradient(red 1px, transparent 1px);
+          background-image: radial-gradient(#5B3CC4 1px, transparent 1px);
           background-size: 40px 40px;
           animation: moveParticles 20s linear infinite;
           opacity: 0.2;

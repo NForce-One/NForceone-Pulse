@@ -67,7 +67,7 @@ export const Login = () => {
       }}
     >
       {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-red-900/60"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/60 to-purple-100/60"></div>
 
       {/* ✨ MOVING LIGHT EFFECT */}
       <div className="light-beam"></div>
@@ -76,11 +76,11 @@ export const Login = () => {
 
         {/* 🔥 UPDATED HEADER (NO LOGO) */}
         <div className="text-center mb-6 animate-fadeIn">
-          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(255,0,0,0.6)]">
-            NForce Pulse
-          </h1>
+<h1 className="text-3xl font-bold text-[#1E293B] tracking-wide drop-shadow-[0_0_10px_rgba(91,60,196,0.6)]">
+             NForce Pulse
+           </h1>
 
-          <p className="text-sm text-gray-300 mt-1 tracking-wide">
+          <p className="text-sm text-[#64748B] mt-1 tracking-wide">
             Time tracking tool
           </p>
         </div>
@@ -89,10 +89,10 @@ export const Login = () => {
         <div className="card-modern p-8">
 
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-white animate-slideDown">
+            <h2 className="text-2xl font-semibold text-[#1E293B] animate-slideDown">
               Welcome back
             </h2>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-[#64748B] text-sm mt-1">
               Enter your credentials to access your account
             </p>
           </div>
@@ -107,7 +107,7 @@ export const Login = () => {
 
             {/* EMAIL */}
             <div className="field-anim">
-              <label className="text-sm text-gray-300">Email</label>
+              <label className="text-sm text-[#64748B]">Email</label>
               <Input
                 type="email"
                 placeholder="name@company.com"
@@ -120,7 +120,7 @@ export const Login = () => {
 
             {/* PASSWORD */}
             <div className="field-anim delay-1">
-              <label className="text-sm text-gray-300">Password</label>
+              <label className="text-sm text-[#64748B]">Password</label>
               <Input
                 type="password"
                 value={password}
@@ -132,12 +132,12 @@ export const Login = () => {
 
             {/* FORGOT */}
             <div className="text-right delay-2 field-anim">
-              <span
-                className="text-sm text-red-400 cursor-pointer hover:text-red-300 transition"
-                onClick={() => navigate("/forgot-password")}
-              >
-                Forgot Password?
-              </span>
+<span
+                 className="text-sm text-indigo-400 cursor-pointer hover:text-indigo-300 transition"
+                 onClick={() => navigate("/forgot-password")}
+               >
+                 Forgot Password?
+               </span>
             </div>
 
             {/* BUTTON */}
@@ -187,11 +187,11 @@ export const Login = () => {
         }
 
         .card-modern {
-          background: rgba(0,0,0,0.5);
+          background: white;
           backdrop-filter: blur(20px);
           border-radius: 20px;
-          border: 1px solid rgba(255,0,0,0.2);
-          box-shadow: 0 0 30px rgba(255,0,0,0.2);
+          border: 1px solid #E2E8F0;
+          box-shadow: 0 0 30px rgba(91,60,196,0.3);
           transition: transform 0.3s;
         }
 
@@ -200,18 +200,18 @@ export const Login = () => {
         }
 
         .input-modern {
-          background: rgba(255,255,255,0.1);
-          border: 1px solid #444;
-          color: white;
+          background: white;
+          border: 1px solid #E2E8F0;
+          color: #1E293B;
         }
 
         .input-modern:focus {
-          border-color: red;
-          box-shadow: 0 0 10px rgba(255,0,0,0.5);
+          border-color: #5B3CC4;
+          box-shadow: 0 0 10px rgba(91,60,196,0.3);
         }
 
         .btn-modern {
-          background: linear-gradient(90deg, #ff0000, #cc0000);
+          background: #5B3CC4;
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -219,12 +219,12 @@ export const Login = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 20px red;
+          box-shadow: 0 0 20px rgba(91,60,196,0.3);
         }
 
         .error-anim {
-          background: rgba(255,0,0,0.1);
-          border: 1px solid red;
+          background: rgba(91,60,196,0.1);
+          border: 1px solid #5B3CC4;
           color: #ff6b6b;
           padding: 10px;
           border-radius: 8px;
@@ -243,7 +243,7 @@ export const Login = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(255,0,0,0.15), transparent);
+          background: linear-gradient(120deg, transparent, rgba(91,60,196,0.15), transparent);
           animation: beamMove 6s linear infinite;
         }
 
