@@ -18,7 +18,6 @@ export const Clients = () => {
     email: "",
     phone: "",
     status: "ACTIVE",
-    billingType: "HOURLY",
   });
 
   const loadClients = async () => {
@@ -49,7 +48,7 @@ export const Clients = () => {
       } else {
         await createClient(formData);
       }
-      setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE", billingType: "HOURLY" });
+      setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE" });
       setShowForm(false);
       setEditingId(null);
       await loadClients();
@@ -66,7 +65,6 @@ export const Clients = () => {
       email: client.email || "",
       phone: client.phone || "",
       status: client.status,
-      billingType: client.billingType,
     });
     setEditingId(client.id);
     setShowForm(true);
@@ -86,10 +84,10 @@ export const Clients = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Client Management</h1>
-          <p className="text-[#6b7280]">Manage clients and billing types</p>
+          <h1 className="text-2xl font-bold text-[#1E293B]">Client Management</h1>
+          <p className="text-[#64748B]">Manage clients and billing types</p>
         </div>
-        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE", billingType: "HOURLY" }); }}>
+        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE" }); }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Client
         </Button>
@@ -107,13 +105,9 @@ export const Clients = () => {
               <Input name="company" value={formData.company} onChange={handleInputChange} placeholder="Company" />
               <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" />
               <Input name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Phone" />
-              <select name="status" value={formData.status} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-              </select>
-              <select name="billingType" value={formData.billingType} onChange={handleInputChange} className="border border-[#d1d5db] p-2 rounded">
-                <option value="HOURLY">Hourly</option>
-                <option value="FIXED">Fixed</option>
+              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+                <option value="ACTIVE" className="bg-white">Active</option>
+                <option value="INACTIVE" className="bg-white">Inactive</option>
               </select>
               <div className="flex gap-2">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
@@ -127,29 +121,29 @@ export const Clients = () => {
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+            <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <tr>
-                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Name</th>
-                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Code</th>
-                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Company</th>
-                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Email</th>
-                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Billing Type</th>
-                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Status</th>
-                <th className="px-4 py-3 text-left text-[#6b7280] font-semibold">Actions</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Name</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Code</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Company</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Email</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Billing Type</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Status</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="7" className="text-center py-8 text-[#6b7280]">Loading...</td></tr>
+                <tr><td colSpan="7" className="text-center py-8 text-[#64748B]">Loading...</td></tr>
               ) : clients.length === 0 ? (
-                <tr><td colSpan="7" className="text-center py-8 text-[#6b7280]">No clients found</td></tr>
+                <tr><td colSpan="7" className="text-center py-8 text-[#64748B]">No clients found</td></tr>
               ) : (
                 clients.map((client) => (
-                  <tr key={client.id} className="border-b border-[#e5e7eb]">
-                    <td className="px-4 py-3 text-[#111827] font-medium">{client.name}</td>
-                    <td className="px-4 py-3 text-[#111827]">{client.code || "-"}</td>
-                    <td className="px-4 py-3 text-[#111827]">{client.company || "-"}</td>
-                    <td className="px-4 py-3 text-[#111827]">{client.email || "-"}</td>
+                  <tr key={client.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                    <td className="px-4 py-3 font-medium text-[#1E293B]">{client.name}</td>
+                    <td className="px-4 py-3 text-[#64748B]">{client.code || "-"}</td>
+                    <td className="px-4 py-3 text-[#64748B]">{client.company || "-"}</td>
+                    <td className="px-4 py-3 text-[#64748B]">{client.email || "-"}</td>
                     <td className="px-4 py-3"><Badge variant="primary">{client.billingType}</Badge></td>
                     <td className="px-4 py-3">
                       <Badge variant={client.status === "ACTIVE" ? "success" : "danger"}>{client.status}</Badge>

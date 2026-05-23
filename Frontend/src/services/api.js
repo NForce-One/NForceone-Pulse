@@ -297,6 +297,11 @@ export const fetchTasks = async () => {
 
 // ================= USERS =================
 
+export const getNextEmployeeId = async () => {
+  const response = await api.get("/users/next-employee-id");
+  return response.data;
+};
+
 export const fetchUsers = async () => {
   const response = await api.get("/users");
   return response.data;

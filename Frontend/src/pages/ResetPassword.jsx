@@ -65,7 +65,7 @@ const ResetPassword = () => {
       }}
     >
       {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-green-900/60"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/60 to-purple-100/60"></div>
 
       {/* ✨ LIGHT EFFECT */}
       <div className="light-beam"></div>
@@ -74,9 +74,9 @@ const ResetPassword = () => {
 
         {/* 🔥 LOGO */}
         <div className="flex justify-center mb-6">
-          <div className="flex items-center gap-3 text-white">
+          <div className="flex items-center gap-3 text-[#1E293B]">
 
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#22c55e] logo-glow">
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#5B3CC4]">
               <img src={logo} alt="logo" className="w-full h-full object-cover" />
             </div>
 
@@ -88,7 +88,7 @@ const ResetPassword = () => {
         <div className="card-modern p-8">
 
           <div className="text-center mb-6">
-            <h2 className="text-2xl text-white animate-slideDown">
+            <h2 className="text-2xl text-[#1E293B] animate-slideDown">
               Reset Password
             </h2>
           </div>
@@ -165,11 +165,11 @@ const ResetPassword = () => {
         }
 
         .card-modern {
-          background: rgba(0,0,0,0.5);
+          background: white;
           backdrop-filter: blur(20px);
           border-radius: 20px;
-          border: 1px solid rgba(34,197,94,0.2);
-          box-shadow: 0 0 30px rgba(34,197,94,0.2);
+          border: 1px solid #E2E8F0;
+          box-shadow: 0 0 30px rgba(91,60,196,0.3);
           transition: transform 0.3s;
         }
 
@@ -177,30 +177,19 @@ const ResetPassword = () => {
           transform: scale(1.02);
         }
 
-        .logo-glow {
-          box-shadow: 0 0 20px #22c55e;
-          animation: pulseGlow 2s infinite;
-        }
-
-        @keyframes pulseGlow {
-          0% { box-shadow: 0 0 10px #22c55e; }
-          50% { box-shadow: 0 0 25px #22c55e; }
-          100% { box-shadow: 0 0 10px #22c55e; }
-        }
-
         .input-modern {
-          background: rgba(255,255,255,0.1);
-          border: 1px solid #444;
-          color: white;
+          background: white;
+          border: 1px solid #E2E8F0;
+          color: #1E293B;
         }
 
         .input-modern:focus {
-          border-color: #22c55e;
-          box-shadow: 0 0 10px rgba(34,197,94,0.5);
+          border-color: #5B3CC4;
+          box-shadow: 0 0 10px rgba(91,60,196,0.3);
         }
 
         .btn-modern {
-          background: linear-gradient(90deg, #22c55e, #16a34a);
+          background: #5B3CC4;
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -208,12 +197,12 @@ const ResetPassword = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 20px #22c55e;
+          box-shadow: 0 0 20px rgba(91,60,196,0.3);
         }
 
         .error-anim {
-          background: rgba(255,0,0,0.1);
-          border: 1px solid red;
+          background: rgba(91,60,196,0.1);
+          border: 1px solid #5B3CC4;
           color: #ff6b6b;
           padding: 10px;
           border-radius: 8px;
@@ -221,9 +210,9 @@ const ResetPassword = () => {
         }
 
         .success-anim {
-          background: rgba(0,255,0,0.1);
-          border: 1px solid #00ff88;
-          color: #00ff88;
+          background: rgba(91,60,196,0.1);
+          border: 1px solid #5B3CC4;
+          color: #5B3CC4;
           padding: 10px;
           border-radius: 8px;
           animation: fadeIn 0.5s;
@@ -241,7 +230,7 @@ const ResetPassword = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(34,197,94,0.15), transparent);
+          background: linear-gradient(120deg, transparent, rgba(91,60,196,0.15), transparent);
           animation: beamMove 6s linear infinite;
         }
 

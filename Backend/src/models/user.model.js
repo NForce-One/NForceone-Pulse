@@ -30,6 +30,11 @@ const User = sequelize.define(
       defaultValue: "EMPLOYEE",
     },
     // 🔥 NEW FIELDS (from spec)
+    employeeId: {
+      type: DataTypes.INTEGER,
+      unique: true,
+      allowNull: true,
+    },
     department: {
       type: DataTypes.STRING,
       allowNull: true,

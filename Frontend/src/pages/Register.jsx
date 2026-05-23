@@ -71,12 +71,12 @@ const Register = () => {
       }}
     >
       {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/50 to-green-900/60"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-white/50 to-purple-100/60"></div>
 
       {/* 🔥 ANIMATED GLOW */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="w-[500px] h-[500px] bg-green-600/20 rounded-full blur-[120px] animate-pulse absolute top-[-100px] left-[-100px]"></div>
-        <div className="w-[400px] h-[400px] bg-green-500/20 rounded-full blur-[100px] animate-pulse absolute bottom-[-80px] right-[-80px]"></div>
+        <div className="w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse absolute top-[-100px] left-[-100px]"></div>
+        <div className="w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[100px] animate-pulse absolute bottom-[-80px] right-[-80px]"></div>
       </div>
 
       <div
@@ -87,9 +87,9 @@ const Register = () => {
 
         {/* 🔥 LOGO */}
         <div className="flex justify-center mb-4">
-          <div className="flex items-center gap-3 text-white drop-shadow-[0_0_30px_rgba(34,197,94,1)] animate-fade-in">
+          <div className="flex items-center gap-3 text-[#1E293B] drop-shadow-[0_0_30px_rgba(91,60,196,0.3)] animate-fade-in">
 
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.7)]">
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#5B3CC4] shadow-[0_0_15px_rgba(91,60,196,0.3)]">
               <img src={logo} alt="NForce Logo" className="w-full h-full object-cover" />
             </div>
 
@@ -100,13 +100,13 @@ const Register = () => {
         </div>
 
         {/* 🔥 CARD */}
-        <div className="bg-black/60 backdrop-blur-xl border border-[#22c55e]/30 rounded-2xl shadow-[0_0_80px_rgba(34,197,94,0.35)] p-8 transition-all duration-500 hover:shadow-[0_0_100px_rgba(34,197,94,0.5)]">
+        <div className="bg-white backdrop-blur-xl border border-[#E2E8F0] rounded-2xl shadow-[0_0_80px_rgba(91,60,196,0.3)] p-8 transition-all duration-500 hover:shadow-[0_0_100px_rgba(91,60,196,0.3)]">
 
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-white">
+            <h2 className="text-2xl font-semibold text-[#1E293B]">
               Create Account
             </h2>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-[#64748B] text-sm mt-1">
               Register as Employee or Manager
             </p>
           </div>
@@ -114,13 +114,13 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
 
             {error && (
-              <div className="bg-red-500/20 border border-red-400 text-red-300 px-4 py-2 rounded-md text-sm animate-pulse">
+              <div className="bg-purple-100 border border-[#5B3CC4] text-[#5B3CC4] px-4 py-2 rounded-md text-sm animate-pulse">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="bg-green-500/20 border border-green-400 text-green-300 px-4 py-2 rounded-md text-sm animate-pulse">
+              <div className="bg-green-50 border border-green-300 text-green-700 px-4 py-2 rounded-md text-sm animate-pulse">
                 {success}
               </div>
             )}
@@ -131,7 +131,7 @@ const Register = () => {
               value={form.name}
               onChange={handleChange}
               required
-              className="bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-[#22c55e] transition-all duration-300 focus:scale-[1.02]"
+              className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-300 focus:scale-[1.02]"
             />
 
             <Input
@@ -141,7 +141,7 @@ const Register = () => {
               value={form.email}
               onChange={handleChange}
               required
-              className="bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-[#22c55e] transition-all duration-300 focus:scale-[1.02]"
+              className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-300 focus:scale-[1.02]"
             />
 
             <Input
@@ -151,19 +151,19 @@ const Register = () => {
               value={form.password}
               onChange={handleChange}
               required
-              className="bg-white/10 border border-white/10 text-white focus:ring-2 focus:ring-[#22c55e] transition-all duration-300 focus:scale-[1.02]"
+              className="bg-white border border-[#E2E8F0] text-[#1E293B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-300 focus:scale-[1.02]"
             />
 
             <select
               name="role"
               value={form.role}
               onChange={handleChange}
-              className="w-full bg-white/10 border border-white/10 text-white p-2 rounded-md focus:ring-2 focus:ring-[#22c55e] transition-all duration-300 focus:scale-[1.02]"
+              className="w-full bg-white border border-[#E2E8F0] text-[#1E293B] p-2 rounded-md focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-300 focus:scale-[1.02]"
             >
-              <option value="EMPLOYEE" className="bg-black text-white">
+              <option value="EMPLOYEE" className="bg-white text-[#1E293B]">
                 Employee
               </option>
-              <option value="MANAGER" className="bg-black text-white">
+              <option value="MANAGER" className="bg-white text-[#1E293B]">
                 Manager
               </option>
             </select>
@@ -172,9 +172,9 @@ const Register = () => {
               type="submit"
               disabled={loading}
               className="w-full py-2 rounded-lg font-semibold text-white 
-              bg-gradient-to-r from-[#22c55e] via-[#16a34a] to-[#15803d] 
+              bg-[#5B3CC4] hover:bg-[#4A2FA0]
               hover:scale-[1.05] active:scale-[0.98]
-              hover:shadow-[0_0_30px_rgba(34,197,94,1)]
+              hover:shadow-[0_0_30px_rgba(91,60,196,0.3)]
               transition-all duration-300"
             >
               {loading ? "Registering..." : "Register"}

@@ -260,13 +260,13 @@ const handleDelete = async (id) => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[#111827]">My Timesheet</h1>
+      <h1 className="text-2xl font-bold text-[#1E293B]">My Timesheet</h1>
 
       {/* FORM */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-[#111827] flex items-center gap-2">
-            <Plus className="w-5 h-5 text-[#22c55e]" />
+          <CardTitle className="text-[#1E293B] flex items-center gap-2">
+            <Plus className="w-5 h-5 text-[#5B3CC4]" />
             Log Time
           </CardTitle>
         </CardHeader>
@@ -282,7 +282,7 @@ const handleDelete = async (id) => {
             <select
               value={selectedManager || ""}
               onChange={(e) => setSelectedManager(e.target.value)}
-              className="h-10 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] focus:border-transparent transition-all duration-200"
+              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200"
             >
               <option value="" className="bg-white">{user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
               {managers.map((m) => (
@@ -302,31 +302,31 @@ const handleDelete = async (id) => {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+            <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <tr>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Client</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Date</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Project</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Task</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Description</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Hour</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Reported To</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
-                <th className="p-3 text-left text-[#6b7280] font-medium">Edit</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Client</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Date</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Project</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Task</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Description</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Hour</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Reported To</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
+                <th className="p-3 text-left text-[#64748B] font-medium">Edit</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry) => {
                 return (
-                  <tr key={entry.id} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
-                    <td className="p-3 text-[#111827]">{entry.client || "-"}</td>
-                    <td className="p-3 text-[#6b7280]">
+                  <tr key={entry.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                    <td className="p-3 text-[#1E293B]">{entry.client || "-"}</td>
+                    <td className="p-3 text-[#64748B]">
                       {format(new Date(entry.entryDate), "MMM dd, yyyy")}
                     </td>
 
-                    <td className="p-3 text-[#111827]">
+                    <td className="p-3 text-[#1E293B]">
                       {editingId === entry.id ? (
                         <Input
                           value={editData.project}
@@ -339,9 +339,9 @@ const handleDelete = async (id) => {
                       )}
                     </td>
 
-                    <td className="p-3 text-[#111827]">{entry.task}</td>
+                    <td className="p-3 text-[#1E293B]">{entry.task}</td>
 
-                    <td className="p-3 text-[#6b7280]">
+                    <td className="p-3 text-[#64748B]">
                       {editingId === entry.id ? (
                         <Input
                           value={editData.description}
@@ -357,7 +357,7 @@ const handleDelete = async (id) => {
                       )}
                     </td>
 
-                    <td className="p-3 text-[#111827] font-medium">{entry.hours} h</td>
+                    <td className="p-3 text-[#1E293B] font-medium">{entry.hours} h</td>
 
                     <td className="p-3">
                       <Badge variant={getStatusBadgeVariant(getEmployeeStatus(entry.status))}>
@@ -365,7 +365,7 @@ const handleDelete = async (id) => {
                       </Badge>
                     </td>
 
-                    <td className="p-3 text-[#6b7280]">
+                    <td className="p-3 text-[#64748B]">
                       {entry.Manager?.name || "-"}
                     </td>
 
@@ -380,7 +380,7 @@ const handleDelete = async (id) => {
                         entry.status === "SUBMITTED") && "-"}
                     </td>
 
-                    <td className="p-3 text-[#6b7280] max-w-[200px]">
+                    <td className="p-3 text-[#64748B] max-w-[200px]">
                       {entry.managerComment || "-"}
                     </td>
 
@@ -427,7 +427,7 @@ const handleDelete = async (id) => {
               })}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan="11" className="p-8 text-center text-[#6b7280]">
+                  <td colSpan="11" className="p-8 text-center text-[#64748B]">
                     No time entries found. Start by adding your first entry above.
                   </td>
                 </tr>

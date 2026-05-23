@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { getDashboardStats, getHourDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
 import { AdminListModal } from "../components/ui/AdminListModal";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { DrillDownModal } from "../components/ui/DrillDownModal";
-import { Clock, CheckCircle, AlertCircle, BarChart3, Users, FolderOpen, Building, TrendingUp, TrendingDown, ChevronDown } from "lucide-react";
+import { Users, FolderOpen, Building, ChevronDown } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -36,6 +36,12 @@ const FILTER_OPTIONS = [
   { value: "customMonth", label: "Custom Month" },
   { value: "customRange", label: "Custom Range" },
 ];
+const METRIC_OPTIONS = [
+  { value: "total", label: "Total Working Hours" },
+  { value: "working", label: "Working Hours" },
+  { value: "weekend", label: "Extra Working Hours on Weekends" },
+  { value: "holiday", label: "Extra Working Hours on Holidays" },
+];
 
 const toDateStr = (date) => {
   const y = date.getFullYear();
@@ -55,6 +61,7 @@ export const Dashboard = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dashboardView, setDashboardView] = useState("self");
+  const [selectedMetric, setSelectedMetric] = useState("total");
 
   const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
   const isAdmin = user?.role === "ADMIN";
@@ -222,9 +229,9 @@ export const Dashboard = () => {
           key: "role", label: "Role",
           render: (u) => (
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-              u.role === "ADMIN" ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" :
-              u.role === "MANAGER" ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" :
-              "bg-[#2a2a2a] text-[#a1a1aa] border border-[#3a3a3a]"
+              u.role === "ADMIN" ? "bg-purple-100 text-purple-700 border border-purple-200" :
+              u.role === "MANAGER" ? "bg-blue-100 text-blue-700 border border-blue-200" :
+              "bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]"
             }`}>{u.role}</span>
           )
         },
@@ -233,7 +240,7 @@ export const Dashboard = () => {
           key: "isActive", label: "Status",
           render: (u) => (
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-              u.isActive ? "bg-emerald-500/20 text-emerald-300" : "bg-red-500/20 text-red-300"
+              u.isActive ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-red-100 text-red-700 border border-red-200"
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full ${u.isActive ? "bg-emerald-400" : "bg-red-400"}`}></span>
               {u.isActive ? "Active" : "Inactive"}
@@ -258,7 +265,7 @@ export const Dashboard = () => {
         {
           key: "status", label: "Status",
           render: (p) => (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
               {p.status}
             </span>
           )
@@ -291,7 +298,7 @@ export const Dashboard = () => {
         {
           key: "status", label: "Status",
           render: (c) => (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
               {c.status}
             </span>
           )
@@ -299,7 +306,7 @@ export const Dashboard = () => {
         {
           key: "projectCount", label: "Related Projects",
           render: (c) => (
-            <span className="text-[#a1a1aa]">{c.projectCount} project{c.projectCount !== 1 ? "s" : ""}</span>
+            <span className="text-[#64748B]">{c.projectCount} project{c.projectCount !== 1 ? "s" : ""}</span>
           )
         },
       ];
@@ -351,107 +358,35 @@ export const Dashboard = () => {
     };
   }, [getFilterDateRange, loadStats]);
 
-  const statCards = [
-    {
-      title: "Total Working Hours",
-      value: `${(stats.totalWeekHours || 0).toFixed(2)}h`,
-      icon: Clock,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/20",
-      borderColor: "border-blue-500/30",
-      shadowColor: "shadow-blue-500/20",
-      clickable: true,
-      onClick: () => openHourDetails("Total Working Hours", "total"),
-    },
-    {
-      title: "Working Hours",
-      value: `${(stats.normalHours || 0).toFixed(2)}h`,
-      icon: BarChart3,
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/20",
-      borderColor: "border-purple-500/30",
-      shadowColor: "shadow-purple-500/20",
-      clickable: true,
-      onClick: () => openHourDetails("Working Hours", "working"),
-    },
-    {
-      title: "Extra Working Hours on Weekends",
-      value: `${(stats.weekendHours || 0).toFixed(2)}h`,
-      icon: Clock,
-      color: "text-amber-400",
-      bgColor: "bg-amber-500/20",
-      borderColor: "border-amber-500/30",
-      shadowColor: "shadow-amber-500/20",
-      clickable: true,
-      onClick: () => openHourDetails("Extra Working Hours on Weekends", "weekend"),
-    },
-    {
-      title: "Extra Working Hours on Holidays",
-      value: `${(stats.holidayHours || 0).toFixed(2)}h`,
-      icon: Clock,
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-500/20",
-      borderColor: "border-emerald-500/30",
-      shadowColor: "shadow-emerald-500/20",
-      clickable: true,
-      onClick: () => openHourDetails("Extra Working Hours on Holidays", "holiday"),
-    },
-  ];
+  const filteredDashboardData = useMemo(() => {
+    const entries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];
+    let filtered = [];
+    if (selectedMetric === "total") {
+      filtered = entries;
+    } else if (selectedMetric === "working") {
+      filtered = entries.filter(e => e.type === "working");
+    } else if (selectedMetric === "weekend") {
+      filtered = entries.filter(e => e.type === "weekend");
+    } else if (selectedMetric === "holiday") {
+      filtered = entries.filter(e => e.type === "holiday");
+    }
+    const totalHours = filtered.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+    const normalHours = filtered.filter(e => e.type === "working").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+    const weekendHours = filtered.filter(e => e.type === "weekend").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+    const holidayHours = filtered.filter(e => e.type === "holiday").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+    return {
+      entries: filtered,
+      totals: { normalHours, weekendHours, holidayHours, totalExtraHours: weekendHours + holidayHours, totalHours },
+    };
+  }, [stats?.dashboardEntries, selectedMetric]);
 
-  if (user?.role === "EMPLOYEE" || (user?.role === "MANAGER" && dashboardView === "self")) {
-    statCards.push({
-      title: "Draft Entries",
-      value: stats.draftEntries || 0,
-      icon: AlertCircle,
-      color: "text-amber-400",
-      bgColor: "bg-amber-500/20",
-      borderColor: "border-amber-500/30",
-      shadowColor: "shadow-amber-500/20",
-      clickable: true,
-      onClick: () => openHourDetails("Draft Entries", "draft"),
-    });
-  }
-
-  if (isAdmin || (user?.role === "MANAGER" && dashboardView === "team")) {
-    statCards.push({
-      title: "Pending Approvals",
-      value: stats.pendingApprovals || 0,
-      icon: CheckCircle,
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-500/20",
-      borderColor: "border-emerald-500/30",
-      shadowColor: "shadow-emerald-500/20",
-    });
-  }
-
-  if (user?.role === "MANAGER" && dashboardView === "team") {
-    statCards.push(
-      {
-        title: "Missing Hours",
-        value: `${stats.missingHours || 0}h`,
-        icon: TrendingDown,
-        color: "text-red-400",
-        bgColor: "bg-red-500/20",
-        borderColor: "border-red-500/30",
-        shadowColor: "shadow-red-500/20",
-      },
-      {
-        title: "Utilization %",
-        value: `${stats.utilization || 0}%`,
-        icon: TrendingUp,
-        color: "text-cyan-400",
-        bgColor: "bg-cyan-500/20",
-        borderColor: "border-cyan-500/30",
-        shadowColor: "shadow-cyan-500/20",
-      }
-    );
-  }
+  const statCards = [];
 
   if (isAdmin) {
     statCards.push(
-      { title: "Total Users", value: stats.totalUsers || 0, icon: Users, color: "text-indigo-400", bgColor: "bg-indigo-500/20", borderColor: "border-indigo-500/30", shadowColor: "shadow-indigo-500/20", clickable: true, onClick: openUsersModal },
-      { title: "Active Projects", value: stats.totalProjects || 0, icon: FolderOpen, color: "text-teal-400", bgColor: "bg-teal-500/20", borderColor: "border-teal-500/30", shadowColor: "shadow-teal-500/20", clickable: true, onClick: openProjectsModal },
-      { title: "Active Clients", value: stats.totalClients || 0, icon: Building, color: "text-rose-400", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30", shadowColor: "shadow-rose-500/20", clickable: true, onClick: openClientsModal }
+      { title: "Total Users", value: stats.totalUsers || 0, icon: Users, color: "text-indigo-600", bgColor: "bg-indigo-500/20", borderColor: "border-indigo-500/30", shadowColor: "shadow-indigo-500/20", clickable: true, onClick: openUsersModal },
+      { title: "Active Projects", value: stats.totalProjects || 0, icon: FolderOpen, color: "text-teal-600", bgColor: "bg-teal-500/20", borderColor: "border-teal-500/30", shadowColor: "shadow-teal-500/20", clickable: true, onClick: openProjectsModal },
+      { title: "Active Clients", value: stats.totalClients || 0, icon: Building, color: "text-rose-600", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30", shadowColor: "shadow-rose-500/20", clickable: true, onClick: openClientsModal }
     );
   }
 
@@ -459,8 +394,8 @@ export const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Dashboard</h1>
-          <p className="text-[#6b7280]">Welcome back, {user?.name || "User"}!</p>
+          <h1 className="text-2xl font-bold text-[#1E293B]">Dashboard</h1>
+          <p className="text-[#64748B]">Welcome back, {user?.name || "User"}!</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
       {user?.role === "MANAGER" && (
@@ -468,32 +403,44 @@ export const Dashboard = () => {
               <select
                 value={dashboardView}
                 onChange={(e) => setDashboardView(e.target.value)}
-                className="appearance-none bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#22c55e]/50 focus:ring-1 focus:ring-[#22c55e]/20 cursor-pointer hover:border-[#9ca3af] transition-colors"
+                className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#5B3CC4]/50 focus:ring-1 focus:ring-[#5B3CC4]/20 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
               >
                 <option value="self">Self Dashboard</option>
                 <option value="team">Team Dashboard</option>
               </select>
-      <ChevronDown className="w-4 h-4 text-[#6b7280] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 text-[#64748B] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           )}
           <div className="relative">
             <select
+              value={selectedMetric}
+              onChange={(e) => setSelectedMetric(e.target.value)}
+              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#5B3CC4]/50 focus:ring-1 focus:ring-[#5B3CC4]/20 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
+            >
+              {METRIC_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 text-[#64748B] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+          <div className="relative">
+            <select
               value={filterPeriod}
               onChange={(e) => setFilterPeriod(e.target.value)}
-              className="appearance-none bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#22c55e]/50 focus:ring-1 focus:ring-[#22c55e]/20 cursor-pointer hover:border-[#9ca3af] transition-colors"
+              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#5B3CC4]/50 focus:ring-1 focus:ring-[#5B3CC4]/20 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
             >
               {FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="w-4 h-4 text-[#6b7280] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-[#64748B] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
           {filterPeriod === "customMonth" && (
             <>
               <select
                 value={customMonth}
                 onChange={(e) => setCustomMonth(Number(e.target.value))}
-                className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors"
+                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
               >
                 {MONTHS.map((name, idx) => (
                   <option key={idx} value={idx}>{name}</option>
@@ -502,7 +449,7 @@ export const Dashboard = () => {
               <select
                 value={customYear}
                 onChange={(e) => setCustomYear(Number(e.target.value))}
-                className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors"
+                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
               >
                 {YEARS.map((year) => (
                   <option key={year} value={year}>{year}</option>
@@ -513,21 +460,21 @@ export const Dashboard = () => {
           {filterPeriod === "customRange" && (
             <>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-[#6b7280]">From:</span>
+                <span className="text-xs text-[#64748B]">From:</span>
                 <input
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors w-[140px]"
+                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors w-[140px]"
                 />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-[#6b7280]">To:</span>
+                <span className="text-xs text-[#64748B]">To:</span>
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="bg-white border border-[#d1d5db] text-[#111827] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#22c55e]/50 cursor-pointer hover:border-[#9ca3af] transition-colors w-[140px]"
+                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors w-[140px]"
                 />
               </div>
             </>
@@ -535,16 +482,16 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {isLoading ? (
+      {statCards.length > 0 && (isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (
-            <Card key={n} className="animate-pulse border-[#e5e7eb] bg-white">
+            <Card key={n} className="animate-pulse border-[#E2E8F0] bg-white">
               <CardHeader className="flex justify-between pb-2">
-                <div className="h-4 w-1/2 bg-[#e5e7eb] rounded"></div>
-                <div className="h-4 w-4 bg-[#e5e7eb] rounded-full"></div>
+                <div className="h-4 w-1/2 bg-[#E2E8F0] rounded"></div>
+                <div className="h-4 w-4 bg-[#E2E8F0] rounded-full"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-8 w-1/3 bg-[#e5e7eb] rounded mb-2"></div>
+                <div className="h-8 w-1/3 bg-[#E2E8F0] rounded mb-2"></div>
               </CardContent>
             </Card>
           ))}
@@ -554,56 +501,117 @@ export const Dashboard = () => {
           {statCards.map((card, index) => (
             <Card
               key={card.title}
-              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(34,197,94,0.1)] hover:border-[#22c55e]/30 transition-all duration-300 hover:scale-[1.02] group ${card.clickable ? "cursor-pointer" : ""}`}
+              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(91,60,196,0.08)] hover:border-[#5B3CC4]/30 transition-all duration-300 hover:scale-[1.02] group ${card.clickable ? "cursor-pointer" : ""}`}
               style={{
                 animationDelay: `${index * 100}ms`,
               }}
               onClick={card.clickable ? card.onClick : undefined}
             >
               <CardHeader className="flex justify-between pb-2">
-                <CardTitle className="text-sm text-[#6b7280] group-hover:text-[#111827] transition-colors">
+                <CardTitle className="text-sm text-[#64748B] group-hover:text-white transition-colors">
                   {card.title}
                 </CardTitle>
                 <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
-                  <card.icon className={`w-4 h-4 ${card.color} drop-shadow-[0_0_8px_currentColor]`} />
+                  <card.icon className={`w-4 h-4 ${card.color}`} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className={`text-3xl font-bold ${card.color} drop-shadow-[0_0_10px_currentColor] font-mono`}>
+                <div className={`text-3xl font-bold ${card.color} font-mono`}>
                   {card.value}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+      ))}
+
+      {!isLoading && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-white">
+                {METRIC_OPTIONS.find(m => m.value === selectedMetric)?.label || "Dashboard"} Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredDashboardData.entries.length === 0 ? (
+                <div className="flex items-center justify-center h-32 text-[#64748B]">
+                  No entries found for the selected period.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Date</th>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Day</th>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Work Type</th>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Holiday Name</th>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Client</th>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Project</th>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Task</th>
+                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDashboardData.entries.map((entry, idx) => (
+                        <tr
+                          key={idx}
+                          className={`border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150 ${entry.type === "holiday" ? "bg-emerald-50 border-l-4 border-l-emerald-500" : entry.type === "weekend" ? "bg-amber-50 border-l-4 border-l-amber-500" : ""}`}
+                        >
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.entryDate || entry.rawDate || "-"}</td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.day || "-"}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {entry.type === "holiday" ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">Holiday</span>
+                            ) : entry.type === "weekend" ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">Weekend</span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">Regular</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.displayName || "-"}</td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.clientWorked || "-"}</td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.projectWorked || "-"}</td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.taskWorked || "-"}</td>
+                          <td className="px-4 py-3 text-[#64748B] whitespace-nowrap max-w-[200px] truncate">{entry.description || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {user?.role === "MANAGER" && dashboardView === "team" && stats.teamData && stats.teamData.length > 0 && (
         <Card className="overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-[#111827] flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#22c55e]" />
+            <CardTitle className="text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-[#5B3CC4]" />
               Team Overview
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+                <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Name</th>
-                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Email</th>
-                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Week Hours</th>
-                    <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Entries</th>
+                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Name</th>
+                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Email</th>
+                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Week Hours</th>
+                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Entries</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.teamData.map((member) => (
-                    <tr key={member.userId} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
-                      <td className="px-4 py-3 text-[#111827] font-medium">{member.name}</td>
-                      <td className="px-4 py-3 text-[#6b7280]">{member.email}</td>
-                      <td className="px-4 py-3 text-[#111827]">{member.weekHours}h</td>
-                      <td className="px-4 py-3 text-[#6b7280]">{member.entriesCount}</td>
+                    <tr key={member.userId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[#1E293B] font-medium">{member.name}</td>
+                      <td className="px-4 py-3 text-[#64748B]">{member.email}</td>
+                      <td className="px-4 py-3 text-[#1E293B]">{member.weekHours}h</td>
+                      <td className="px-4 py-3 text-[#64748B]">{member.entriesCount}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -618,28 +626,28 @@ export const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-[#111827]">Top 5 Employees by Hours</CardTitle>
+                <CardTitle className="text-white">Top 5 Employees by Hours</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+                    <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-[#6b7280]">Name</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280]">Hours</th>
+                        <th className="px-4 py-3 text-left text-[#64748B]">Name</th>
+                        <th className="px-4 py-3 text-left text-[#64748B]">Hours</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(stats.topEmployees || []).length > 0 ? (
                         stats.topEmployees.map((emp) => (
-                          <tr key={emp.userId} className="border-b border-[#2a2a2a]">
-                            <td className="px-4 py-3 text-white">{emp.name}</td>
-                            <td className="px-4 py-3 text-white">{emp.weekHours}h</td>
+                          <tr key={emp.userId} className="border-b border-[#E2E8F0]">
+                            <td className="px-4 py-3 text-[#1E293B]">{emp.name}</td>
+                            <td className="px-4 py-3 text-[#1E293B]">{emp.weekHours}h</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={2} className="px-4 py-6 text-center text-[#6b7280]">
+                          <td colSpan={2} className="px-4 py-6 text-center text-[#64748B]">
                             No employee hours available yet.
                           </td>
                         </tr>
@@ -652,30 +660,30 @@ export const Dashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-[#111827]">Employees with Missing Time</CardTitle>
+                <CardTitle className="text-white">Employees with Missing Time</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+                    <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-[#6b7280]">Name</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280]">Hours Logged</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280]">Missing</th>
+                        <th className="px-4 py-3 text-left text-[#64748B]">Name</th>
+                        <th className="px-4 py-3 text-left text-[#64748B]">Hours Logged</th>
+                        <th className="px-4 py-3 text-left text-[#64748B]">Missing</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(stats.missingEmployees || []).length > 0 ? (
                         stats.missingEmployees.map((emp) => (
-                          <tr key={emp.userId} className="border-b border-[#e5e7eb]">
-                            <td className="px-4 py-3 text-[#111827]">{emp.name}</td>
-                            <td className="px-4 py-3 text-[#111827]">{emp.weekHours}h</td>
+                          <tr key={emp.userId} className="border-b border-[#E2E8F0]">
+                            <td className="px-4 py-3 text-[#1E293B]">{emp.name}</td>
+                            <td className="px-4 py-3 text-[#1E293B]">{emp.weekHours}h</td>
                             <td className="px-4 py-3 text-red-400">{emp.missingHours}h</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-4 py-6 text-center text-[#6b7280]">
+                          <td colSpan={3} className="px-4 py-6 text-center text-[#64748B]">
                             No missing time records available yet.
                           </td>
                         </tr>
@@ -689,28 +697,28 @@ export const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-[#111827]">Top Projects by Hours</CardTitle>
+              <CardTitle className="text-white">Top Projects by Hours</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                     <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-[#6b7280]">Name</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280]">Hours</th>
+                  <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-[#64748B]">Project</th>
+                      <th className="px-4 py-3 text-left text-[#64748B]">Hours</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(stats.topProjects || []).length > 0 ? (
                       stats.topProjects.map((proj, idx) => (
-                         <tr key={idx} className="border-b border-[#e5e7eb]">
-                           <td className="px-4 py-3 text-[#111827]">{proj.name}</td>
-                           <td className="px-4 py-3 text-[#111827]">{proj.hours}h</td>
+                        <tr key={idx} className="border-b border-[#E2E8F0]">
+                          <td className="px-4 py-3 text-[#1E293B]">{proj.name}</td>
+                          <td className="px-4 py-3 text-[#1E293B]">{proj.hours}h</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={2} className="px-4 py-6 text-center text-[#6b7280]">
+                        <td colSpan={2} className="px-4 py-6 text-center text-[#64748B]">
                           No project hours data available yet.
                         </td>
                       </tr>
@@ -724,7 +732,7 @@ export const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-[#111827]">Working vs Extra</CardTitle>
+                <CardTitle className="text-white">Working vs Extra</CardTitle>
               </CardHeader>
               <CardContent>
                 {((stats.billableWeekHours || 0) > 0 || (stats.nonBillableWeekHours || 0) > 0) ? (
@@ -736,17 +744,17 @@ export const Dashboard = () => {
                         nonBillable: stats.nonBillableWeekHours || 0,
                       }]}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="name" stroke="#6b7280" />
-                      <YAxis stroke="#6b7280" />
-                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", color: "#111827" }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                      <XAxis dataKey="name" stroke="#a1a1aa" />
+                      <YAxis stroke="#a1a1aa" />
+                      <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
                       <Legend />
                       <Bar dataKey="billable" fill="#a855f7" name="Working" />
                       <Bar dataKey="nonBillable" fill="#6b7280" name="Extra" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex h-[300px] items-center justify-center text-[#6b7280]">
+                  <div className="flex h-[300px] items-center justify-center text-[#64748B]">
                     No working/extra data available yet.
                   </div>
                 )}
@@ -769,12 +777,12 @@ export const Dashboard = () => {
                           <Cell key={`cell-${index}`} fill={["#a855f7", "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e"][index % 5]} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", color: "#111827" }} />
+                      <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex h-[300px] items-center justify-center text-[#6b7280]">
+                  <div className="flex h-[300px] items-center justify-center text-[#64748B]">
                     No project distribution data available yet.
                   </div>
                 )}
@@ -784,16 +792,16 @@ export const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-[#111827]">Weekly Trend (Last 4 Weeks)</CardTitle>
+              <CardTitle className="text-white">Weekly Trend (Last 4 Weeks)</CardTitle>
             </CardHeader>
             <CardContent>
               {(stats.weeklyTrend || []).length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={stats.weeklyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="week" stroke="#6b7280" />
-                    <YAxis stroke="#6b7280" />
-                    <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", color: "#111827" }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                    <XAxis dataKey="week" stroke="#a1a1aa" />
+                    <YAxis stroke="#a1a1aa" />
+                    <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
                     <Legend />
                     <Line type="monotone" dataKey="totalHours" stroke="#3b82f6" name="Total Hours" />
                     <Line type="monotone" dataKey="billableHours" stroke="#a855f7" name="Working Hours" />
@@ -801,8 +809,8 @@ export const Dashboard = () => {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                  <div className="flex h-[300px] items-center justify-center text-[#6b7280]">
-                    No weekly trend data available yet.
+                <div className="flex h-[300px] items-center justify-center text-[#64748B]">
+                  No weekly trend data available yet.
                 </div>
               )}
             </CardContent>

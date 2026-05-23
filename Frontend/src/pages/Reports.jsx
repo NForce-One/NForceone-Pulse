@@ -134,60 +134,60 @@ export const Reports = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-[#111827] flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-[#22c55e]" />
-            Reports
-          </h1>
-          <p className="text-[#6b7280]">View and export time tracking reports</p>
-        </div>
+<div>
+           <h1 className="text-2xl font-bold text-[#1E293B] flex items-center gap-2">
+             <BarChart3 className="w-6 h-6 text-[#5B3CC4]" />
+             Reports
+           </h1>
+           <p className="text-[#64748B]">View and export time tracking reports</p>
+         </div>
         <Button onClick={exportCSV} disabled={!data.length} className="hover:scale-105 active:scale-95">
           <Download className="w-4 h-4 mr-2" />
           Export CSV
         </Button>
       </div>
 
-      {message.text && (
-        <div className={`p-3 rounded-lg text-sm ${
-          message.type === "success" ? "bg-green-500/10 text-green-400 border border-green-500/30" :
-          message.type === "error" ? "bg-red-500/10 text-red-400 border border-red-500/30" :
-          "bg-blue-500/10 text-blue-400 border border-blue-500/30"
-        }`}>
-          {message.text}
-        </div>
-      )}
+{message.text && (
+         <div className={`p-3 rounded-lg text-sm ${
+           message.type === "success" ? "bg-green-100 text-green-700 border border-green-200" :
+           message.type === "error" ? "bg-red-100 text-red-700 border border-red-200" :
+           "bg-blue-100 text-blue-700 border border-blue-200"
+         }`}>
+           {message.text}
+         </div>
+       )}
 
       <Card>
         <CardContent className="pt-6">
           <div className="flex gap-4 mb-4 flex-wrap">
             <Input name="startDate" type="date" value={filters.startDate} onChange={handleFilterChange} />
             <Input name="endDate" type="date" value={filters.endDate} onChange={handleFilterChange} />
-            <select
-              name="projectId"
-              value={filters.projectId}
-              onChange={handleFilterChange}
-              className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition-all duration-200"
-            >
-              <option value="">All Projects</option>
-              {projects.map((p) => (
-                <option key={p.id} value={String(p.id)}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="clientId"
-              value={filters.clientId}
-              onChange={handleFilterChange}
-              className="h-10 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition-all duration-200"
-            >
-              <option value="">All Clients</option>
-              {clients.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+<select
+               name="projectId"
+               value={filters.projectId}
+               onChange={handleFilterChange}
+               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200"
+             >
+               <option value="">All Projects</option>
+               {projects.map((p) => (
+                 <option key={p.id} value={String(p.id)}>
+                   {p.name}
+                 </option>
+               ))}
+             </select>
+             <select
+               name="clientId"
+               value={filters.clientId}
+               onChange={handleFilterChange}
+               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200"
+             >
+               <option value="">All Clients</option>
+               {clients.map((c) => (
+                 <option key={c.id} value={String(c.id)}>
+                   {c.name}
+                 </option>
+               ))}
+             </select>
             <Input name="department" value={filters.department} onChange={handleFilterChange} placeholder="Department" />
             <Button onClick={loadReport} className="hover:scale-105 active:scale-95">
               <BarChart3 className="w-4 h-4 mr-2" />
@@ -200,108 +200,108 @@ export const Reports = () => {
       <Card>
 
         <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-[#6b7280]">Loading...</div>
-          ) : data.length === 0 ? (
-            <div className="text-center py-8 text-[#6b7280]">No data found. Adjust filters and generate report.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                  <tr>
-                    {activeTab === "employee-hours" && (
-                      <>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Employee</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Project</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Task</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Date</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Hours</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Billable</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Status</th>
-                      </>
-                    )}
-                    {activeTab === "project-hours" && (
-                      <>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Project</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Client</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Employee</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Date</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Hours</th>
-                      </>
-                    )}
-                    {activeTab === "utilization" && (
-                      <>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Employee</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Department</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Total Hours</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Working</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Extra</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Utilization %</th>
-                      </>
-                    )}
-                    {activeTab === "billing" && (
-                      <>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Client</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Project</th>
-                        <th className="px-4 py-3 text-left text-[#6b7280] font-medium">Total Working Hours</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeTab === "employee-hours" && data.map((entry, i) => (
-                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
-                      <td className="px-4 py-3 text-[#111827]">{entry.User?.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#111827]">{entry.projectName || entry.Project?.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#111827]">{entry.taskTitle || entry.Task?.title || "-"}</td>
-                      <td className="px-4 py-3 text-[#6b7280]">{entry.entryDate}</td>
-                      <td className="px-4 py-3 text-[#111827] font-medium">{entry.hours}h</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={entry.isBillable ? "success" : "warning"}>
-                          {entry.isBillable ? "Yes" : "No"}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={entry.status === "APPROVED" ? "success" : entry.status === "SUBMITTED" ? "warning" : "default"}>
-                          {entry.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                  {activeTab === "project-hours" && data.map((entry, i) => (
-                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
-                      <td className="px-4 py-3 text-[#111827]">{entry.projectName || entry.Project?.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#111827]">{entry.clientName || entry.Client?.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#111827]">{entry.User?.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#6b7280]">{entry.entryDate}</td>
-                      <td className="px-4 py-3 text-[#111827] font-medium">{entry.hours}h</td>
-                    </tr>
-                  ))}
-                  {activeTab === "utilization" && data.map((u, i) => (
-                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
-                      <td className="px-4 py-3 text-[#111827]">{u.name || "-"}</td>
-                      <td className="px-4 py-3 text-[#6b7280]">{u.department || "-"}</td>
-                      <td className="px-4 py-3 text-[#111827]">{(u.totalHours ?? 0)}h</td>
-                      <td className="px-4 py-3 text-[#111827]">{(u.billableHours ?? 0)}h</td>
-                      <td className="px-4 py-3 text-[#111827]">{(u.nonBillableHours ?? 0)}h</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={u.utilizationPercent >= 70 ? "success" : u.utilizationPercent >= 50 ? "warning" : "danger"}>
-                          {(u.utilizationPercent ?? 0)}%
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                  {activeTab === "billing" && data.map((b, i) => (
-                    <tr key={i} className="border-b border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors duration-150">
-                      <td className="px-4 py-3 text-[#111827]">{b.clientName}</td>
-                      <td className="px-4 py-3 text-[#111827]">{b.projectName}</td>
-                      <td className="px-4 py-3 text-[#111827] font-medium">{b.totalHours}h</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+{isLoading ? (
+             <div className="text-center py-8 text-[#64748B]">Loading...</div>
+           ) : data.length === 0 ? (
+             <div className="text-center py-8 text-[#64748B]">No data found. Adjust filters and generate report.</div>
+           ) : (
+             <div className="overflow-x-auto">
+               <table className="w-full text-sm">
+                 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                   <tr>
+                     {activeTab === "employee-hours" && (
+                       <>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Employee</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Project</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Task</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Date</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Hours</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Billable</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Status</th>
+                       </>
+                     )}
+                     {activeTab === "project-hours" && (
+                       <>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Project</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Client</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Employee</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Date</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Hours</th>
+                       </>
+                     )}
+                     {activeTab === "utilization" && (
+                       <>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Employee</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Department</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Total Hours</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Working</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Extra</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Utilization %</th>
+                       </>
+                     )}
+                     {activeTab === "billing" && (
+                       <>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Client</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Project</th>
+                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Total Working Hours</th>
+                       </>
+                     )}
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {activeTab === "employee-hours" && data.map((entry, i) => (
+                     <tr key={i} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                       <td className="px-4 py-3 text-[#1E293B]">{entry.User?.name || "-"}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{entry.projectName || entry.Project?.name || "-"}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{entry.taskTitle || entry.Task?.title || "-"}</td>
+                       <td className="px-4 py-3 text-[#64748B]">{entry.entryDate}</td>
+                       <td className="px-4 py-3 text-[#1E293B] font-medium">{entry.hours}h</td>
+                       <td className="px-4 py-3">
+                         <Badge variant={entry.isBillable ? "success" : "warning"}>
+                           {entry.isBillable ? "Yes" : "No"}
+                         </Badge>
+                       </td>
+                       <td className="px-4 py-3">
+                         <Badge variant={entry.status === "APPROVED" ? "success" : entry.status === "SUBMITTED" ? "warning" : "default"}>
+                           {entry.status}
+                         </Badge>
+                       </td>
+                     </tr>
+                   ))}
+                   {activeTab === "project-hours" && data.map((entry, i) => (
+                     <tr key={i} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                       <td className="px-4 py-3 text-[#1E293B]">{entry.projectName || entry.Project?.name || "-"}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{entry.clientName || entry.Client?.name || "-"}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{entry.User?.name || "-"}</td>
+                       <td className="px-4 py-3 text-[#64748B]">{entry.entryDate}</td>
+                       <td className="px-4 py-3 text-[#1E293B] font-medium">{entry.hours}h</td>
+                     </tr>
+                   ))}
+                   {activeTab === "utilization" && data.map((u, i) => (
+                     <tr key={i} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                       <td className="px-4 py-3 text-[#1E293B]">{u.name || "-"}</td>
+                       <td className="px-4 py-3 text-[#64748B]">{u.department || "-"}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{(u.totalHours ?? 0)}h</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{(u.billableHours ?? 0)}h</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{(u.nonBillableHours ?? 0)}h</td>
+                       <td className="px-4 py-3">
+                         <Badge variant={u.utilizationPercent >= 70 ? "success" : u.utilizationPercent >= 50 ? "warning" : "danger"}>
+                           {(u.utilizationPercent ?? 0)}%
+                         </Badge>
+                       </td>
+                     </tr>
+                   ))}
+                   {activeTab === "billing" && data.map((b, i) => (
+                     <tr key={i} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                       <td className="px-4 py-3 text-[#1E293B]">{b.clientName}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{b.projectName}</td>
+                       <td className="px-4 py-3 text-[#1E293B] font-medium">{b.totalHours}h</td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+           )}
         </CardContent>
       </Card>
     </div>
