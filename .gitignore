@@ -9,3 +9,4 @@ backend.err
 .vercel/
 .opencode/
 tidb-ca.pem
+.env*.local
