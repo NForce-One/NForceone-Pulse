@@ -1,18 +1,17 @@
-// 🔥 ONLY UI ENHANCEMENTS ADDED (NO LOGIC CHANGED)
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Clock, Mail, Lock, Eye, EyeOff, LogIn, BarChart3, FileText } from "lucide-react";
 
 import { loginUser } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
-import { Input } from "../components/ui/Input";
-
-import bg from "../assets/now.png";
+import logo from "../assets/logo.png";
 
 export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -58,201 +57,170 @@ export const Login = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-green-900/60"></div>
+    <div className="min-h-screen flex font-['Inter']">
+      {/* LEFT BRANDING PANEL */}
+      <div className="hidden lg:flex w-1/2 items-center justify-center"
+        style={{
+          background: "linear-gradient(135deg, #0f0f0f 0%, #1a0000 50%, #2b0000 100%)",
+        }}
+      >
+        <div className="flex flex-col items-center text-center px-12 max-w-lg">
+          <img src={logo} alt="NForce Pulse" className="w-20 h-20 mb-8 object-contain" />
 
-      {/* ✨ MOVING LIGHT EFFECT */}
-      <div className="light-beam"></div>
-
-      <div className="relative w-full max-w-md z-10 animate-fadeIn">
-
-        {/* 🔥 UPDATED HEADER (NO LOGO) */}
-        <div className="text-center mb-6 animate-fadeIn">
-          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]">
+          <h1 className="text-4xl font-bold text-white tracking-tight mb-3">
             NForce Pulse
           </h1>
 
-          <p className="text-sm text-gray-300 mt-1 tracking-wide">
-            Time tracking tool
+          <p className="text-gray-400 text-base leading-relaxed mb-12">
+            Enterprise time tracking and workforce management platform.
           </p>
-        </div>
 
-        {/* 🔥 CARD */}
-        <div className="card-modern p-8">
-
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-white animate-slideDown">
-              Welcome back
-            </h2>
-            <p className="text-gray-400 text-sm mt-1">
-              Enter your credentials to access your account
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-
-            {error && (
-              <div className="error-anim">
-                {error}
-              </div>
-            )}
-
-            {/* EMAIL */}
-            <div className="field-anim">
-              <label className="text-sm text-gray-300">Email</label>
-              <Input
-                type="email"
-                placeholder="name@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="input-modern"
-              />
-            </div>
-
-            {/* PASSWORD */}
-            <div className="field-anim delay-1">
-              <label className="text-sm text-gray-300">Password</label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="input-modern"
-              />
-            </div>
-
-            {/* FORGOT */}
-            <div className="text-right delay-2 field-anim">
-              <span
-                className="text-sm text-green-400 cursor-pointer hover:text-green-300 transition"
-                onClick={() => navigate("/forgot-password")}
+          {/* Feature highlights */}
+          <div className="space-y-4 w-full">
+            <div className="flex items-center gap-4 text-left">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(220,38,38,0.15)" }}
               >
-                Forgot Password?
-              </span>
+                <Clock size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium">Time Tracking</p>
+                <p className="text-gray-500 text-xs">Track work hours with precision</p>
+              </div>
             </div>
-
-            {/* BUTTON */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-modern w-full"
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
-            </button>
-
-          </form>
+            <div className="flex items-center gap-4 text-left">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(220,38,38,0.15)" }}
+              >
+                <BarChart3 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium">Team Analytics</p>
+                <p className="text-gray-500 text-xs">Data-driven workforce insights</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-left">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(220,38,38,0.15)" }}
+              >
+                <FileText size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium">Reporting</p>
+                <p className="text-gray-500 text-xs">Comprehensive exportable reports</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 🔥 ANIMATIONS */}
-      <style>
-        {`
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease;
-        }
+      {/* RIGHT FORM PANEL */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6"
+        style={{ background: "#f8f9fb" }}
+      >
+        <div className="w-full max-w-md">
+          <div className="lg:hidden flex flex-col items-center mb-8">
+            <img src={logo} alt="NForce Pulse" className="w-14 h-14 mb-4 object-contain" />
+            <h1 className="text-2xl font-bold text-gray-900">NForce Pulse</h1>
+            <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
+          </div>
 
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+          {/* Form card */}
+          <div className="bg-white rounded-2xl p-8 md:p-10"
+            style={{
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900">Welcome Back</h2>
+              <p className="text-gray-500 text-sm mt-1.5">
+                Sign in to your account to continue
+              </p>
+            </div>
 
-        .animate-slideDown {
-          animation: slideDown 0.6s ease;
-        }
+            {error && (
+              <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-6">
+                <div className="w-1 h-8 rounded-full bg-red-500 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
 
-        @keyframes slideDown {
-          from { transform: translateY(-20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-gray-700">Email Address</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="email"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder:text-gray-400 outline-none"
+                  />
+                </div>
+              </div>
 
-        .field-anim {
-          animation: fadeUp 0.6s ease forwards;
-        }
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-gray-700">Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full h-11 pl-10 pr-11 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder:text-gray-400 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
 
-        .delay-1 { animation-delay: 0.2s; }
-        .delay-2 { animation-delay: 0.4s; }
+              {/* Remember Me + Forgot Password */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-red-600 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600">Remember Me</span>
+                </label>
+                <span
+                  className="text-sm text-red-600 cursor-pointer font-medium"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  Forgot Password?
+                </span>
+              </div>
 
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 flex items-center justify-center gap-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed border-0"
+                style={{
+                  background: "linear-gradient(135deg, #ff3b3b, #c40000)",
+                }}
+              >
+                {isLoading ? "Signing in..." : <><LogIn size={18} /><span>Login</span></>}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
 
-        .card-modern {
-          background: rgba(0,0,0,0.5);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          border: 1px solid rgba(34,197,94,0.2);
-          box-shadow: 0 0 30px rgba(34,197,94,0.2);
-          transition: transform 0.3s;
-        }
-
-        .card-modern:hover {
-          transform: scale(1.02);
-        }
-
-        .input-modern {
-          background: rgba(255,255,255,0.1);
-          border: 1px solid #444;
-          color: white;
-        }
-
-        .input-modern:focus {
-          border-color: #22c55e;
-          box-shadow: 0 0 10px rgba(34,197,94,0.5);
-        }
-
-        .btn-modern {
-          background: linear-gradient(90deg, #22c55e, #16a34a);
-          color: white;
-          font-weight: 600;
-          transition: all 0.3s;
-        }
-
-        .btn-modern:hover {
-          transform: scale(1.03);
-          box-shadow: 0 0 20px #22c55e;
-        }
-
-        .error-anim {
-          background: rgba(255,0,0,0.1);
-          border: 1px solid red;
-          color: #ff6b6b;
-          padding: 10px;
-          border-radius: 8px;
-          animation: shake 0.3s;
-        }
-
-        @keyframes shake {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          50% { transform: translateX(5px); }
-          75% { transform: translateX(-5px); }
-          100% { transform: translateX(0); }
-        }
-
-        .light-beam {
-          position: absolute;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(34,197,94,0.15), transparent);
-          animation: beamMove 6s linear infinite;
-        }
-
-        @keyframes beamMove {
-          from { transform: translateX(-50%) translateY(-50%); }
-          to { transform: translateX(50%) translateY(50%); }
-        }
-        `}
-      </style>
     </div>
   );
 };
