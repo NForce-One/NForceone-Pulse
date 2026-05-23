@@ -363,8 +363,8 @@ export const TimerPage = () => {
   if (isRestoring) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Timer</h1>
-        <div className="text-center py-12 text-[#a1a1aa]">Restoring timer state...</div>
+<h1 className="text-2xl font-bold text-[#1E293B]">Timer</h1>
+         <div className="text-center py-12 text-[#64748B]">Restoring timer state...</div>
       </div>
     );
   }
@@ -372,11 +372,11 @@ export const TimerPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Play className="w-6 h-6 text-[#ff2d2d]" />
+        <h1 className="text-2xl font-bold text-[#1E293B] flex items-center gap-2">
+          <Play className="w-6 h-6 text-[#5B3CC4]" />
           Timer
         </h1>
-        <p className="text-[#a1a1aa]">Track time with start, pause, resume, and stop controls</p>
+        <p className="text-[#64748B]">Track time with start, pause, resume, and stop controls</p>
       </div>
 
       {/* ERROR / SUCCESS MESSAGES */}
@@ -394,7 +394,7 @@ export const TimerPage = () => {
 
       {/* ACTIVE TIMER DISPLAY */}
       {timer && (
-        <Card className="border-[#ff2d2d]/20 shadow-[0_0_30px_rgba(255,45,45,0.1)]">
+        <Card className="border-[#5B3CC4]/20 shadow-[0_0_30px_rgba(91,60,196,0.08)]">
           <CardContent className="pt-6">
             <div className="text-center">
               <div className="flex justify-center mb-4">
@@ -402,18 +402,18 @@ export const TimerPage = () => {
                   {isRunning ? "⏱ Running" : "⏸ Paused"}
                 </Badge>
               </div>
-              <div className="text-7xl font-mono font-bold text-white mb-4 tracking-wider drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+              <div className="text-7xl font-mono font-bold text-[#1E293B] mb-4 tracking-wider">
                 {formatTime(elapsedSeconds)}
               </div>
 
               {/* Timer context info */}
-              <div className="flex justify-center gap-4 text-sm text-[#a1a1aa] mb-6 flex-wrap">
-                <span className="bg-[#2a2a2a] px-3 py-1 rounded-lg">Client: {timer.clientName || (clients.find((c) => Number(c.id) === Number(form.clientId))?.name) || "-"}</span>
-                <span className="bg-[#2a2a2a] px-3 py-1 rounded-lg">Project: {timer.projectName || (projects.find((p) => Number(p.id) === Number(form.projectId))?.name) || "-"}</span>
-                <span className="bg-[#2a2a2a] px-3 py-1 rounded-lg">Task: {timer.taskName || form.task || "-"}</span>
+              <div className="flex justify-center gap-4 text-sm text-[#64748B] mb-6 flex-wrap">
+                <span className="bg-[#F1F5F9] px-3 py-1 rounded-lg">Client: {timer.clientName || (clients.find((c) => Number(c.id) === Number(form.clientId))?.name) || "-"}</span>
+                <span className="bg-[#F1F5F9] px-3 py-1 rounded-lg">Project: {timer.projectName || (projects.find((p) => Number(p.id) === Number(form.projectId))?.name) || "-"}</span>
+                <span className="bg-[#F1F5F9] px-3 py-1 rounded-lg">Task: {timer.taskName || form.task || "-"}</span>
               </div>
               {timer.description && (
-                <p className="text-sm text-[#a1a1aa] mb-6 italic">"{timer.description}"</p>
+                <p className="text-sm text-[#64748B] mb-6 italic">"{timer.description}"</p>
               )}
 
               {/* CONTROLS */}
@@ -450,7 +450,7 @@ export const TimerPage = () => {
                 <Button
                   onClick={handleConvertToEntry}
                   disabled={isLoading}
-                  className="bg-[#ff2d2d] hover:bg-[#cc0000] shadow-lg shadow-[#ff2d2d]/30 hover:scale-105 active:scale-95"
+                  className="bg-[#5B3CC4] hover:bg-[#4B2CB4] shadow-lg shadow-[#5B3CC4]/30 hover:scale-105 active:scale-95"
                 >
                   <ArrowRight className="w-4 h-4 mr-2" />
                   Stop & Add to Timesheet
@@ -465,8 +465,8 @@ export const TimerPage = () => {
       {!timer && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Play className="w-5 h-5 text-green-400" />
+            <CardTitle className="text-[#1E293B] flex items-center gap-2">
+              <Play className="w-5 h-5 text-green-600" />
               Start New Timer
             </CardTitle>
           </CardHeader>
@@ -480,15 +480,15 @@ export const TimerPage = () => {
             >
               {/* CLIENT */}
               <div>
-                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
-                  Client <span className="text-[#ff2d2d]">*</span>
+                <label className="block text-sm font-medium text-[#64748B] mb-1">
+                  Client <span className="text-[#5B3CC4]">*</span>
                 </label>
                 <select
                   name="clientId"
                   value={form.clientId}
                   onChange={handleInputChange}
                   required
-                  className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-[#ff2d2d] focus:ring-1 focus:ring-[#ff2d2d]/30 transition-colors"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors"
                 >
                   <option value="">-- Select Client --</option>
                   {clients
@@ -503,8 +503,8 @@ export const TimerPage = () => {
 
               {/* PROJECT */}
               <div>
-                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
-                  Project <span className="text-[#ff2d2d]">*</span>
+                <label className="block text-sm font-medium text-[#64748B] mb-1">
+                  Project <span className="text-[#5B3CC4]">*</span>
                 </label>
                 <select
                   name="projectId"
@@ -512,7 +512,7 @@ export const TimerPage = () => {
                   onChange={handleInputChange}
                   required
                   disabled={!form.clientId}
-                  className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-[#ff2d2d] focus:ring-1 focus:ring-[#ff2d2d]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {form.clientId ? "-- Select Project --" : "-- Select a client first --"}
@@ -529,8 +529,8 @@ export const TimerPage = () => {
 
               {/* TASK */}
               <div>
-                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
-                  Task <span className="text-[#ff2d2d]">*</span>
+                <label className="block text-sm font-medium text-[#64748B] mb-1">
+                  Task <span className="text-[#5B3CC4]">*</span>
                 </label>
                 <Input
                   name="task"
@@ -543,8 +543,8 @@ export const TimerPage = () => {
 
               {/* DESCRIPTION */}
               <div>
-                <label className="block text-sm font-medium text-[#a1a1aa] mb-1">
-                  Description <span className="text-[#ff2d2d]">*</span>
+                <label className="block text-sm font-medium text-[#64748B] mb-1">
+                  Description <span className="text-[#5B3CC4]">*</span>
                 </label>
                 <Input
                   name="description"

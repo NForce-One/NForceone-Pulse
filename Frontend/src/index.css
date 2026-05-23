@@ -1,66 +1,57 @@
-
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #ff2d2d; /* Neon Red */
-  --color-primary-hover: #cc0000; /* Darker Red */
-  --color-primary-glow: rgba(255, 45, 45, 0.5); /* Red Glow */
-  --color-secondary: #2a2a2a; /* Dark Secondary */
-  --color-secondary-hover: #333333; /* Hover Secondary */
-  --color-background: #0f0f0f; /* Main Background */
-  --color-card: #1a1a1a; /* Card Background */
-  --color-text-primary: #ffffff; /* Primary Text */
-  --color-text-secondary: #a1a1aa; /* Secondary Text */
-  --color-border: #2a2a2a; /* Border Color */
-  --color-border-focus: #ff2d2d; /* Focus Border */
+  --color-primary: #5B3CC4;
+  --color-primary-hover: #6D4AE6;
+  --color-primary-light: #8B6EF3;
+  --color-primary-glow: rgba(91, 60, 196, 0.5);
+  --color-sidebar-bg: #0B1F3A;
+  --color-sidebar-active: #103B63;
+  --color-sidebar-hover: #1A4A7A;
+  --color-background: #F5F6FA;
+  --color-card: #FFFFFF;
+  --color-text-primary: #1E293B;
+  --color-text-secondary: #64748B;
+  --color-border: #E2E8F0;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
 }
 
 @layer base {
   body {
-    @apply bg-[#0f0f0f] text-[#ffffff] font-sans antialiased;
+    @apply bg-[#F5F6FA] text-[#1E293B] font-sans antialiased;
   }
 
-  /* Global Micro Interactions */
-  * {
-    transition: all 0.2s ease-in-out;
-  }
-
-  /* Custom Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-
   ::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: #E2E8F0;
   }
-
   ::-webkit-scrollbar-thumb {
-    background: #555555;
+    background: #94A3B8;
     border-radius: 4px;
   }
-
   ::-webkit-scrollbar-thumb:hover {
-    background: #ff2d2d;
+    background: #5B3CC4;
   }
 
-  /* Horizontal scrollbar for tables */
   .overflow-x-auto::-webkit-scrollbar {
     height: 10px;
   }
-
   .overflow-x-auto::-webkit-scrollbar-track {
-    background: #0f0f0f;
+    background: #F1F5F9;
     border-radius: 4px;
   }
-
   .overflow-x-auto::-webkit-scrollbar-thumb {
-    background: #666666;
+    background: #94A3B8;
     border-radius: 4px;
-    border: 2px solid #0f0f0f;
+    border: 2px solid #F1F5F9;
   }
-
   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: #ff2d2d;
+    background: #5B3CC4;
   }
 }

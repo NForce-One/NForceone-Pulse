@@ -118,37 +118,37 @@ export const Profile = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <User className="w-6 h-6 text-[#ff2d2d]" />
-          Profile
-        </h1>
-        <p className="text-[#a1a1aa]">Manage your account settings</p>
-      </div>
+<div>
+         <h1 className="text-2xl font-bold text-[#1E293B] flex items-center gap-2">
+           <User className="w-6 h-6 text-[#5B3CC4]" />
+           Profile
+         </h1>
+         <p className="text-[#64748B]">Manage your account settings</p>
+       </div>
 
-      {message && (
-        <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg backdrop-blur-sm">
-          {message}
-        </div>
-      )}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg backdrop-blur-sm">
-          {error}
-        </div>
-      )}
+       {message && (
+         <div className="bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+           {message}
+         </div>
+       )}
+       {error && (
+         <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+           {error}
+         </div>
+       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <User className="w-5 h-5 text-[#ff2d2d]" />
-              Personal Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleProfileSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm text-[#a1a1aa]">Name *</label>
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <Card>
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2 text-[#1E293B]">
+               <User className="w-5 h-5 text-[#5B3CC4]" />
+               Personal Information
+             </CardTitle>
+           </CardHeader>
+           <CardContent>
+             <form onSubmit={handleProfileSubmit} className="space-y-4">
+               <div>
+                 <label className="text-sm text-[#64748B]">Name *</label>
                 <Input
                   name="name"
                   value={profileForm.name}
@@ -162,16 +162,16 @@ export const Profile = () => {
                   <p className="text-red-400 text-xs mt-1">{profileErrors.name}</p>
                 )}
               </div>
-              <div>
-                <label className="text-sm text-[#a1a1aa]">Email</label>
-                <Input value={profile?.email || ""} disabled className="bg-[#0f0f0f] cursor-not-allowed" />
-              </div>
-              <div>
-                <label className="text-sm text-[#a1a1aa]">Role</label>
-                <Input value={profile?.role || ""} disabled className="bg-[#0f0f0f] cursor-not-allowed" />
-              </div>
-              <div>
-                <label className="text-sm text-[#a1a1aa]">Department *</label>
+<div>
+                 <label className="text-sm text-[#64748B]">Email</label>
+                 <Input value={profile?.email || ""} disabled className="bg-[#F8FAFC] cursor-not-allowed" />
+               </div>
+               <div>
+                 <label className="text-sm text-[#64748B]">Role</label>
+                 <Input value={profile?.role || ""} disabled className="bg-[#F8FAFC] cursor-not-allowed" />
+               </div>
+               <div>
+                 <label className="text-sm text-[#64748B]">Department *</label>
                 <Input
                   name="department"
                   value={profileForm.department}
@@ -184,8 +184,8 @@ export const Profile = () => {
                   <p className="text-red-400 text-xs mt-1">{profileErrors.department}</p>
                 )}
               </div>
-              <div>
-                <label className="text-sm text-[#a1a1aa]">Default Hours *</label>
+<div>
+                 <label className="text-sm text-[#64748B]">Default Hours *</label>
                 <Input
                   type="number"
                   name="defaultHours"
@@ -214,16 +214,16 @@ export const Profile = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Key className="w-5 h-5 text-[#ff2d2d]" />
-              Change Password
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm text-[#a1a1aa]">Current Password *</label>
+<CardHeader>
+             <CardTitle className="flex items-center gap-2 text-[#1E293B]">
+               <Key className="w-5 h-5 text-[#5B3CC4]" />
+               Change Password
+             </CardTitle>
+           </CardHeader>
+           <CardContent>
+             <form onSubmit={handlePasswordSubmit} className="space-y-4">
+               <div>
+                 <label className="text-sm text-[#64748B]">Current Password *</label>
                 <Input
                   type="password"
                   value={passwordForm.currentPassword}
@@ -236,8 +236,8 @@ export const Profile = () => {
                   <p className="text-red-400 text-xs mt-1">{passwordErrors.currentPassword}</p>
                 )}
               </div>
-              <div>
-                <label className="text-sm text-[#a1a1aa]">New Password * (min 6 chars)</label>
+<div>
+                 <label className="text-sm text-[#64748B]">New Password * (min 6 chars)</label>
                 <Input
                   type="password"
                   value={passwordForm.newPassword}
@@ -250,8 +250,8 @@ export const Profile = () => {
                   <p className="text-red-400 text-xs mt-1">{passwordErrors.newPassword}</p>
                 )}
               </div>
-              <div>
-                <label className="text-sm text-[#a1a1aa]">Confirm New Password *</label>
+<div>
+                 <label className="text-sm text-[#64748B]">Confirm New Password *</label>
                 <Input
                   type="password"
                   value={passwordForm.confirmPassword}

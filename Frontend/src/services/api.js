@@ -296,6 +296,11 @@ export const fetchTasks = async () => {
 
 // ================= USERS =================
 
+export const getNextEmployeeId = async () => {
+  const response = await api.get("/users/next-employee-id");
+  return response.data;
+};
+
 export const fetchUsers = async () => {
   const response = await api.get("/users");
   return response.data;
@@ -400,7 +405,11 @@ export const getDashboardStats = async (params = {}) => {
 
 export const getHourDetails = async (params = {}) => {
   const response = await api.get("/reports/dashboard/hour-details", { params });
-  return response.data?.data ?? response.data;
+  const result = response.data?.data ?? response.data;
+  if (result && typeof result === "object" && !Array.isArray(result) && result.success === false) {
+    return null;
+  }
+  return result;
 };
 
 export const getEmployeeHoursReport = async (params) => {

@@ -3,12 +3,12 @@ import { cn } from "../../utils/twMerge";
 
 const Badge = React.forwardRef(({ className, variant = "default", ...props }, ref) => {
   const variants = {
-    default: "bg-[#2a2a2a] text-[#a1a1aa] border border-[#3a3a3a]",
-    primary: "bg-[#ff2d2d]/20 text-[#ff2d2d] border border-[#ff2d2d]/30",
-    info: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
-    success: "bg-green-500/20 text-green-400 border border-green-500/30",
-    warning: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",
-    danger: "bg-red-500/20 text-red-400 border border-red-500/30",
+    default: "bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]",
+    primary: "bg-[#5B3CC4]/10 text-[#5B3CC4] border border-[#5B3CC4]/30",
+    info: "bg-blue-500/10 text-blue-600 border border-blue-500/30",
+    success: "bg-green-500/10 text-green-600 border border-green-500/30",
+    warning: "bg-yellow-500/10 text-yellow-600 border border-yellow-500/30",
+    danger: "bg-red-500/10 text-red-600 border border-red-500/30",
   };
 
   return (
@@ -25,5 +25,4 @@ const Badge = React.forwardRef(({ className, variant = "default", ...props }, re
 });
 
 Badge.displayName = "Badge";
-
 export { Badge };

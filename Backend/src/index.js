@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import { DataTypes } from "sequelize";
 import sequelize from "./config/db.js";
 import cron from "node-cron";
 import * as notificationService from "./services/notification.service.js";
@@ -107,8 +108,13 @@ const app = express();
 ====================== */
 
 // 🔥 VERY IMPORTANT FIX (CORS)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://nforce-timetracker.vercel.app",
+];
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"], // frontend URL
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -247,6 +253,22 @@ const startServer = async () => {
     // The notification model is already correctly defined
     await sequelize.sync();
 
+    // Safely add employeeId column to users table if missing
+    try {
+      const queryInterface = sequelize.getQueryInterface();
+      const tableDesc = await queryInterface.describeTable("users");
+      if (!tableDesc.employeeId) {
+        await queryInterface.addColumn("users", "employeeId", {
+          type: DataTypes.INTEGER,
+          unique: true,
+          allowNull: true,
+        });
+        console.log("✅ Added employeeId column to users table");
+      }
+    } catch (migrationErr) {
+      console.log("⚠️ Could not add employeeId column:", migrationErr.message);
+    }
+
     // ================= INIT HOLIDAYS FROM DATABASE =================
     const { initHolidays, seedDefaultHolidays } = await import("./utils/holidayConfig.js");
     await seedDefaultHolidays();
@@ -295,4 +317,10 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Start only if NOT on Vercel (serverless)
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+// Export for Vercel serverless
+export default app;
