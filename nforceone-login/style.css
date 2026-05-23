@@ -1,0 +1,281 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;600;800&display=swap');
+
+:root {
+    --bg-black: #000000;
+    --accent-crimson: #800000;
+    --accent-red-glow: rgba(255, 30, 30, 0.4);
+    --glass-panel: rgba(10, 10, 10, 0.5);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --neon-soft: rgba(255, 0, 0, 0.15);
+    --text-white: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-black);
+    color: var(--text-white);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* --- Cinematic Ambient Background --- */
+.ambient-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: radial-gradient(circle at 50% 50%, #0a0000 0%, #000000 100%);
+}
+
+.ambient-light {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(128, 0, 0, 0.15) 0%, transparent 60%);
+    transition: all 5s ease-in-out;
+    filter: blur(100px);
+}
+
+.vignette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.8) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* --- Floating Calm Particles --- */
+.particles-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.particle {
+    position: absolute;
+    background: var(--accent-red-glow);
+    border-radius: 50%;
+    filter: blur(15px);
+    opacity: 0.2;
+    animation: calm-float infinite ease-in-out;
+}
+
+@keyframes calm-float {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -40px); }
+}
+
+/* --- Glass Card --- */
+.login-card {
+    position: relative;
+    z-index: 10;
+    background: var(--glass-panel);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--glass-border);
+    border-radius: 32px;
+    padding: 60px 50px;
+    width: 460px;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8),
+                inset 0 0 20px rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+    animation: card-reveal 1.2s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+}
+
+@keyframes card-reveal {
+    from { opacity: 0; transform: translateY(40px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Moving Glass Reflection */
+.reflection {
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.03),
+        transparent
+    );
+    transform: skewX(-25deg);
+    animation: reflection-sweep 8s infinite ease-in-out;
+    pointer-events: none;
+}
+
+@keyframes reflection-sweep {
+    0% { left: -150%; }
+    40%, 100% { left: 150%; }
+}
+
+/* --- Branding --- */
+.branding {
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.branding h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    background: linear-gradient(to bottom, #fff 40%, rgba(255, 255, 255, 0.5) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 5px;
+}
+
+.branding p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 400;
+}
+
+/* --- Floating Input --- */
+.input-group {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.input-group input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 18px 20px;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-group label {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.input-group input:focus,
+.input-group input:not(:placeholder-shown) {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 0, 0, 0.3);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.05);
+}
+
+.input-group input:focus + label,
+.input-group input:not(:placeholder-shown) + label {
+    top: -10px;
+    left: 12px;
+    font-size: 0.75rem;
+    color: var(--accent-red-glow);
+    background: #0a0a0a;
+    padding: 0 8px;
+    border-radius: 4px;
+}
+
+/* --- Options --- */
+.form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+    font-size: 0.85rem;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.remember-me input {
+    accent-color: var(--accent-crimson);
+}
+
+.forgot-link {
+    color: var(--text-white);
+    text-decoration: none;
+    opacity: 0.6;
+    transition: 0.3s;
+}
+
+.forgot-link:hover {
+    opacity: 1;
+    color: #ff4d4d;
+}
+
+/* --- Premium Button --- */
+.btn-submit {
+    width: 100%;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(128, 0, 0, 0.6), rgba(220, 20, 60, 0.4));
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+    opacity: 0.5;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(160, 0, 0, 0.8), rgba(255, 30, 30, 0.6));
+    box-shadow: 0 15px 30px rgba(255, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 500px) {
+    .login-card {
+        width: 90%;
+        padding: 40px 30px;
+    }
+    .branding h1 {
+        font-size: 2.2rem;
+    }
+}

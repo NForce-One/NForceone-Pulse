@@ -1,6 +1,11 @@
 node_modules/
-.env
-*.log
 dist/
-build/
+.env
+.env.vercel*
+.env.production
+*.log
+backend.err
 .DS_Store
+.vercel/
+.opencode/
+tidb-ca.pem
