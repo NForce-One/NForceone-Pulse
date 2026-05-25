@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { fetchProjects, createProject, updateProject, deleteProject, fetchClients, getManagers } from "../services/api";
+import { fetchProjects, createProject, updateProject, deleteProject, fetchClients } from "../services/api";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -9,7 +9,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 export const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [clients, setClients] = useState([]);
-  const [managers, setManagers] = useState([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -18,7 +18,6 @@ export const Projects = () => {
     code: "",
     description: "",
     clientId: "",
-    managerId: "",
     startDate: "",
     endDate: "",
     budgetHours: "",
@@ -28,14 +27,12 @@ export const Projects = () => {
 
   const loadData = async () => {
     try {
-      const [projectsRes, clientsRes, managersRes] = await Promise.all([
+      const [projectsRes, clientsRes] = await Promise.all([
         fetchProjects(),
         fetchClients(),
-        getManagers(),
       ]);
       setProjects(projectsRes?.data || []);
       setClients(clientsRes?.data || []);
-      setManagers(managersRes?.data || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -58,7 +55,6 @@ export const Projects = () => {
       const payload = {
         ...formData,
         clientId: formData.clientId ? Number(formData.clientId) : null,
-        managerId: formData.managerId ? Number(formData.managerId) : null,
         budgetHours: formData.budgetHours ? Number(formData.budgetHours) : null,
         budgetAmount: formData.budgetAmount ? Number(formData.budgetAmount) : null,
       };
@@ -67,7 +63,7 @@ export const Projects = () => {
       } else {
         await createProject(payload);
       }
-      setFormData({ name: "", code: "", description: "", clientId: "", managerId: "", startDate: "", endDate: "", budgetHours: "", budgetAmount: "", status: "ACTIVE" });
+      setFormData({ name: "", code: "", description: "", clientId: "", startDate: "", endDate: "", budgetHours: "", budgetAmount: "", status: "ACTIVE" });
       setShowForm(false);
       setEditingId(null);
       await loadData();
@@ -82,7 +78,6 @@ export const Projects = () => {
       code: project.code || "",
       description: project.description || "",
       clientId: project.clientId || "",
-      managerId: project.managerId || "",
       startDate: project.startDate || "",
       endDate: project.endDate || "",
       budgetHours: project.budgetHours || "",
@@ -110,7 +105,7 @@ export const Projects = () => {
           <h1 className="text-2xl font-bold text-[#1E293B]">Project Management</h1>
           <p className="text-[#64748B]">Manage projects and budgets</p>
         </div>
-        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", description: "", clientId: "", managerId: "", startDate: "", endDate: "", budgetHours: "", budgetAmount: "", status: "ACTIVE" }); }}>
+        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", description: "", clientId: "", startDate: "", endDate: "", budgetHours: "", budgetAmount: "", status: "ACTIVE" }); }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Project
         </Button>
@@ -129,10 +124,7 @@ export const Projects = () => {
                 <option value="" className="bg-white">Select Client</option>
                 {clients.map((c) => <option key={c.id} value={c.id} className="bg-white">{c.name}</option>)}
               </select>
-              <select name="managerId" value={formData.managerId} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
-                <option value="" className="bg-white">Select Manager</option>
-                {managers.map((m) => <option key={m.id} value={m.id} className="bg-white">{m.name}</option>)}
-              </select>
+
               <Input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} className="bg-white border border-[#E2E8F0] text-[#1E293B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
               <Input name="endDate" type="date" value={formData.endDate} onChange={handleInputChange} className="bg-white border border-[#E2E8F0] text-[#1E293B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
               <Input name="budgetHours" type="number" value={formData.budgetHours} onChange={handleInputChange} placeholder="Budget Hours" />
