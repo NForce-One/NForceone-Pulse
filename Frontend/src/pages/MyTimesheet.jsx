@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -8,10 +8,11 @@ import {
   updateTimeEntry,
   deleteTimeEntry,
   getDashboardStats,
+  fetchClients,
+  fetchProjects,
+  getManagers,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-
-import axios from "axios";
 
 import {
   Card,
@@ -34,6 +35,8 @@ export const MyTimesheet = () => {
 
   const [managers, setManagers] = useState([]);
   const [selectedManager, setSelectedManager] = useState("");
+  const [clients, setClients] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   const [workingHours, setWorkingHours] = useState({
     normalHours: 0,
@@ -74,19 +77,24 @@ export const MyTimesheet = () => {
   // LOAD MANAGERS
   const loadManagers = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.get(
-        "http://localhost:5000/api/auth/managers",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const data = res.data?.data || res.data || [];
+      const res = await getManagers();
+      const data = res?.data || res || [];
       setManagers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const loadClientsAndProjects = async () => {
+    try {
+      const [clientsRes, projectsRes] = await Promise.all([
+        fetchClients(),
+        fetchProjects(),
+      ]);
+      setClients(clientsRes?.data || []);
+      setProjects(projectsRes?.data || []);
+    } catch (err) {
+      console.error("Failed to load clients/projects", err);
     }
   };
 
@@ -94,6 +102,7 @@ export const MyTimesheet = () => {
     loadEntries();
     loadManagers();
     loadWorkingHours();
+    loadClientsAndProjects();
 
     const client = searchParams.get("client") || "";
     const project = searchParams.get("project") || "";
@@ -137,9 +146,34 @@ export const MyTimesheet = () => {
     }
   };
 
+  const filteredProjects = useMemo(() => {
+    if (!formData.clientId) return [];
+    return projects.filter(
+      (p) => Number(p.clientId) === Number(formData.clientId) && p.status === "ACTIVE"
+    );
+  }, [formData.clientId, projects]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "client") {
+      const selected = clients.find((c) => String(c.id) === String(value));
+      setFormData((prev) => ({
+        ...prev,
+        clientId: selected ? selected.id : null,
+        client: selected ? selected.name : "",
+        projectId: null,
+        project: "",
+      }));
+    } else if (name === "project") {
+      const selected = projects.find((p) => String(p.id) === String(value));
+      setFormData((prev) => ({
+        ...prev,
+        projectId: selected ? selected.id : null,
+        project: selected ? selected.name : "",
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // CREATE
@@ -181,7 +215,6 @@ export const MyTimesheet = () => {
         projectId: null,
         taskId: null,
       });
-
       setSelectedManager("");
       await loadEntries();
 
@@ -273,8 +306,20 @@ const handleDelete = async (id) => {
 
         <CardContent className="pb-3">
           <form className="grid grid-cols-1 md:grid-cols-7 gap-4" onSubmit={handleCreate}>
-            <Input name="client" value={formData.client} onChange={handleInputChange} placeholder="Client" />
-            <Input name="project" value={formData.project} onChange={handleInputChange} placeholder="Project" />
+            <select name="client" value={formData.clientId || ""} onChange={handleInputChange} className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200">
+              <option value="">-- Select Client --</option>
+              {clients.filter((c) => c.status === "ACTIVE").map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <select name="project" value={formData.projectId || ""} onChange={handleInputChange} disabled={!formData.clientId} className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+              <option value="">
+                {!formData.clientId ? "-- Select a client first --" : filteredProjects.length === 0 ? "No projects available" : "-- Select Project --"}
+              </option>
+              {filteredProjects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
             <Input name="task" value={formData.task} onChange={handleInputChange} placeholder="Task" />
             <Input type="date" name="date" value={formData.date} onChange={handleInputChange} />
             <Input type="number" step="0.01" name="hours" value={formData.hours} onChange={handleInputChange} placeholder="Hours" />
