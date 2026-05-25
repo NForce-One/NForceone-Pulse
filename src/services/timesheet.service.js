@@ -382,8 +382,13 @@ export const withdrawTimesheet = async (timesheetId, userId) => {
 export const getTeamTimesheets = async (managerId, filters = {}) => {
   const whereClause = {};
 
-  // Filter by manager's team members (skip if managerId is "all" for admin)
-  if (managerId && managerId !== "all") {
+  // Apply specific employee filter first (takes precedence over team filter)
+  if (filters.employeeId) {
+    whereClause.userId = filters.employeeId;
+  }
+
+  // Filter by manager's team members (skip if managerId is "all" for admin or employee is already selected)
+  if (managerId && managerId !== "all" && !filters.employeeId) {
     const teamMembers = await User.findAll({
       where: { managerId, isActive: true },
       attributes: ["id"],
@@ -402,16 +407,11 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
   if (filters.dateFrom || filters.dateTo) {
     whereClause.weekStartDate = {};
     if (filters.dateFrom) {
-      whereClause.weekStartDate.gte = filters.dateFrom;
+      whereClause.weekStartDate[Op.gte] = filters.dateFrom;
     }
     if (filters.dateTo) {
-      whereClause.weekStartDate.lte = filters.dateTo;
+      whereClause.weekStartDate[Op.lte] = filters.dateTo;
     }
-  }
-
-  // Apply specific employee filter (overrides team filter if set)
-  if (filters.employeeId) {
-    whereClause.userId = filters.employeeId;
   }
 
   // Query timesheets
