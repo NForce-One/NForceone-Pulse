@@ -189,10 +189,15 @@ export const MyTimesheet = () => {
 
   // ACTIONS
   const handleSubmitEntry = async (id) => {
-    const result = await submitTimeEntry(id);
-    await loadEntries();
-    if (result.workingHours) {
-      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+    try {
+      const result = await submitTimeEntry(id);
+      await loadEntries();
+      if (result?.workingHours) {
+        setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+      }
+    } catch (error) {
+      console.error("SUBMIT ERROR:", error);
+      alert(error.response?.data?.message || error.message || "Failed to submit entry");
     }
   };
 /*
@@ -227,11 +232,16 @@ const handleDelete = async (id) => {
   };
 
   const handleSave = async (id) => {
-    const result = await updateTimeEntry(id, editData);
-    setEditingId(null);
-    await loadEntries();
-    if (result.workingHours) {
-      setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+    try {
+      const result = await updateTimeEntry(id, editData);
+      setEditingId(null);
+      await loadEntries();
+      if (result?.workingHours) {
+        setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
+      }
+    } catch (error) {
+      console.error("SAVE ERROR:", error);
+      alert(error.response?.data?.message || error.message || "Failed to update entry");
     }
   };
 

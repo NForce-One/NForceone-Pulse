@@ -384,13 +384,24 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
 
   // Filter by manager's team members (skip if managerId is "all" for admin)
   if (managerId && managerId !== "all") {
-    const teamMembers = await User.findAll({
+    // Find users who have this manager as their reporting manager
+    const reportingUsers = await User.findAll({
       where: { managerId, isActive: true },
       attributes: ["id"],
     });
-    const teamMemberIds = teamMembers.map((u) => u.id);
-    if (teamMemberIds.length === 0) return [];
-    whereClause.userId = { [Op.in]: teamMemberIds };
+    const reportingUserIds = reportingUsers.map((u) => u.id);
+
+    // Also find users who have submitted time entries to this manager
+    const entryUsers = await TimeEntry.findAll({
+      where: { managerId },
+      attributes: ["userId"],
+    });
+    const entryUserIds = entryUsers.map((e) => e.userId);
+
+    // Combine both lists
+    const allTeamMemberIds = [...new Set([...reportingUserIds, ...entryUserIds])];
+    if (allTeamMemberIds.length === 0) return [];
+    whereClause.userId = { [Op.in]: allTeamMemberIds };
   }
 
   // Apply status filter

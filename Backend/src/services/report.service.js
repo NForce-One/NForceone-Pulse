@@ -258,11 +258,19 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
   if (isSelfViewActive) {
     whereClause.userId = userId;
   } else if (isTeamView) {
-    const teamMembers = await User.findAll({
+    const reportingUsers = await User.findAll({
       where: { managerId: userId, isActive: true },
       attributes: ["id"],
     });
-    teamMemberIds = teamMembers.map((m) => m.id);
+    const reportingUserIds = reportingUsers.map((m) => m.id);
+
+    const entryUsers = await TimeEntry.findAll({
+      where: { managerId: userId },
+      attributes: ["userId"],
+    });
+    const entryUserIds = entryUsers.map((e) => e.userId);
+
+    teamMemberIds = [...new Set([...reportingUserIds, ...entryUserIds])];
     if (teamMemberIds.length > 0) {
       whereClause.userId = { [Op.in]: teamMemberIds };
     } else {
@@ -408,8 +416,24 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     }
 
     if (role === "MANAGER" && !isSelfView) {
-      const teamMembers = await User.findAll({
+      const reportingUsers = await User.findAll({
         where: { managerId: userId, isActive: true },
+        attributes: ["id", "name", "email", "department", "defaultHours"],
+      });
+
+      const entryUserIds = await TimeEntry.findAll({
+        where: { managerId: userId },
+        attributes: ["userId"],
+      });
+      const entryUserIdSet = new Set(entryUserIds.map((e) => e.userId));
+
+      const allTeamMemberIds = [...new Set([
+        ...reportingUsers.map((u) => u.id),
+        ...entryUserIdSet,
+      ])];
+
+      const teamMembers = await User.findAll({
+        where: { id: { [Op.in]: allTeamMemberIds }, isActive: true },
         attributes: ["id", "name", "email", "department", "defaultHours"],
       });
 
