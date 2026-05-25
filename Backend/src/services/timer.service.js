@@ -1,4 +1,5 @@
 import Timer from "../models/timer.model.js";
+import Project from "../models/project.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
 
 // ================= GET ACTIVE/PAUSED TIMER BY USER =================
@@ -31,6 +32,17 @@ export const startTimer = async (data) => {
   }
   if (!description || description.trim() === "") {
     throw new Error("Description is required");
+  }
+
+  // Validate client-project relationship
+  if (clientId && projectId) {
+    const project = await Project.findByPk(projectId);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    if (Number(project.clientId) !== Number(clientId)) {
+      throw new Error("Project does not belong to the selected client");
+    }
   }
 
   // Check if user already has an active or paused timer
