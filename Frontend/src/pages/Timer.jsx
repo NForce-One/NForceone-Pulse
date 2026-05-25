@@ -197,10 +197,12 @@ export const TimerPage = () => {
     setError("");
   };
 
-  // ================= FILTERED PROJECTS BY SELECTED CLIENT =================
+  // ================= FILTERED ACTIVE PROJECTS BY SELECTED CLIENT =================
   const filteredProjects = useMemo(() => {
     if (!form.clientId) return [];
-    return projects.filter((p) => Number(p.clientId) === Number(form.clientId));
+    return projects.filter(
+      (p) => Number(p.clientId) === Number(form.clientId) && p.status === "ACTIVE"
+    );
   }, [form.clientId, projects]);
 
   // ================= VALIDATE FORM =================
@@ -211,6 +213,13 @@ export const TimerPage = () => {
     }
     if (!form.projectId) {
       setError("Please select a Project");
+      return false;
+    }
+    const selectedProject = projects.find(
+      (p) => Number(p.id) === Number(form.projectId) && Number(p.clientId) === Number(form.clientId)
+    );
+    if (!selectedProject) {
+      setError("Selected project does not match the selected client");
       return false;
     }
     if (!form.task || form.task.trim() === "") {
@@ -515,15 +524,17 @@ export const TimerPage = () => {
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
-                    {form.clientId ? "-- Select Project --" : "-- Select a client first --"}
+                    {!form.clientId
+                      ? "-- Select a client first --"
+                      : filteredProjects.length === 0
+                      ? "No projects available"
+                      : "-- Select Project --"}
                   </option>
-                  {filteredProjects
-                    .filter((p) => p.status === "ACTIVE")
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                  {filteredProjects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
