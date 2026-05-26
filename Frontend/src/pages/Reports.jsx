@@ -33,10 +33,9 @@ export const Reports = () => {
   const [message, setMessage] = useState({ text: "", type: "" });
 
   useEffect(() => {
-    const userId = user?.role === "EMPLOYEE" ? user?.id : null;
     const loadProjects = async () => {
       try {
-        const res = await fetchProjects(userId);
+        const res = await fetchProjects();
         setProjects(res?.data || []);
       } catch (err) {
         setProjects([]);
@@ -44,7 +43,7 @@ export const Reports = () => {
     };
     const loadClients = async () => {
       try {
-        const res = await fetchClients(userId);
+        const res = await fetchClients();
         setClients(res?.data || []);
       } catch (err) {
         setClients([]);
@@ -52,7 +51,7 @@ export const Reports = () => {
     };
     loadProjects();
     loadClients();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     loadReport();
@@ -93,9 +92,20 @@ export const Reports = () => {
     }
   };
 
+  const filteredProjects = React.useMemo(() => {
+    if (!filters.clientId) return projects;
+    return projects.filter(
+      (p) => Number(p.clientId) === Number(filters.clientId) && p.status === "ACTIVE"
+    );
+  }, [filters.clientId, projects]);
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "clientId" ? { projectId: "" } : {}),
+    }));
     setMessage({ text: "", type: "" });
   };
 
@@ -163,30 +173,39 @@ export const Reports = () => {
             <Input name="startDate" type="date" value={filters.startDate} onChange={handleFilterChange} />
             <Input name="endDate" type="date" value={filters.endDate} onChange={handleFilterChange} />
 <select
+                name="clientId"
+                value={filters.clientId}
+                onChange={handleFilterChange}
+                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200"
+              >
+                <option value="">All Clients</option>
+                {clients
+                  .filter((c) => c.status === "ACTIVE")
+                  .map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <select
                name="projectId"
                value={filters.projectId}
                onChange={handleFilterChange}
-               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200"
+               disabled={!filters.clientId}
+               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
              >
-               <option value="">All Projects</option>
-               {projects.map((p) => (
-                 <option key={p.id} value={String(p.id)}>
-                   {p.name}
-                 </option>
-               ))}
-             </select>
-             <select
-               name="clientId"
-               value={filters.clientId}
-               onChange={handleFilterChange}
-               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200"
-             >
-               <option value="">All Clients</option>
-               {clients.map((c) => (
-                 <option key={c.id} value={String(c.id)}>
-                   {c.name}
-                 </option>
-               ))}
+                <option value="">
+                  {!filters.clientId
+                    ? "-- Select a client first --"
+                    : filteredProjects.length === 0
+                    ? "No projects available"
+                    : "All Projects"}
+                </option>
+                {filteredProjects.map((p) => (
+                  <option key={p.id} value={String(p.id)}>
+                    {p.name}
+                  </option>
+                ))}
              </select>
             <Input name="department" value={filters.department} onChange={handleFilterChange} placeholder="Department" />
             <Button onClick={loadReport} className="hover:scale-105 active:scale-95">
