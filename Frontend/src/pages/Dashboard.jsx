@@ -4,7 +4,7 @@ import { AdminListModal } from "../components/ui/AdminListModal";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { DrillDownModal } from "../components/ui/DrillDownModal";
-import { Users, FolderOpen, Building, ChevronDown } from "lucide-react";
+import { Users, FolderOpen, Building, ChevronDown, Clock, Briefcase, CalendarDays, Gift } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -48,6 +48,12 @@ const toDateStr = (date) => {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+};
+
+const formatHours = (hours) => {
+  const num = Number(hours || 0);
+  if (num === 0) return "0h";
+  return num % 1 === 0 ? `${num}h` : `${parseFloat(num.toFixed(2))}h`;
 };
 
 export const Dashboard = () => {
@@ -482,7 +488,8 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {statCards.length > 0 && (isLoading ? (
+      {/* Hour Metric Cards */}
+      {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (
             <Card key={n} className="animate-pulse border-[#E2E8F0] bg-white">
@@ -497,6 +504,39 @@ export const Dashboard = () => {
           ))}
         </div>
       ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            { title: "Total Working Hours", type: "total", value: stats.totalWeekHours || 0, icon: Clock, color: "text-indigo-600", bgColor: "bg-indigo-500/20", borderColor: "border-indigo-500/30" },
+            { title: "Working Hours", type: "working", value: stats.normalHours || 0, icon: Briefcase, color: "text-emerald-600", bgColor: "bg-emerald-500/20", borderColor: "border-emerald-500/30" },
+            { title: "Extra Working Hours on Weekends", type: "weekend", value: stats.weekendHours || 0, icon: CalendarDays, color: "text-amber-600", bgColor: "bg-amber-500/20", borderColor: "border-amber-500/30" },
+            { title: "Extra Working Hours on Holidays", type: "holiday", value: stats.holidayHours || 0, icon: Gift, color: "text-rose-600", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
+            ].map((card, index) => (
+            <Card
+              key={card.title}
+              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(91,60,196,0.08)] hover:border-[#5B3CC4]/30 transition-all duration-300 hover:scale-[1.02] group cursor-pointer`}
+              style={{ animationDelay: `${index * 100}ms` }}
+              onClick={() => openHourDetails(card.title, card.type)}
+            >
+              <div className="flex items-center justify-between p-6 pb-2">
+                <span className="text-sm text-[#64748B] group-hover:text-white transition-colors">
+                  {card.title}
+                </span>
+                <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
+                  <card.icon className={`w-4 h-4 ${card.color}`} />
+                </div>
+              </div>
+              <div className="p-6 pt-0">
+                <div className={`text-3xl font-bold ${card.color} font-mono`}>
+                  {formatHours(card.value)}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Admin Overview Cards */}
+      {statCards.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {statCards.map((card, index) => (
             <Card
@@ -523,7 +563,7 @@ export const Dashboard = () => {
             </Card>
           ))}
         </div>
-      ))}
+      )}
 
       {!isLoading && (
         <div className="space-y-4">

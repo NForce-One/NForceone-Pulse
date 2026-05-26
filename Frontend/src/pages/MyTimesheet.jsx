@@ -9,6 +9,8 @@ import {
   deleteTimeEntry,
   getDashboardStats,
   getManagers,
+  fetchClients,
+  fetchProjects,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -33,6 +35,8 @@ export const MyTimesheet = () => {
 
   const [managers, setManagers] = useState([]);
   const [selectedManager, setSelectedManager] = useState("");
+  const [clients, setClients] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   const [workingHours, setWorkingHours] = useState({
     normalHours: 0,
@@ -81,10 +85,24 @@ export const MyTimesheet = () => {
     }
   };
 
+  const loadDropdownData = async () => {
+    try {
+      const [clientsRes, projectsRes] = await Promise.all([
+        fetchClients(),
+        fetchProjects(),
+      ]);
+      setClients(clientsRes?.data || []);
+      setProjects(projectsRes?.data || []);
+    } catch (err) {
+      console.error("Failed to load dropdown data", err);
+    }
+  };
+
   useEffect(() => {
     loadEntries();
     loadManagers();
     loadWorkingHours();
+    loadDropdownData();
 
     const client = searchParams.get("client") || "";
     const project = searchParams.get("project") || "";
@@ -128,9 +146,34 @@ export const MyTimesheet = () => {
     }
   };
 
+  const filteredProjects = React.useMemo(() => {
+    if (!formData.clientId) return [];
+    return projects.filter(
+      (p) => Number(p.clientId) === Number(formData.clientId) && p.status === "ACTIVE"
+    );
+  }, [formData.clientId, projects]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "clientId") {
+      const client = clients.find((c) => Number(c.id) === Number(value));
+      setFormData((prev) => ({
+        ...prev,
+        clientId: Number(value),
+        client: client?.name || "",
+        projectId: null,
+        project: "",
+      }));
+    } else if (name === "projectId") {
+      const project = projects.find((p) => Number(p.id) === Number(value));
+      setFormData((prev) => ({
+        ...prev,
+        projectId: Number(value),
+        project: project?.name || "",
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // CREATE
@@ -270,9 +313,38 @@ const handleDelete = async (id) => {
         </CardHeader>
 
         <CardContent className="pb-3">
-          <form className="grid grid-cols-1 md:grid-cols-7 gap-4" onSubmit={handleCreate}>
-            <Input name="client" value={formData.client} onChange={handleInputChange} placeholder="Client" />
-            <Input name="project" value={formData.project} onChange={handleInputChange} placeholder="Project" />
+          <form className="grid grid-cols-1 md:grid-cols-3 gap-4" onSubmit={handleCreate}>
+            <select
+              name="clientId"
+              value={formData.clientId || ""}
+              onChange={handleInputChange}
+              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200"
+            >
+              <option value="">-- Select Client --</option>
+              {clients
+                .filter((c) => c.status === "ACTIVE")
+                .map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+            </select>
+            <select
+              name="projectId"
+              value={formData.projectId || ""}
+              onChange={handleInputChange}
+              disabled={!formData.clientId}
+              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">
+                {!formData.clientId
+                  ? "-- Select a client first --"
+                  : filteredProjects.length === 0
+                  ? "No projects available"
+                  : "-- Select Project --"}
+              </option>
+              {filteredProjects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
             <Input name="task" value={formData.task} onChange={handleInputChange} placeholder="Task" />
             <Input type="date" name="date" value={formData.date} onChange={handleInputChange} />
             <Input type="number" step="0.01" name="hours" value={formData.hours} onChange={handleInputChange} placeholder="Hours" />
@@ -289,7 +361,7 @@ const handleDelete = async (id) => {
                 </option>
               ))}
             </select>
-            <Button type="submit" disabled={isSubmitting} className="md:col-span-7 w-full">
+            <Button type="submit" disabled={isSubmitting} className="md:col-span-3 w-full">
               <Plus className="w-4 h-4" /> {isSubmitting ? "Adding..." : "Add Entry"}
             </Button>
           </form>

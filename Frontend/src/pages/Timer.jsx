@@ -332,15 +332,15 @@ export const TimerPage = () => {
     }
   };
 
-  // ================= STOP TIMER AND GO TO TIMESHEET =================
+  // ================= STOP TIMER AND CREATE TIME ENTRY =================
   const handleConvertToEntry = async () => {
     if (!timer) return;
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await stopTimer(timer.id);
-      const data = response?.data;
+      const response = await convertTimerToEntry(timer.id);
+      const result = response?.data;
 
       setTimer(null);
       setElapsedSeconds(0);
@@ -348,21 +348,11 @@ export const TimerPage = () => {
       setIsPaused(false);
       setForm({ clientId: "", projectId: "", task: "", description: "" });
 
-      const params = new URLSearchParams({
-        client: data.clientName || "",
-        project: data.projectName || "",
-        task: data.taskName || "",
-        description: data.description || "",
-        hours: data.hours || 0,
-        date: new Date(data.startTime).toISOString().split("T")[0],
-        clientId: data.clientId || "",
-        projectId: data.projectId || "",
-        taskId: data.taskId || "",
-      });
+      setSuccessMsg("Time entry created successfully! Redirecting...");
 
-      navigate(`/timesheet?${params.toString()}`);
+      navigate("/timesheet");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to stop timer");
+      setError(err.response?.data?.message || "Failed to stop timer and create entry");
     } finally {
       setIsLoading(false);
     }
