@@ -66,7 +66,9 @@ export const MyTimesheet = () => {
     try {
       setIsLoading(true);
       const response = await fetchTimeEntries();
-      setEntries(response?.data || response || []);
+      const raw = response?.data || response || [];
+      const sorted = [...raw].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
+      setEntries(sorted);
     } catch (error) {
       console.error(error);
     } finally {
@@ -371,32 +373,32 @@ const handleDelete = async (id) => {
       {/* TABLE */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse">
             <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <tr>
-                <th className="p-3 text-left text-[#64748B] font-medium">Client</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">Date</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">Project</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">Task</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">Description</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">Hour</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">Reported To</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
-                <th className="p-3 text-left text-[#64748B] font-medium">Edit</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Client</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Date</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Project</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Task</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Description</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap w-[70px]">Hour</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Reported To</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
+                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
+                <th className="px-3 py-3 text-center text-[#64748B] font-medium whitespace-nowrap w-[100px]">Edit</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry) => {
                 return (
                   <tr key={entry.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
-                    <td className="p-3 text-[#1E293B]">{entry.client || "-"}</td>
-                    <td className="p-3 text-[#64748B]">
+                    <td className="px-3 py-3 text-[#1E293B] align-middle whitespace-nowrap">{entry.client || "-"}</td>
+                    <td className="px-3 py-3 text-[#64748B] align-middle whitespace-nowrap">
                       {format(new Date(entry.entryDate), "MMM dd, yyyy")}
                     </td>
 
-                    <td className="p-3 text-[#1E293B]">
+                    <td className="px-3 py-3 text-[#1E293B] align-middle max-w-[140px] truncate">
                       {editingId === entry.id ? (
                         <Input
                           value={editData.project}
@@ -409,9 +411,9 @@ const handleDelete = async (id) => {
                       )}
                     </td>
 
-                    <td className="p-3 text-[#1E293B]">{entry.task}</td>
+                    <td className="px-3 py-3 text-[#1E293B] align-middle max-w-[120px] truncate">{entry.task}</td>
 
-                    <td className="p-3 text-[#64748B]">
+                    <td className="px-3 py-3 text-[#64748B] align-middle max-w-[180px] truncate">
                       {editingId === entry.id ? (
                         <Input
                           value={editData.description}
@@ -423,23 +425,23 @@ const handleDelete = async (id) => {
                           }
                         />
                       ) : (
-                        entry.description
+                        entry.description || "-"
                       )}
                     </td>
 
-                    <td className="p-3 text-[#1E293B] font-medium">{entry.hours} h</td>
+                    <td className="px-3 py-3 text-[#1E293B] font-medium align-middle whitespace-nowrap w-[70px] text-right">{entry.hours}h</td>
 
-                    <td className="p-3">
+                    <td className="px-3 py-3 align-middle whitespace-nowrap">
                       <Badge variant={getStatusBadgeVariant(getEmployeeStatus(entry.status))}>
                         {getEmployeeStatus(entry.status)}
                       </Badge>
                     </td>
 
-                    <td className="p-3 text-[#64748B]">
+                    <td className="px-3 py-3 text-[#64748B] align-middle whitespace-nowrap">
                       {entry.Manager?.name || "-"}
                     </td>
 
-                    <td className="p-3">
+                    <td className="px-3 py-3 align-middle whitespace-nowrap">
                       {entry.status === "APPROVED" && (
                         <Badge variant="success">Approved</Badge>
                       )}
@@ -447,49 +449,51 @@ const handleDelete = async (id) => {
                         <Badge variant="danger">Rejected</Badge>
                       )}
                       {(entry.status === "DRAFT" ||
-                        entry.status === "SUBMITTED") && "-"}
+                        entry.status === "SUBMITTED") && <span className="text-[#94A3B8]">-</span>}
                     </td>
 
-                    <td className="p-3 text-[#64748B] max-w-[200px]">
+                    <td className="px-3 py-3 text-[#64748B] align-middle max-w-[160px] truncate">
                       {entry.managerComment || "-"}
                     </td>
 
-                    <td className="p-3">
-                      {entry.status === "DRAFT" && (
-                        <div className="flex items-center gap-2">
+                    <td className="px-3 py-3 align-middle w-[100px]">
+                      {entry.status === "DRAFT" ? (
+                        <div className="flex items-center justify-center gap-1.5">
                           {editingId === entry.id ? (
                             <>
-                              <Button size="sm" onClick={() => handleSave(entry.id)} className="hover:scale-105">
-                                <Save className="w-4 h-4" />
+                              <Button size="sm" onClick={() => handleSave(entry.id)} className="hover:scale-105 min-w-[28px] h-7 px-1.5">
+                                <Save className="w-3.5 h-3.5" />
                               </Button>
-                              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="hover:scale-105">
-                                <X className="w-4 h-4" />
+                              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="hover:scale-105 min-w-[28px] h-7 px-1.5">
+                                <X className="w-3.5 h-3.5" />
                               </Button>
                             </>
                           ) : (
                             <>
-                              <Button size="sm" variant="ghost" onClick={() => handleEdit(entry)} className="hover:scale-105">
-                                <Pencil className="w-4 h-4" />
+                              <Button size="sm" variant="ghost" onClick={() => handleEdit(entry)} className="hover:scale-105 min-w-[28px] h-7 px-1.5">
+                                <Pencil className="w-3.5 h-3.5" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="secondary"
                                 onClick={() => handleSubmitEntry(entry.id)}
-                                className="hover:scale-105"
+                                className="hover:scale-105 min-w-[28px] h-7 px-1.5"
                               >
-                                <Send className="w-4 h-4" />
+                                <Send className="w-3.5 h-3.5" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="danger"
                                 onClick={() => handleDelete(entry.id)}
-                                className="hover:scale-105"
+                                className="hover:scale-105 min-w-[28px] h-7 px-1.5"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </Button>
                             </>
                           )}
                         </div>
+                      ) : (
+                        <span className="flex items-center justify-center min-h-[28px]">&nbsp;</span>
                       )}
                     </td>
                   </tr>
