@@ -22,6 +22,7 @@ import { Clients } from "../pages/Clients";
 import { Projects } from "../pages/Projects";
 import { Tasks } from "../pages/Tasks";
 import { TeamTimesheets } from "../pages/TeamTimesheets";
+import { EmployeeTimeIQ } from "../components/EmployeeTimeIQ/EmployeeTimeIQ";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { token, loading, user } = useAuth();
@@ -78,6 +79,7 @@ export const AppRoutes = () => {
           <Route index element={<Dashboard />} />
           <Route path="timesheet" element={<ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER"]}><MyTimesheet /></ProtectedRoute>} />
           <Route path="my-timesheet" element={<ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER"]}><MyTimesheet /></ProtectedRoute>} />
+          <Route path="employee/my-timesheet" element={<ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER"]}><EmployeeTimeIQ /></ProtectedRoute>} />
           <Route path="timer" element={<ProtectedRoute allowedRoles={["EMPLOYEE", "MANAGER"]}><TimerPage /></ProtectedRoute>} />
           <Route path="reports" element={<Reports />} />
           <Route path="notifications" element={<Notifications />} />
