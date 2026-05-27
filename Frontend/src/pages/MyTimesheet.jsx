@@ -48,6 +48,7 @@ export const MyTimesheet = () => {
 
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
+  const [hoveredCommentId, setHoveredCommentId] = useState(null);
 
   const [formData, setFormData] = useState({
     client: "",
@@ -452,7 +453,9 @@ const handleDelete = async (id) => {
                         entry.status === "SUBMITTED") && <span className="text-[#94A3B8]">-</span>}
                     </td>
 
-                    <td className="px-3 py-3 text-[#64748B] align-middle max-w-[160px] truncate">
+                    <td className={`px-3 py-3 text-[#64748B] align-middle cursor-default ${hoveredCommentId === entry.id ? "whitespace-normal break-words min-w-[200px]" : "max-w-[160px] truncate"}`}
+                        onMouseEnter={() => entry.managerComment && setHoveredCommentId(entry.id)}
+                        onMouseLeave={() => setHoveredCommentId(null)}>
                       {entry.managerComment || "-"}
                     </td>
 

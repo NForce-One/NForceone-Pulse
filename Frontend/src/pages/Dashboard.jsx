@@ -37,10 +37,10 @@ const FILTER_OPTIONS = [
   { value: "customRange", label: "Custom Range" },
 ];
 const METRIC_OPTIONS = [
-  { value: "total", label: "Total Working Hours" },
+  { value: "total", label: "Total Hours Logged" },
   { value: "working", label: "Working Hours" },
-  { value: "weekend", label: "Extra Working Hours on Weekends" },
-  { value: "holiday", label: "Extra Working Hours on Holidays" },
+  { value: "weekend", label: "Weekend Working Hours" },
+  { value: "holiday", label: "Holiday Working Hours" },
 ];
 
 const toDateStr = (date) => {
@@ -506,10 +506,10 @@ export const Dashboard = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { title: "Total Working Hours", type: "total", value: stats.totalWeekHours || 0, icon: Clock, color: "text-indigo-600", bgColor: "bg-indigo-500/20", borderColor: "border-indigo-500/30" },
+            { title: "Total Hours Logged", type: "total", value: stats.totalWeekHours || 0, icon: Clock, color: "text-indigo-600", bgColor: "bg-indigo-500/20", borderColor: "border-indigo-500/30" },
             { title: "Working Hours", type: "working", value: stats.normalHours || 0, icon: Briefcase, color: "text-emerald-600", bgColor: "bg-emerald-500/20", borderColor: "border-emerald-500/30" },
-            { title: "Extra Working Hours on Weekends", type: "weekend", value: stats.weekendHours || 0, icon: CalendarDays, color: "text-amber-600", bgColor: "bg-amber-500/20", borderColor: "border-amber-500/30" },
-            { title: "Extra Working Hours on Holidays", type: "holiday", value: stats.holidayHours || 0, icon: Gift, color: "text-rose-600", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
+            { title: "Weekend Working Hours", type: "weekend", value: stats.weekendHours || 0, icon: CalendarDays, color: "text-amber-600", bgColor: "bg-amber-500/20", borderColor: "border-amber-500/30" },
+            { title: "Holiday Working Hours", type: "holiday", value: stats.holidayHours || 0, icon: Gift, color: "text-rose-600", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
             ].map((card, index) => (
             <Card
               key={card.title}
@@ -518,7 +518,7 @@ export const Dashboard = () => {
               onClick={() => openHourDetails(card.title, card.type)}
             >
               <div className="flex items-center justify-between p-6 pb-2">
-                <span className="text-sm text-[#64748B] group-hover:text-white transition-colors">
+                <span className="text-sm text-[#64748B] transition-colors">
                   {card.title}
                 </span>
                 <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
@@ -548,7 +548,7 @@ export const Dashboard = () => {
               onClick={card.clickable ? card.onClick : undefined}
             >
               <CardHeader className="flex justify-between pb-2">
-                <CardTitle className="text-sm text-[#64748B] group-hover:text-white transition-colors">
+                <CardTitle className="text-sm text-[#64748B] transition-colors">
                   {card.title}
                 </CardTitle>
                 <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
