@@ -71,3 +71,24 @@ export const updateTimesheet = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+export const getManagerAction = async (req, res) => {
+  try {
+    const { timesheetId } = req.params;
+    const result = await employeeTimesheetService.getManagerAction(timesheetId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteProjectEntries = async (req, res) => {
+  try {
+    const { projectId, weekStartDate } = req.params;
+    const { clientName, projectName } = req.query;
+    const result = await employeeTimesheetService.deleteProjectEntries(req.user.id, weekStartDate, projectId, clientName, projectName);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};

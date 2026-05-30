@@ -8,6 +8,8 @@ import {
   saveDraftTimesheet,
   submitTimesheet,
   updateTimesheet,
+  deleteProjectEntries,
+  getManagerAction,
 } from "../controllers/employeeTimesheet.controller.js";
 
 const router = express.Router();
@@ -19,5 +21,7 @@ router.get("/weekly", protect, getWeeklyTimesheet);
 router.post("/save", protect, saveDraftTimesheet);
 router.post("/submit", protect, submitTimesheet);
 router.put("/update", protect, updateTimesheet);
+router.get("/manager-action/:timesheetId", protect, getManagerAction);
+router.delete("/project/:projectId/week/:weekStartDate", protect, deleteProjectEntries);
 
 export default router;
