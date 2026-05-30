@@ -7,7 +7,52 @@ import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 
-import { Check, X, ChevronDown } from "lucide-react";
+import { Check, X, ChevronDown, MessageSquare } from "lucide-react";
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const getWeekStart = (dateStr) => {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() - d.getDay());
+  return format(d, "yyyy-MM-dd");
+};
+
+const buildWeekTable = (entries) => {
+  if (!entries || entries.length === 0) return null;
+  const sorted = [...entries].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
+  const ws = getWeekStart(sorted[0].entryDate);
+  const start = new Date(ws + "T00:00:00");
+  const weekDates = DAY_NAMES.map((_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return { date: format(d, "yyyy-MM-dd"), dayName: DAY_NAMES[i], dateNum: d.getDate() };
+  });
+  const projectMap = {};
+  sorted.forEach((entry) => {
+    const pName = entry.project || "Unassigned";
+    if (!projectMap[pName]) {
+      projectMap[pName] = { project: pName, client: entry.client || "", days: {}, comment: entry.comment || "" };
+    }
+    projectMap[pName].days[entry.entryDate] = Number(entry.hours || 0);
+    if (entry.comment) projectMap[pName].comment = entry.comment;
+  });
+  const projectRows = Object.values(projectMap).map((row) => ({
+    ...row,
+    total: weekDates.reduce((s, wd) => s + (row.days[wd.date] || 0), 0),
+  }));
+  const dailyTotals = {};
+  weekDates.forEach((wd) => {
+    dailyTotals[wd.date] = projectRows.reduce((s, r) => s + (r.days[wd.date] || 0), 0);
+  });
+  const weekTotal = projectRows.reduce((s, r) => s + r.total, 0);
+  return {
+    weekDates,
+    projectRows,
+    dailyTotals,
+    weekTotal,
+    weekLabel: `${format(start, "MMM dd")} — ${format(new Date(weekDates[6].date + "T00:00:00"), "MMM dd, yyyy")}`,
+  };
+};
 
 export const Approvals = () => {
   const [entries, setEntries] = useState([]);
@@ -211,30 +256,78 @@ export const Approvals = () => {
                     </tr>
 
                     {/* Child rows - individual entries (expanded) */}
-                    {expandedIds.includes(group.userId) &&
-                      group.entries.map((entry) => (
-                        <tr
-                          key={entry.id}
-                          className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150"
-                        >
-                          <td className="px-3 py-3"></td>
-                          <td className="px-3 py-3"></td>
-                          <td className="px-3 py-3 text-[#1E293B] whitespace-nowrap">
-                            {format(new Date(entry.entryDate), "dd-MMM-yyyy")}
+                    {expandedIds.includes(group.userId) && (() => {
+                      const wt = buildWeekTable(group.entries);
+                      if (!wt) return null;
+                      return (
+                        <tr key={`exp-${group.userId}`}>
+                          <td colSpan={10} className="px-4 py-4 bg-[#FAFBFC]">
+                            <div className="text-[10px] font-semibold text-[#64748B] mb-2 uppercase tracking-wider">
+                              Week: {wt.weekLabel}
+                            </div>
+                            <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                                    <th className="px-3 py-2 text-left font-semibold text-[#64748B] uppercase tracking-wider min-w-[140px]">Project</th>
+                                    {wt.weekDates.map((wd) => (
+                                      <th key={wd.date} className="px-2 py-2 text-center border-l border-[#E2E8F0]">
+                                        <div className="font-semibold text-[#64748B] uppercase tracking-wider">{wd.dayName}</div>
+                                        <div className="font-bold text-[#1E293B]">{wd.dateNum}</div>
+                                      </th>
+                                    ))}
+                                    <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[70px]">
+                                      <div className="font-semibold text-[#64748B] uppercase tracking-wider">Week</div>
+                                      <div className="font-semibold text-[#64748B] uppercase tracking-wider">Total</div>
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {wt.projectRows.map((row) => (
+                                    <tr key={row.project} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50">
+                                      <td className="px-3 py-2 border-r border-[#E2E8F0]">
+                                        <div className="flex items-center gap-2">
+                                          <div>
+                                            <div className="text-sm font-semibold text-[#1E293B]">{row.project}</div>
+                                            <div className="text-[10px] text-[#64748B]">{row.client}</div>
+                                          </div>
+                                          {row.comment && (
+                                            <span title={row.comment} className="text-[#5B3CC4] flex-shrink-0">
+                                              <MessageSquare className="w-3.5 h-3.5" />
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      {wt.weekDates.map((wd) => (
+                                        <td key={wd.date} className="px-2 py-2 text-center border-l border-[#E2E8F0] text-sm font-medium text-[#1E293B]">
+                                          {row.days[wd.date] != null ? Number(row.days[wd.date]).toFixed(1) : ""}
+                                        </td>
+                                      ))}
+                                      <td className="px-2 py-2 text-center border-l border-[#E2E8F0] text-sm font-bold text-[#1E293B]">
+                                        {row.total.toFixed(1)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                  <tr className="bg-[#F8FAFC] border-t-2 border-[#E2E8F0]">
+                                    <td className="px-3 py-2 border-r border-[#E2E8F0] text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
+                                      Daily Totals
+                                    </td>
+                                    {wt.weekDates.map((wd) => (
+                                      <td key={wd.date} className="px-2 py-2 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#1E293B]">
+                                        {(wt.dailyTotals[wd.date] || 0).toFixed(1)}
+                                      </td>
+                                    ))}
+                                    <td className="px-2 py-2 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#5B3CC4]">
+                                      {wt.weekTotal.toFixed(1)}
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
                           </td>
-                          <td className="px-3 py-3 text-[#64748B] whitespace-nowrap">{entry.client || "-"}</td>
-                          <td className="px-3 py-3 text-[#64748B] whitespace-nowrap">{entry.project || "-"}</td>
-                          <td className="px-3 py-3 text-[#64748B]">{entry.task || "-"}</td>
-                          <td className="px-3 py-3 text-[#64748B] max-w-[200px] truncate" title={entry.description || ""}>
-                            {entry.description || "-"}
-                          </td>
-                          <td className="px-3 py-3 text-right text-[#1E293B] font-medium whitespace-nowrap">{Number(entry.hours || 0).toFixed(2)}h</td>
-                          <td className="px-3 py-3 text-center whitespace-nowrap">
-                            <Badge variant="warning">{entry.status}</Badge>
-                          </td>
-                          <td className="px-3 py-3 text-right whitespace-nowrap"></td>
                         </tr>
-                      ))}
+                      );
+                    })()}
 
                   </React.Fragment>
                 ))

@@ -65,6 +65,10 @@ const TimeEntry = sequelize.define(
     description: {
       type: DataTypes.TEXT,
     },
+    comment: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     isBillable: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

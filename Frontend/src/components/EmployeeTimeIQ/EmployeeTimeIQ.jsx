@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from "react";
+﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import { Button } from "../ui/Button";
 import {
@@ -6,8 +6,11 @@ import {
   saveETDraft,
   submitETTimesheet,
   updateETTimesheet,
+  deleteETProjectEntries,
+  fetchETManagerAction,
 } from "../../services/employeeTimeIQApi";
 import { fetchClients, fetchProjects, getManagers } from "../../services/api";
+import { CommentModal } from "./CommentModal";
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,6 +21,8 @@ import {
   Loader2,
   Clock,
   Trash2,
+  MessageSquare,
+  MessageSquareOff,
 } from "lucide-react";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -60,19 +65,44 @@ const getSnackbarStyles = (type) => {
 };
 
 export const EmployeeTimeIQ = () => {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const saved = sessionStorage.getItem("timeiq_weekStart");
+    return saved || getWeekStart(new Date());
+  });
   const weekEnd = getWeekEnd(currentWeekStart);
   const weekDates = useMemo(() => generateWeekDates(currentWeekStart), [currentWeekStart]);
+  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+
+  useEffect(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const weekStart = new Date(currentWeekStart + "T00:00:00");
+    const selected = new Date(weekStart);
+    selected.setDate(weekStart.getDate() + dayOfWeek);
+    setSelectedDate(format(selected, "yyyy-MM-dd"));
+  }, [currentWeekStart]);
 
   const [clients, setClients] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
-  const [selectedClient, setSelectedClient] = useState("");
-  const [selectedProject, setSelectedProject] = useState("");
-  const [selectedManager, setSelectedManager] = useState("");
+  const [selectedClient, setSelectedClient] = useState(() => {
+    const saved = sessionStorage.getItem("timeiq_selectedClient");
+    return saved ? Number(saved) : "";
+  });
+  const [selectedProject, setSelectedProject] = useState(() => {
+    const saved = sessionStorage.getItem("timeiq_selectedProject");
+    return saved ? Number(saved) : "";
+  });
+  const [selectedManager, setSelectedManager] = useState(() => {
+    const saved = sessionStorage.getItem("timeiq_selectedManager");
+    return saved ? Number(saved) : "";
+  });
   const [allManagers, setAllManagers] = useState([]);
 
   const [projectRows, setProjectRows] = useState([]);
   const [timesheetStatus, setTimesheetStatus] = useState(null);
+  const [timesheetId, setTimesheetId] = useState(null);
+  const [managerAction, setManagerAction] = useState(null);
+  const [managerActionModal, setManagerActionModal] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,12 +124,22 @@ export const EmployeeTimeIQ = () => {
     setTimeout(() => setSnackbar(null), duration);
   }, []);
 
+  const [commentModalRowId, setCommentModalRowId] = useState(null);
+  const [commentValue, setCommentValue] = useState("");
+
   const filteredProjects = useMemo(() => {
     if (!selectedClient) return [];
     return allProjects.filter(
       (p) => Number(p.clientId) === Number(selectedClient) && p.status === "ACTIVE"
     );
   }, [selectedClient, allProjects]);
+
+  const getProjectsForClient = useCallback((clientId) => {
+    if (!clientId) return [];
+    return allProjects.filter(
+      (p) => Number(p.clientId) === Number(clientId) && p.status === "ACTIVE"
+    );
+  }, [allProjects]);
 
   useEffect(() => {
     (async () => {
@@ -118,6 +158,32 @@ export const EmployeeTimeIQ = () => {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem("timeiq_weekStart", currentWeekStart);
+  }, [currentWeekStart]);
+
+  useEffect(() => {
+    if (selectedClient) {
+      sessionStorage.setItem("timeiq_selectedClient", String(selectedClient));
+    } else {
+      sessionStorage.removeItem("timeiq_selectedClient");
+    }
+  }, [selectedClient]);
+  useEffect(() => {
+    if (selectedProject) {
+      sessionStorage.setItem("timeiq_selectedProject", String(selectedProject));
+    } else {
+      sessionStorage.removeItem("timeiq_selectedProject");
+    }
+  }, [selectedProject]);
+  useEffect(() => {
+    if (selectedManager) {
+      sessionStorage.setItem("timeiq_selectedManager", String(selectedManager));
+    } else {
+      sessionStorage.removeItem("timeiq_selectedManager");
+    }
+  }, [selectedManager]);
 
   const handleClientChange = useCallback((clientId) => {
     const id = clientId ? Number(clientId) : "";
@@ -140,10 +206,17 @@ export const EmployeeTimeIQ = () => {
       if (res?.success && res?.data) {
         const { timesheet, entries } = res.data;
         setTimesheetStatus(timesheet?.status || null);
+        setTimesheetId(timesheet?.id || null);
 
         const rowMap = {};
         (entries || []).forEach((entry) => {
-          const key = entry.projectId ? `proj-${entry.projectId}` : `row-${entry.entryDate}`;
+          const hoursNum = parseFloat(entry.hours);
+          const hasHours = !isNaN(hoursNum) && hoursNum > 0;
+          if (!hasHours && !entry.description) return;
+
+          const key = entry.projectId
+            ? `proj-${entry.projectId}`
+            : `unassigned-${(entry.client || '')}-${(entry.project || '')}`;
           if (!rowMap[key]) {
             rowMap[key] = {
               rowId: key,
@@ -152,8 +225,12 @@ export const EmployeeTimeIQ = () => {
               projectId: entry.projectId || null,
               projectName: entry.project || "",
               managerId: entry.managerId || null,
+              comment: entry.comment || "",
               days: {},
             };
+          }
+          if (entry.comment && !rowMap[key].comment) {
+            rowMap[key].comment = entry.comment;
           }
           rowMap[key].days[entry.entryDate] = {
             hours: entry.hours ?? "",
@@ -174,10 +251,12 @@ export const EmployeeTimeIQ = () => {
       } else {
         setProjectRows([]);
         setTimesheetStatus(null);
+        setTimesheetId(null);
       }
     } catch (err) {
       console.error("Failed to load weekly data:", err);
       setProjectRows([]);
+      setTimesheetId(null);
     } finally {
       setLoading(false);
     }
@@ -186,11 +265,25 @@ export const EmployeeTimeIQ = () => {
   useEffect(() => {
     setProjectRows([]);
     setTimesheetStatus(null);
-    setSelectedClient("");
-    setSelectedProject("");
-    setSelectedManager("");
+    setTimesheetId(null);
+    setManagerAction(null);
     loadWeekData(currentWeekStart);
   }, [currentWeekStart, loadWeekData]);
+
+  useEffect(() => {
+    if (!timesheetId) {
+      setManagerAction(null);
+      return;
+    }
+    fetchETManagerAction(timesheetId).then((res) => {
+      setManagerAction(res?.data || null);
+    }).catch(() => setManagerAction(null));
+  }, [timesheetId]);
+
+  const dataRef = useRef({ projectRows: [], isReadOnly: false, currentWeekStart: "", weekDates: [] });
+  dataRef.current = { projectRows, isReadOnly, currentWeekStart, weekDates };
+  const unmountDataRef = useRef({ rows: [], isReadOnly: false, weekStart: "" });
+  unmountDataRef.current = { rows: projectRows, isReadOnly, weekStart: currentWeekStart };
 
   const handleCellChange = useCallback((rowId, date, value) => {
     if (value !== "" && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) return;
@@ -205,6 +298,26 @@ export const EmployeeTimeIQ = () => {
             }
       )
     );
+    const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd } = dataRef.current;
+    if (ro || curRows.length === 0) return;
+    const row = curRows.find((r) => r.rowId === rowId);
+    if (!row || row.isPending) return;
+    const dayData = row.days[date] || { hours: "", description: "" };
+    const updatedHours = value;
+    const data = {
+      weekStartDate: ws,
+      dailyEntries: wd.map((w) => ({
+        entryDate: w.date,
+        hours: w.date === date ? (parseFloat(updatedHours) || 0) : (parseFloat(row.days[w.date]?.hours) || 0),
+        description: (w.date === date ? (dayData.description || "") : (row.days[w.date]?.description || "")),
+        clientId: row.clientId,
+        projectId: row.projectId,
+        managerId: row.managerId,
+        clientName: row.clientName,
+        projectName: row.projectName,
+      })),
+    };
+    saveETDraft(data).catch(() => {});
   }, []);
 
 
@@ -212,68 +325,142 @@ export const EmployeeTimeIQ = () => {
 
 
   const handleAddProject = useCallback(() => {
-    if (!selectedClient) {
-      showSnackbar("Please select a client first", "error");
-      return;
-    }
-    if (!selectedProject) {
-      showSnackbar("Please select a project", "error");
-      return;
-    }
-    if (projectRows.some((r) => Number(r.projectId) === Number(selectedProject))) {
-      showSnackbar("This project is already added for this week", "error");
+    if (selectedClient && selectedProject) {
+      if (projectRows.some((r) => Number(r.projectId) === Number(selectedProject))) {
+        showSnackbar("This project is already added for this week", "error");
+        return;
+      }
+      const selectedProjectData = allProjects.find((p) => Number(p.id) === Number(selectedProject));
+      const selectedClientData = clients.find((c) => Number(c.id) === Number(selectedClient));
+      const rowId = `proj-${selectedProject}`;
+      const newRow = {
+        rowId,
+        clientId: Number(selectedClient),
+        clientName: selectedClientData?.name || "",
+        projectId: Number(selectedProject),
+        projectName: selectedProjectData?.name || "",
+        managerId: null,
+        days: {},
+      };
+      weekDates.forEach((wd) => {
+        newRow.days[wd.date] = { hours: "", description: "" };
+      });
+      setProjectRows((prev) => [...prev, newRow]);
+      setSelectedClient("");
+      setSelectedProject("");
       return;
     }
 
-    const selectedProjectData = allProjects.find((p) => Number(p.id) === Number(selectedProject));
-    const selectedClientData = clients.find((c) => Number(c.id) === Number(selectedClient));
-
-    const rowId = `proj-${selectedProject}`;
+    const rowId = `pending-${Date.now()}`;
     const newRow = {
       rowId,
-      clientId: Number(selectedClient),
-      clientName: selectedClientData?.name || "",
-      projectId: Number(selectedProject),
-      projectName: selectedProjectData?.name || "",
-      managerId: selectedManager ? Number(selectedManager) : null,
+      isPending: true,
+      clientId: null,
+      clientName: "",
+      projectId: null,
+      projectName: "",
+      managerId: null,
       days: {},
     };
     weekDates.forEach((wd) => {
       newRow.days[wd.date] = { hours: "", description: "" };
     });
-
     setProjectRows((prev) => [...prev, newRow]);
-    setSelectedClient("");
-    setSelectedProject("");
-    setSelectedManager("");
-  }, [selectedClient, selectedProject, selectedManager, allProjects, clients, weekDates, projectRows, showSnackbar]);
+  }, [selectedClient, selectedProject, allProjects, clients, weekDates, projectRows, showSnackbar]);
 
-  const handleRemoveProject = useCallback((rowId) => {
+  const handlePendingClientChange = useCallback((rowId, clientId) => {
+    const id = clientId ? Number(clientId) : null;
+    const client = clients.find((c) => Number(c.id) === id);
+    setProjectRows((prev) =>
+      prev.map((row) =>
+        row.rowId === rowId
+          ? { ...row, clientId: id, clientName: client?.name || "", projectId: null, projectName: "" }
+          : row
+      )
+    );
+  }, [clients]);
+
+  const handlePendingProjectChange = useCallback((rowId, projectId) => {
+    const id = projectId ? Number(projectId) : null;
+    const project = allProjects.find((p) => Number(p.id) === id);
+    if (!project) return;
+    if (projectRows.some((r) => Number(r.projectId) === id && r.rowId !== rowId)) {
+      showSnackbar("This project is already added for this week", "error");
+      return;
+    }
+    const client = clients.find((c) => Number(c.id) === Number(project.clientId));
+    setProjectRows((prev) =>
+      prev.map((row) =>
+        row.rowId === rowId
+          ? {
+              ...row,
+              isPending: false,
+              projectId: id,
+              projectName: project.name,
+              clientId: Number(project.clientId),
+              clientName: client?.name || "",
+              rowId: `proj-${id}`,
+            }
+          : row
+      )
+    );
+  }, [allProjects, clients, projectRows, showSnackbar]);
+
+  const handleRemoveProject = useCallback(async (rowId) => {
     const row = projectRows.find((r) => r.rowId === rowId);
     if (!row) return;
     const hasHours = Object.values(row.days).some((d) => parseFloat(d.hours) > 0);
     if (hasHours && !window.confirm(`Remove "${row.projectName}" and its hours?`)) return;
+    try {
+      const pId = row.projectId || "null";
+      await deleteETProjectEntries(pId, currentWeekStart, row.clientName, row.projectName);
+    } catch (err) {
+      console.error("Failed to delete project entries:", err);
+    }
     setProjectRows((prev) => prev.filter((r) => r.rowId !== rowId));
-  }, [projectRows]);
+  }, [projectRows, currentWeekStart]);
+
+  const handleCommentSave = useCallback((rowId, date, text) => {
+    setProjectRows((prev) =>
+      prev.map((row) =>
+        row.rowId === rowId ? { ...row, comment: text } : row
+      )
+    );
+    setCommentModalRowId(null);
+    setCommentValue("");
+    showSnackbar("Comment saved", "success");
+  }, [showSnackbar]);
+
+  const handleCommentDelete = useCallback((rowId, date) => {
+    setProjectRows((prev) =>
+      prev.map((row) =>
+        row.rowId === rowId ? { ...row, comment: "" } : row
+      )
+    );
+    setCommentModalRowId(null);
+    setCommentValue("");
+    showSnackbar("Comment deleted", "info");
+  }, [showSnackbar]);
 
   const prepareSaveData = useCallback(() => ({
     weekStartDate: currentWeekStart,
-    dailyEntries: projectRows.flatMap((row) =>
-      weekDates.map((wd) => {
+    dailyEntries: projectRows.filter((r) => !r.isPending).flatMap((row) =>
+      weekDates.map((wd, idx) => {
         const dayData = row.days[wd.date] || { hours: "", description: "" };
         return {
           entryDate: wd.date,
           hours: parseFloat(dayData.hours) || 0,
           description: dayData.description || "",
+          comment: idx === 0 ? (row.comment || "") : undefined,
           clientId: row.clientId,
           projectId: row.projectId,
-          managerId: row.managerId,
+          managerId: selectedManager ? Number(selectedManager) : null,
           clientName: row.clientName,
           projectName: row.projectName,
         };
       })
     ),
-  }), [currentWeekStart, projectRows, weekDates]);
+  }), [currentWeekStart, projectRows, selectedManager, weekDates]);
 
   const handleSaveDraft = useCallback(async () => {
     if (projectRows.length === 0) {
@@ -302,9 +489,8 @@ export const EmployeeTimeIQ = () => {
       showSnackbar("Please add at least one project", "error");
       return;
     }
-    const rowsWithoutManager = projectRows.filter((r) => !r.managerId);
-    if (rowsWithoutManager.length > 0) {
-      showSnackbar(`Please select a manager for: ${rowsWithoutManager.map((r) => r.projectName).join(", ")}`, "error");
+    if (!selectedManager) {
+      showSnackbar("Please select a manager for timesheet submission", "error");
       return;
     }
     if (totalHours <= 0) {
@@ -334,7 +520,7 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [projectRows, totalHours, prepareSaveData, showSnackbar]);
+  }, [projectRows, totalHours, selectedManager, prepareSaveData, showSnackbar]);
 
   const handleUpdate = useCallback(async () => {
     if (!window.confirm("Revert to draft for editing?")) return;
@@ -396,6 +582,9 @@ export const EmployeeTimeIQ = () => {
           <div className="text-center min-w-[180px]">
             <p className="text-sm font-semibold text-[#1E293B]">
               {format(new Date(currentWeekStart + "T00:00:00"), "MMM dd")} — {format(new Date(weekEnd + "T00:00:00"), "MMM dd, yyyy")}
+            </p>
+            <p className="text-[11px] font-medium text-[#5B3CC4] mt-0.5">
+              {format(new Date(), "EEEE, MMMM d, yyyy")}
             </p>
             {timesheetStatus && (
               <span className={`inline-block mt-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
@@ -468,6 +657,15 @@ export const EmployeeTimeIQ = () => {
         </div>
       </div>
 
+      {!isReadOnly && (
+        <button
+          onClick={handleAddProject}
+          className="mb-3 h-9 rounded-lg border-2 border-dashed border-[#E2E8F0] text-sm font-medium text-[#5B3CC4] hover:border-[#5B3CC4] hover:bg-[#5B3CC4]/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed px-4"
+        >
+          + Add New Project
+        </button>
+      )}
+
       {/* ===== SECTION 3: Multi-Project Weekly Table ===== */}
       <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-x-auto">
         <table className="w-full min-w-[900px]">
@@ -482,9 +680,16 @@ export const EmployeeTimeIQ = () => {
                   <p className={`text-xs font-bold ${wd.isToday ? "text-[#5B3CC4]" : "text-[#1E293B]"}`}>{wd.dateNum}</p>
                 </th>
               ))}
+              <th className="px-2 py-2 text-center border-l border-[#E2E8F0] w-14">
+                <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">COMMENT</p>
+              </th>
               <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[75px]">
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">WEEK</p>
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">TOTAL</p>
+              </th>
+              <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[90px]">
+                <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">MANAGER</p>
+                <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">STATUS</p>
               </th>
               <th className="px-2 py-2 text-center border-l border-[#E2E8F0] w-10"></th>
             </tr>
@@ -492,7 +697,7 @@ export const EmployeeTimeIQ = () => {
           <tbody>
             {projectRows.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-sm text-[#94A3B8]">
+                <td colSpan={12} className="px-4 py-8 text-center text-sm text-[#94A3B8]">
                   No projects added yet. Select a client/project above and click "+ Add New Project".
                 </td>
               </tr>
@@ -504,10 +709,36 @@ export const EmployeeTimeIQ = () => {
                 return (
                   <tr key={row.rowId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50 transition-colors">
                     <td className="px-3 py-2 border-r border-[#E2E8F0]">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-[#1E293B] truncate max-w-[160px]">{row.projectName}</span>
-                        <span className="text-[10px] text-[#64748B] truncate max-w-[160px]">{row.clientName}</span>
-                      </div>
+                      {row.isPending ? (
+                        <div className="flex flex-col gap-1.5 min-w-[180px]">
+                          <select
+                            value={row.clientId || ""}
+                            onChange={(e) => handlePendingClientChange(row.rowId, e.target.value)}
+                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent"
+                          >
+                            <option value="">-- Select Client --</option>
+                            {clients.map((c) => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={row.projectId || ""}
+                            onChange={(e) => handlePendingProjectChange(row.rowId, e.target.value)}
+                            disabled={!row.clientId}
+                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <option value="">{!row.clientId ? "Select client first" : "-- Select Project --"}</option>
+                            {row.clientId && getProjectsForClient(row.clientId).map((p) => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-[#1E293B] truncate max-w-[160px]">{row.projectName}</span>
+                          <span className="text-[10px] text-[#64748B] truncate max-w-[160px]">{row.clientName}</span>
+                        </div>
+                      )}
                     </td>
                     {weekDates.map((wd) => {
                       const dayData = row.days[wd.date] || { hours: "", description: "" };
@@ -520,15 +751,60 @@ export const EmployeeTimeIQ = () => {
                             step="0.5"
                             value={dayData.hours}
                             onChange={(e) => handleCellChange(row.rowId, wd.date, e.target.value)}
-                            disabled={isReadOnly}
+                            disabled={isReadOnly || row.isPending}
                             className="w-full h-7 rounded-md border border-[#E2E8F0] bg-white text-xs text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                             placeholder="0"
                           />
                         </td>
                       );
                     })}
+                    <td className="px-1.5 py-2 text-center border-l border-[#E2E8F0] w-14">
+                      <button
+                        onClick={() => {
+                          setCommentModalRowId(row.rowId);
+                          setCommentValue(row.comment || "");
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors mx-auto"
+                        title={row.comment ? "Edit comment" : "Add comment"}
+                      >
+                        {row.comment ? (
+                          <MessageSquare className="w-4 h-4 text-[#5B3CC4]" />
+                        ) : (
+                          <MessageSquareOff className="w-4 h-4 text-[#94A3B8]" />
+                        )}
+                      </button>
+                    </td>
                     <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
                       <span className="text-sm font-bold text-[#1E293B]">{formatHoursToHHMM(rowTotal)}</span>
+                    </td>
+                    <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
+                      {(() => {
+                        if (managerAction) {
+                          const isApproved = managerAction.status === "APPROVED";
+                          return (
+                            <div className="flex items-center justify-center gap-1">
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                isApproved ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                              }`}>
+                                {isApproved ? "Approved" : "Rejected"}
+                              </span>
+                              {managerAction.comment && (
+                                <button
+                                  onClick={() => setManagerActionModal(managerAction)}
+                                  className="p-0.5 rounded hover:bg-[#F1F5F9] text-[#5B3CC4]"
+                                  title="View comment"
+                                >
+                                  <MessageSquare className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (timesheetStatus === "SUBMITTED") {
+                          return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Pending</span>;
+                        }
+                        return <span className="text-[#94A3B8]">-</span>;
+                      })()}
                     </td>
                     <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
                       {!isReadOnly && (
@@ -562,25 +838,17 @@ export const EmployeeTimeIQ = () => {
                     </td>
                   );
                 })}
+                <td className="px-2 py-2 border-l border-[#E2E8F0]"></td>
                 <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
                   <span className="text-xs font-bold text-[#5B3CC4]">{formatHoursToHHMM(totalHours)}</span>
                 </td>
+                <td className="px-2 py-2 border-l border-[#E2E8F0]"></td>
                 <td className="px-2 py-2 border-l border-[#E2E8F0]"></td>
               </tr>
             </tfoot>
           )}
         </table>
       </div>
-
-      {!isReadOnly && (
-        <button
-          onClick={handleAddProject}
-          disabled={!selectedClient || !selectedProject}
-          className="mt-2 w-full h-9 rounded-lg border-2 border-dashed border-[#E2E8F0] text-sm font-medium text-[#5B3CC4] hover:border-[#5B3CC4] hover:bg-[#5B3CC4]/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          + Add New Project
-        </button>
-      )}
 
       {/* ===== SECTION 4: Buttons ===== */}
       <div className="flex items-center justify-end gap-2 mt-3">
@@ -611,6 +879,76 @@ export const EmployeeTimeIQ = () => {
         )}
       </div>
 
+      {commentModalRowId && (
+        <CommentModal
+          isOpen={!!commentModalRowId}
+          rowId={commentModalRowId}
+          date={weekDates[0]?.date || ""}
+          dayName={format(new Date(selectedDate + "T00:00:00"), "EEEE")}
+          fullDate={format(new Date(selectedDate + "T00:00:00"), "MMMM d, yyyy")}
+          hoursLogged={projectRows.find((r) => r.rowId === commentModalRowId)?.comment ? 0 : 0}
+          value={commentValue}
+          onChange={setCommentValue}
+          onSave={handleCommentSave}
+          onDelete={handleCommentDelete}
+          onClose={() => {
+            setCommentModalRowId(null);
+            setCommentValue("");
+          }}
+        />
+      )}
+
+      {managerActionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setManagerActionModal(null)}></div>
+          <div className="relative w-full max-w-md bg-white border border-[#E2E8F0] rounded-xl shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+              <h2 className="text-lg font-semibold text-[#1E293B] flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-[#5B3CC4]" />
+                Manager Response
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Manager Status</span>
+                <div className="mt-1">
+                  <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
+                    managerActionModal.status === "APPROVED" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  }`}>
+                    {managerActionModal.status === "APPROVED" ? "Approved" : "Rejected"}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Manager</span>
+                <p className="mt-1 text-sm font-medium text-[#1E293B]">{managerActionModal.managerName}</p>
+              </div>
+              {managerActionModal.comment && (
+                <div>
+                  <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Comment</span>
+                  <p className="mt-1 text-sm text-[#1E293B] bg-[#F8FAFC] rounded-lg p-3 border border-[#E2E8F0]">
+                    "{managerActionModal.comment}"
+                  </p>
+                </div>
+              )}
+              <div>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Date</span>
+                <p className="mt-1 text-sm text-[#64748B]">
+                  {format(new Date(managerActionModal.date), "dd-MMM-yyyy")}
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-[#E2E8F0] bg-[#F8FAFC] flex justify-end">
+              <button
+                onClick={() => setManagerActionModal(null)}
+                className="px-4 py-2 text-sm font-medium text-[#64748B] hover:text-[#1E293B] bg-white border border-[#E2E8F0] rounded-lg hover:bg-[#F1F5F9] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

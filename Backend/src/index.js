@@ -46,6 +46,7 @@ import timerRoutes from "./routes/timer.routes.js";
 import timesheetRoutes from "./routes/timesheet.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import reportRoutes from "./routes/report.routes.js";
+import employeeTimesheetRoutes from "./routes/employeeTimesheet.routes.js";
 
 // Middleware
 import { protect, authorizeRoles } from "./middleware/auth.middleware.js";
@@ -176,6 +177,11 @@ app.use("/api/notifications", notificationRoutes);
     REPORT ROUTES
 ====================== */
 app.use("/api/reports", reportRoutes);
+
+/* ======================
+    EMPLOYEE TIMESHEET ROUTES (EmployeeTimeIQ)
+====================== */
+app.use("/api/employee-timesheet", employeeTimesheetRoutes);
 
 /* ======================
    PROTECTED TEST ROUTE

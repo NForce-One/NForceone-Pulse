@@ -42,3 +42,16 @@ export const updateETTimesheet = async (data) => {
   const res = await api.put("/employee-timesheet/update", data);
   return extractData(res.data);
 };
+
+export const fetchETManagerAction = async (timesheetId) => {
+  const res = await api.get(`/employee-timesheet/manager-action/${timesheetId}`);
+  return extractData(res.data);
+};
+
+export const deleteETProjectEntries = async (projectId, weekStartDate, clientName, projectName) => {
+  const params = {};
+  if (clientName) params.clientName = clientName;
+  if (projectName) params.projectName = projectName;
+  const res = await api.delete(`/employee-timesheet/project/${projectId}/week/${weekStartDate}`, { params });
+  return extractData(res.data);
+};

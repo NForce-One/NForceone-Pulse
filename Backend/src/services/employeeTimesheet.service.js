@@ -4,6 +4,7 @@ import Project from "../models/project.model.js";
 import User from "../models/user.model.js";
 import Timesheet from "../models/timesheet.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
+import ApprovalHistory from "../models/approvalHistory.model.js";
 
 const toLocalDate = (date) => {
   if (typeof date === "string") {
@@ -132,6 +133,8 @@ export const getWeeklyTimesheet = async (userId, weekStartDate) => {
       clientId: e.clientId,
       projectId: e.projectId,
       managerId: e.managerId,
+      client: e.client,
+      project: e.project,
     })),
     clientId,
     projectId,
@@ -193,9 +196,18 @@ export const saveDraftTimesheet = async (userId, data) => {
     const h = Math.max(0, parseFloat(hours) || 0);
     totalHours += h;
 
+    const findWhere = { userId, entryDate };
+    if (pId !== null) {
+      findWhere.projectId = pId;
+    } else {
+      findWhere.projectId = { [Op.is]: null };
+    }
     const existingEntry = await TimeEntry.findOne({
-      where: { userId, entryDate, projectId: pId },
+      where: findWhere,
     });
+
+    const hasNoData = h === 0 && !description;
+    if (hasNoData && !existingEntry) continue;
 
     const entryData = {
       userId,
@@ -365,4 +377,92 @@ export const updateTimesheet = async (userId, data) => {
   }
 
   return { timesheet: { id: timesheet.id, status: "DRAFT" }, message: "Timesheet reverted to draft." };
+};
+
+export const getManagerAction = async (timesheetId) => {
+  const timesheet = await Timesheet.findByPk(timesheetId, {
+    attributes: ["id", "userId", "weekStartDate", "weekEndDate"],
+  });
+  if (!timesheet) return null;
+
+  const entries = await TimeEntry.findAll({
+    where: {
+      userId: timesheet.userId,
+      entryDate: { [Op.between]: [timesheet.weekStartDate, timesheet.weekEndDate] },
+    },
+    attributes: ["id"],
+  });
+
+  const entryIds = entries.map((e) => e.id);
+  if (entryIds.length === 0) return null;
+
+  const action = await ApprovalHistory.findOne({
+    where: {
+      timeEntryId: { [Op.in]: entryIds },
+      action: { [Op.in]: ["APPROVED", "REJECTED"] },
+    },
+    include: [{ model: User, as: "Actor", attributes: ["id", "name"] }],
+    order: [["createdAt", "DESC"]],
+  });
+
+  if (!action) return null;
+
+  return {
+    status: action.action,
+    managerName: action.Actor?.name || "Unknown",
+    comment: action.comment || "",
+    date: action.createdAt,
+  };
+};
+
+export const deleteProjectEntries = async (userId, weekStartDate, projectId, clientName, projectName) => {
+  const ws = weekStartDate;
+  const we = getWeekEnd(ws);
+
+  const whereClause = {
+    userId,
+    entryDate: { [Op.between]: [ws, we] },
+  };
+  const pId = projectId !== null && projectId !== undefined && projectId !== "null"
+    ? parseInt(projectId)
+    : null;
+  if (pId !== null) {
+    whereClause.projectId = pId;
+  } else {
+    whereClause.projectId = { [Op.is]: null };
+    if (clientName) whereClause.client = clientName;
+    if (projectName) whereClause.project = projectName;
+  }
+
+  await TimeEntry.destroy({ where: whereClause });
+
+  const remainingEntries = await TimeEntry.findAll({
+    where: {
+      userId,
+      entryDate: { [Op.between]: [ws, we] },
+    },
+  });
+
+  const totalHours = remainingEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+
+  const timesheet = await Timesheet.findOne({
+    where: { userId, weekStartDate: ws },
+  });
+
+  if (timesheet) {
+    await timesheet.update({ totalHours });
+  }
+
+  return {
+    timesheet: timesheet
+      ? {
+          id: timesheet.id,
+          weekStartDate: timesheet.weekStartDate,
+          weekEndDate: timesheet.weekEndDate,
+          status: timesheet.status,
+          totalHours: timesheet.totalHours,
+        }
+      : null,
+    totalHours,
+  };
 };
