@@ -95,6 +95,7 @@ export const Approvals = () => {
     entryIds: [],
     action: null, // "approve" | "reject"
     comment: "",
+    error: "",
   });
 
   const loadEntries = async () => {
@@ -126,27 +127,34 @@ export const Approvals = () => {
 
   const openModal = (entryIds, action, e) => {
     e.stopPropagation();
-    setModal({ isOpen: true, entryIds, action, comment: "" });
+    setModal({ isOpen: true, entryIds, action, comment: "", error: "" });
   };
 
   const closeModal = () => {
-    setModal({ isOpen: false, entryIds: [], action: null, comment: "" });
+    setModal({ isOpen: false, entryIds: [], action: null, comment: "", error: "" });
   };
 
   const handleConfirm = async () => {
     const { entryIds, action, comment } = modal;
-    try {
-      for (const id of entryIds) {
+    let failed = false;
+    for (const id of entryIds) {
+      try {
         if (action === "approve") {
           await approveTimeEntry(id, comment);
         } else if (action === "reject") {
           await rejectTimeEntry(id, comment);
         }
+      } catch (error) {
+        failed = true;
+        setModal((prev) => ({
+          ...prev,
+          error: error?.response?.data?.message || error?.message || `Failed to ${action} entry ${id}`,
+        }));
       }
+    }
+    if (!failed) {
       closeModal();
       await loadEntries();
-    } catch (error) {
-      console.error(`Failed to ${action}`, error);
     }
   };
 
@@ -369,6 +377,11 @@ export const Approvals = () => {
                   rows={4}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors resize-none"
                 />
+                {modal.error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    {modal.error}
+                  </div>
+                )}
                 <div className="flex justify-end gap-3 mt-6">
                   <Button variant="outline" onClick={closeModal}>
                     Cancel
