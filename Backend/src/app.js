@@ -43,6 +43,7 @@ import timerRoutes from "./routes/timer.routes.js";
 import timesheetRoutes from "./routes/timesheet.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import reportRoutes from "./routes/report.routes.js";
+import employeeTimesheetRoutes from "./routes/employeeTimesheet.routes.js";
 
 // Middleware
 import { protect, authorizeRoles } from "./middleware/auth.middleware.js";
@@ -108,6 +109,7 @@ const allowedOrigins = process.env.CORS_ORIGINS
       "http://localhost:5173",
       "http://localhost:5174",
       "https://nforcepulse-frontend.vercel.app",
+      "https://nforce-timetracker.vercel.app",
     ];
 
 app.use(
@@ -182,6 +184,11 @@ app.use("/api/notifications", notificationRoutes);
     REPORT ROUTES
 ====================== */
 app.use("/api/reports", reportRoutes);
+
+/* ======================
+    EMPLOYEE TIMESHEET ROUTES (EmployeeTimeIQ)
+====================== */
+app.use("/api/employee-timesheet", employeeTimesheetRoutes);
 
 /* ======================
    SEED ROUTE (ADMIN ONLY)
