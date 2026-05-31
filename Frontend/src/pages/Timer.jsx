@@ -362,7 +362,7 @@ export const TimerPage = () => {
   if (isRestoring) {
     return (
       <div className="space-y-6">
-<h1 className="text-2xl font-bold text-[#1E293B]">Timer</h1>
+<h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">Timer</h1>
          <div className="text-center py-12 text-[#64748B]">Restoring timer state...</div>
       </div>
     );
@@ -371,7 +371,7 @@ export const TimerPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#1E293B] flex items-center gap-2">
+        <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
           <Play className="w-6 h-6 text-[#5B3CC4]" />
           Timer
         </h1>

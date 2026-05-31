@@ -165,7 +165,7 @@ export const Notifications = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
 <div>
-           <h1 className="text-2xl font-bold text-[#1E293B] flex items-center gap-2">
+           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
              <Bell className="w-6 h-6 text-[#5B3CC4]" />
              Notifications
            </h1>

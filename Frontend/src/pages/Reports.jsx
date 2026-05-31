@@ -145,7 +145,7 @@ export const Reports = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
 <div>
-           <h1 className="text-2xl font-bold text-[#1E293B] flex items-center gap-2">
+           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
              <BarChart3 className="w-6 h-6 text-[#5B3CC4]" />
              Reports
            </h1>
@@ -230,39 +230,39 @@ export const Reports = () => {
                    <tr>
                      {activeTab === "employee-hours" && (
                        <>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Employee</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Project</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Task</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Date</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Hours</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Billable</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Status</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Employee</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Project</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Task</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Date</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Billable</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Status</th>
                        </>
                      )}
                      {activeTab === "project-hours" && (
                        <>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Project</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Client</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Employee</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Date</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Hours</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Project</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Client</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Employee</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Date</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
                        </>
                      )}
                      {activeTab === "utilization" && (
                        <>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Employee</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Department</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Total Hours</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Working</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Extra</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Utilization %</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Employee</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Department</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Total Hours</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Working</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Extra</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Utilization %</th>
                        </>
                      )}
                      {activeTab === "billing" && (
                        <>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Client</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Project</th>
-                         <th className="px-4 py-3 text-left text-[#64748B] font-medium">Total Working Hours</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Client</th>
+                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Project</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Total Working Hours</th>
                        </>
                      )}
                    </tr>
