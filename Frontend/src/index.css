@@ -6,10 +6,10 @@
   --color-primary-hover: #6D4AE6;
   --color-primary-light: #8B6EF3;
   --color-primary-glow: rgba(91, 60, 196, 0.5);
-  --color-sidebar-bg: #0B1F3A;
-  --color-sidebar-active: #103B63;
-  --color-sidebar-hover: #1A4A7A;
-  --color-background: #F5F6FA;
+  --color-sidebar-bg: #0D0D0D;
+  --color-sidebar-active: #991B1B;
+  --color-sidebar-hover: #991B1B;
+  --color-background: #F8FAFC;
   --color-card: #FFFFFF;
   --color-text-primary: #1E293B;
   --color-text-secondary: #64748B;
@@ -22,7 +22,7 @@
 
 @layer base {
   body {
-    @apply bg-[#F5F6FA] text-[#1E293B] font-sans antialiased;
+    @apply bg-[#F8FAFC] text-[#1E293B] font-sans antialiased;
   }
 
   ::-webkit-scrollbar {
