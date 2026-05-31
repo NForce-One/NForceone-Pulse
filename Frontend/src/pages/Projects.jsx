@@ -102,8 +102,8 @@ export const Projects = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">Project Management</h1>
-          <p className="text-[#64748B]">Manage projects and budgets</p>
+          <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">Project Management</h1>
+          <p className="text-base text-[#64748B]">Manage projects and budgets</p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", description: "", clientId: "", startDate: "", endDate: "", budgetHours: "", budgetAmount: "", status: "ACTIVE" }); }}>
           <Plus className="w-4 h-4 mr-2" />

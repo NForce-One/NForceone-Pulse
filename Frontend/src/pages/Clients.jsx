@@ -84,8 +84,8 @@ export const Clients = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">Client Management</h1>
-          <p className="text-[#64748B]">Manage clients and billing types</p>
+          <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">Client Management</h1>
+          <p className="text-base text-[#64748B]">Manage clients and billing types</p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE" }); }}>
           <Plus className="w-4 h-4 mr-2" />

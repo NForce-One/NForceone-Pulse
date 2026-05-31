@@ -121,7 +121,7 @@ export const Login = () => {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex flex-col items-center mb-8">
             <img src={logo} alt="NForce Pulse" className="w-14 h-14 mb-4 object-contain" />
-            <h1 className="text-2xl font-bold text-gray-900">NForce Pulse</h1>
+            <h1 className="text-[32px] font-bold text-gray-900 leading-tight">NForce Pulse</h1>
             <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
           </div>
 
@@ -132,7 +132,7 @@ export const Login = () => {
             }}
           >
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900">Welcome Back</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 leading-tight">Welcome Back</h2>
               <p className="text-gray-500 text-sm mt-1.5">
                 Sign in to your account to continue
               </p>

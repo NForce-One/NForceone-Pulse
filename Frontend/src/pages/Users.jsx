@@ -119,8 +119,8 @@ export const Users = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
 <div>
-           <h1 className="text-2xl font-bold text-[#1E293B]">User Management</h1>
-           <p className="text-[#64748B]">Manage system users and roles</p>
+           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">User Management</h1>
+           <p className="text-base text-[#64748B]">Manage system users and roles</p>
          </div>
         <Button onClick={openCreateForm}>
           <UserPlus className="w-4 h-4 mr-2" />

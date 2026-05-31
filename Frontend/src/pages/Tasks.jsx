@@ -97,8 +97,8 @@ export const Tasks = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">Task Management</h1>
-          <p className="text-[#64748B]">Manage tasks and categories</p>
+          <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">Task Management</h1>
+          <p className="text-base text-[#64748B]">Manage tasks and categories</p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ title: "", description: "", category: "", projectId: "", isBillableDefault: true, status: "PENDING" }); }}>
           <Plus className="w-4 h-4 mr-2" />
