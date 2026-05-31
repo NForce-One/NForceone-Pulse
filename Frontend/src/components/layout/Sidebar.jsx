@@ -62,11 +62,11 @@ export const Sidebar = () => {
         {mainItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
           return (
-            <Link
+                <Link
               key={item.name}
               to={item.path}
               className={cn(
-                "flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                "flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-base font-semibold transition-all duration-200",
                 isActive
                   ? "bg-[#103B63] text-white border-l-4 border-[#5B3CC4]"
                   : "text-[#94A3B8] hover:bg-[#103B63] hover:text-white hover:border-l-4 hover:border-[#5B3CC4]/50"
@@ -97,7 +97,7 @@ export const Sidebar = () => {
                   key={item.name}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-semibold transition-all duration-200",
                     isActive
                       ? "bg-[#103B63] text-white border-l-4 border-[#5B3CC4]"
                       : "text-[#94A3B8] hover:bg-[#103B63] hover:text-white hover:border-l-4 hover:border-[#5B3CC4]/50"
