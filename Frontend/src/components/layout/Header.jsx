@@ -26,7 +26,7 @@ export const Header = () => {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-6 shadow-sm">
+    <header className="h-16 flex items-center justify-between px-6 shadow-sm" style={{ background: "linear-gradient(90deg, #0D0D0D 0%, #0D0D0D 15%, #1A0000 22%, #3A0000 32%, #6B0000 45%, #8B1212 58%, #B91C1C 75%, #DC2626 100%)" }}>
       <div className="flex items-center">
       </div>
       <div className="flex items-center gap-4">
@@ -35,27 +35,27 @@ export const Header = () => {
             navigate("/notifications");
             loadUnreadCount();
           }}
-          className="relative p-2 text-[#64748B] hover:text-[#5B3CC4] hover:bg-[#F1F5F9] rounded-lg transition-all duration-200"
+          className="relative p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#5B3CC4] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(91,60,196,0.5)]">
+            <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)]">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </button>
 
-        <div className="flex items-center gap-2 text-sm text-[#64748B]">
-          <div className="w-8 h-8 bg-[#5B3CC4]/10 rounded-full flex items-center justify-center text-[#5B3CC4] border border-[#5B3CC4]/20">
+        <div className="flex items-center gap-2 text-sm text-white/80">
+          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white border border-white/20">
             <User className="w-4 h-4" />
           </div>
-          <span className="font-medium text-[#1E293B]">{user?.name || user?.email || 'User'}</span>
-          <span className="text-[#64748B] capitalize bg-[#F1F5F9] px-2 py-0.5 rounded text-xs ml-2 border border-[#E2E8F0]">
+          <span className="font-medium text-white">{user?.name || user?.email || 'User'}</span>
+          <span className="text-white/70 capitalize bg-black/20 px-2 py-0.5 rounded text-xs ml-2 border border-white/10">
             {user?.role || 'employee'}
           </span>
         </div>
-        <div className="w-px h-6 bg-[#E2E8F0]"></div>
-        <Button variant="ghost" size="sm" onClick={logout} className="text-[#64748B] hover:text-[#EF4444] gap-2 hover:bg-[#F1F5F9]">
+        <div className="w-px h-6 bg-white/20"></div>
+        <Button variant="ghost" size="sm" onClick={logout} className="text-white/70 hover:text-white gap-2 hover:bg-white/10">
           <LogOut className="w-4 h-4" />
           Logout
         </Button>
