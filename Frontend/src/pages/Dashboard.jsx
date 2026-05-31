@@ -523,7 +523,7 @@ export const Dashboard = () => {
                 </span>
               </div>
               <div className="p-6 pt-0">
-                <div className="text-2xl font-bold text-[#5B3CC4]">
+                <div className="text-2xl font-bold text-[#1F2937]">
                   {formatHours(card.value)}
                 </div>
               </div>
