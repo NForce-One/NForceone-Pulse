@@ -304,7 +304,7 @@ const handleDelete = async (id) => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[#1E293B]">My Timesheet</h1>
+      <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">My Timesheet</h1>
 
       {/* FORM */}
       <Card>
@@ -377,17 +377,17 @@ const handleDelete = async (id) => {
             <table className="w-full text-sm border-collapse">
             <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <tr>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Client</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Date</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Project</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Task</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Description</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap w-[70px]">Hour</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Reported To</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
-                <th className="px-3 py-3 text-center text-[#64748B] font-medium whitespace-nowrap w-[100px]">Edit</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Client</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Project</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Task</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Description</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap w-[70px]">Hour</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">{user?.role === "MANAGER" ? "Report Status" : "Employee Status"}</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Reported To</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">{user?.role === "MANAGER" ? "Admin Action" : "Manager Action"}</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">{user?.role === "MANAGER" ? "Admin Comment" : "Manager Comment"}</th>
+                <th className="px-3 py-3 text-center text-sm font-semibold text-[#64748B] whitespace-nowrap w-[100px]">Edit</th>
               </tr>
             </thead>
             <tbody>

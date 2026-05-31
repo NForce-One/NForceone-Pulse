@@ -322,7 +322,7 @@ export const TeamTimesheets = () => {
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-[#1E293B]">Team Timesheets</h2>
+          <h2 className="text-[32px] font-bold text-[#1E293B] leading-tight">Team Timesheets</h2>
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={handleResetFilters}>
               <X className="w-4 h-4 mr-1" />
@@ -472,15 +472,15 @@ export const TeamTimesheets = () => {
               <table className="w-full text-sm border-collapse">
                 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Employee</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Week Start</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Week End</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Total Hours</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Billable</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Non-Billable</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Missing</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3 text-right text-[#64748B] font-medium whitespace-nowrap">Actions</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Employee</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Week Start</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Week End</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Total Hours</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Billable</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Non-Billable</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Missing</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -602,11 +602,11 @@ export const TeamTimesheets = () => {
                         <table className="w-full text-sm">
                           <thead className="bg-[#F8FAFC]">
                             <tr>
-                              <th className="px-3 py-2 text-left text-[#64748B] font-medium">Date</th>
-                              <th className="px-3 py-2 text-left text-[#64748B] font-medium">Project</th>
-                              <th className="px-3 py-2 text-left text-[#64748B] font-medium">Task</th>
-                              <th className="px-3 py-2 text-left text-[#64748B] font-medium">Hours</th>
-                              <th className="px-3 py-2 text-left text-[#64748B] font-medium">Status</th>
+                              <th className="px-3 py-2 text-left text-sm font-semibold text-[#64748B]">Date</th>
+                              <th className="px-3 py-2 text-left text-sm font-semibold text-[#64748B]">Project</th>
+                              <th className="px-3 py-2 text-left text-sm font-semibold text-[#64748B]">Task</th>
+                              <th className="px-3 py-2 text-left text-sm font-semibold text-[#64748B]">Hours</th>
+                              <th className="px-3 py-2 text-left text-sm font-semibold text-[#64748B]">Status</th>
                             </tr>
                           </thead>
                           <tbody>

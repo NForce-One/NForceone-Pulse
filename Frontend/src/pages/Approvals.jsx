@@ -163,7 +163,7 @@ export const Approvals = () => {
 
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-[#1E293B] flex items-center gap-2">
+        <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
           <Check className="w-6 h-6 text-[#5B3CC4]" />
           Approvals
         </h1>
@@ -180,16 +180,16 @@ export const Approvals = () => {
 
             <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <tr>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">EmpID</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Name</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Date</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Client</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Project</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Task</th>
-                <th className="px-3 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Description</th>
-                <th className="px-3 py-3 text-right text-[#64748B] font-medium whitespace-nowrap">Hours</th>
-                <th className="px-3 py-3 text-center text-[#64748B] font-medium whitespace-nowrap">Status</th>
-                <th className="px-3 py-3 text-right text-[#64748B] font-medium whitespace-nowrap">Action</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">EmpID</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Name</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Client</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Project</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Task</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Description</th>
+                <th className="px-3 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Hours</th>
+                <th className="px-3 py-3 text-center text-sm font-semibold text-[#64748B] whitespace-nowrap">Status</th>
+                <th className="px-3 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Action</th>
               </tr>
             </thead>
 
