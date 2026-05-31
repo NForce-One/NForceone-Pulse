@@ -401,7 +401,7 @@ export const Dashboard = () => {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1E293B]">Dashboard</h1>
-          <p className="text-[#64748B]">Welcome back, {user?.name || "User"}!</p>
+          <p className="text-sm text-[#64748B]">Welcome back, {user?.name || "User"}!</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
       {user?.role === "MANAGER" && (
@@ -523,7 +523,7 @@ export const Dashboard = () => {
                 </span>
               </div>
               <div className="p-6 pt-0">
-                <div className="text-3xl font-bold text-[#1E293B] font-mono">
+                <div className="text-2xl font-bold text-[#5B3CC4]">
                   {formatHours(card.value)}
                 </div>
               </div>
@@ -580,14 +580,14 @@ export const Dashboard = () => {
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Date</th>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Day</th>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Work Type</th>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Holiday Name</th>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Client</th>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Project</th>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Task</th>
-                        <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Description</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Day</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Work Type</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Holiday Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Client</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Project</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Task</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Description</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -636,10 +636,10 @@ export const Dashboard = () => {
               <table className="w-full text-sm">
                 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Name</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Email</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Week Hours</th>
-                    <th className="px-4 py-3 text-left text-[#64748B] font-medium">Entries</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Week Hours</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Entries</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -670,8 +670,8 @@ export const Dashboard = () => {
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-[#64748B]">Name</th>
-                        <th className="px-4 py-3 text-left text-[#64748B]">Hours</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -704,9 +704,9 @@ export const Dashboard = () => {
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-[#64748B]">Name</th>
-                        <th className="px-4 py-3 text-left text-[#64748B]">Hours Logged</th>
-                        <th className="px-4 py-3 text-left text-[#64748B]">Missing</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours Logged</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Missing</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -741,8 +741,8 @@ export const Dashboard = () => {
                 <table className="w-full text-sm">
                   <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-[#64748B]">Project</th>
-                      <th className="px-4 py-3 text-left text-[#64748B]">Hours</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Project</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
                     </tr>
                   </thead>
                   <tbody>
