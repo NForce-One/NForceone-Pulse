@@ -54,7 +54,7 @@ export const ForgotPassword = () => {
           <div className="w-12 h-12 rounded-full bg-[#5B3CC4] flex items-center justify-center overflow-hidden">
             <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold text-[#1E293B] tracking-wide">
+          <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight tracking-wide">
             NForce Pulse
           </h1>
         </div>

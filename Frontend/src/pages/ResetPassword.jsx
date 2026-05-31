@@ -88,7 +88,7 @@ const ResetPassword = () => {
         <div className="card-modern p-8">
 
           <div className="text-center mb-6">
-            <h2 className="text-2xl text-[#1E293B] animate-slideDown">
+            <h2 className="text-2xl font-semibold text-[#1E293B] animate-slideDown">
               Reset Password
             </h2>
           </div>
