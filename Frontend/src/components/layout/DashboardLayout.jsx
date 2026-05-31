@@ -9,7 +9,7 @@ export const DashboardLayout = () => {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#F5F6FA]">
+      <div className="h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex items-center gap-2 text-[#64748B]">
           <div className="w-5 h-5 border-2 border-[#5B3CC4] border-t-transparent rounded-full animate-spin"></div>
           Loading...
@@ -19,7 +19,7 @@ export const DashboardLayout = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F5F6FA] overflow-hidden">
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
