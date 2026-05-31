@@ -4,11 +4,13 @@ import { useAuth } from "../../context/AuthContext";
 import { LayoutDashboard, Clock, CheckSquare, Users, Building, FolderOpen, BarChart3, Bell, User, Timer, FileText, Calendar } from "lucide-react";
 import { cn } from "../../utils/twMerge";
 import { fetchUnreadCount } from "../../services/api";
+import logo from "../../assets/logo.png";
 
 export const Sidebar = () => {
   const { user } = useAuth();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -48,10 +50,14 @@ export const Sidebar = () => {
   const mainItems = visibleItems.filter((item) => !item.path.startsWith("/admin"));
 
   return (
-    <div className="flex flex-col w-64 bg-[#0B1F3A] border-r border-[#1A4A7A] h-full shadow-[2px_0_10px_rgba(0,0,0,0.2)]">
-      <div className="h-16 flex items-center px-6 border-b border-[#1A4A7A] bg-[#0B1F3A]">
-        <span className="text-xl font-bold text-white flex items-center gap-2 hover:text-[#8B6EF3] transition-colors">
-          <Clock className="w-6 h-6 text-[#5B3CC4] drop-shadow-[0_0_8px_rgba(91,60,196,0.5)]" />
+    <div className="flex flex-col w-64 bg-[#0D0D0D] border-r border-[#1F2937] h-full shadow-[2px_0_10px_rgba(0,0,0,0.4)]">
+      <div className="h-16 flex items-center px-6 border-b border-[#1F2937] bg-[#0D0D0D]">
+        <span className="text-xl font-bold text-white flex items-center gap-3 hover:text-[#DC2626] transition-colors">
+          {logoError ? (
+            <Clock className="w-6 h-6 text-[#DC2626] drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]" />
+          ) : (
+            <img src={logo} alt="NForce" className="w-9 h-9 object-cover" onError={() => setLogoError(true)} />
+          )}
           <span className="text-white font-extrabold">
             NForce Pulse
           </span>
@@ -68,16 +74,16 @@ export const Sidebar = () => {
               className={cn(
                 "flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-base font-semibold transition-all duration-200",
                 isActive
-                  ? "bg-[#103B63] text-white border-l-4 border-[#5B3CC4]"
-                  : "text-[#94A3B8] hover:bg-[#103B63] hover:text-white hover:border-l-4 hover:border-[#5B3CC4]/50"
+                  ? "bg-[#991B1B] text-white border-l-4 border-[#DC2626]"
+                  : "text-[#CBD5E1] hover:bg-[#991B1B] hover:text-white hover:border-l-4 hover:border-[#DC2626]/50"
               )}
             >
               <div className="flex items-center gap-3">
-                <item.icon className={cn("w-5 h-5", isActive ? "text-[#8B6EF3]" : "text-[#64748B]")} />
+                <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-[#64748B]")} />
                 {item.name}
               </div>
               {item.path === "/notifications" && unreadCount > 0 && (
-                <span className="bg-[#5B3CC4] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(91,60,196,0.5)]">
+                <span className="bg-[#DC2626] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(220,38,38,0.5)]">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
@@ -87,7 +93,7 @@ export const Sidebar = () => {
 
         {adminItems.length > 0 && (
           <>
-            <div className="pt-4 pb-2 px-3 text-xs font-semibold text-[#64748B] uppercase tracking-wider border-t border-[#1A4A7A] mt-4">
+            <div className="pt-4 pb-2 px-3 text-xs font-semibold text-[#64748B] uppercase tracking-wider border-t border-[#1F2937] mt-4">
               Admin
             </div>
             {adminItems.map((item) => {
@@ -99,11 +105,11 @@ export const Sidebar = () => {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-semibold transition-all duration-200",
                     isActive
-                      ? "bg-[#103B63] text-white border-l-4 border-[#5B3CC4]"
-                      : "text-[#94A3B8] hover:bg-[#103B63] hover:text-white hover:border-l-4 hover:border-[#5B3CC4]/50"
-                  )}
-                >
-                  <item.icon className={cn("w-5 h-5", isActive ? "text-[#8B6EF3]" : "text-[#64748B]")} />
+                  ? "bg-[#991B1B] text-white border-l-4 border-[#DC2626]"
+                  : "text-[#CBD5E1] hover:bg-[#991B1B] hover:text-white hover:border-l-4 hover:border-[#DC2626]/50"
+                )}
+              >
+                <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-[#64748B]")} />
                   {item.name}
                 </Link>
               );
