@@ -506,14 +506,14 @@ export const Dashboard = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { title: "Total Hours Logged", type: "total", value: stats.totalWeekHours || 0, icon: Clock, color: "text-indigo-600", bgColor: "bg-indigo-500/20", borderColor: "border-indigo-500/30" },
-            { title: "Working Hours", type: "working", value: stats.normalHours || 0, icon: Briefcase, color: "text-emerald-600", bgColor: "bg-emerald-500/20", borderColor: "border-emerald-500/30" },
-            { title: "Weekend Working Hours", type: "weekend", value: stats.weekendHours || 0, icon: CalendarDays, color: "text-amber-600", bgColor: "bg-amber-500/20", borderColor: "border-amber-500/30" },
-            { title: "Holiday Working Hours", type: "holiday", value: stats.holidayHours || 0, icon: Gift, color: "text-rose-600", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30" },
+            { title: "Total Hours Logged", type: "total", value: stats.totalWeekHours || 0 },
+            { title: "Working Hours", type: "working", value: stats.normalHours || 0 },
+            { title: "Weekend Working Hours", type: "weekend", value: stats.weekendHours || 0 },
+            { title: "Holiday Working Hours", type: "holiday", value: stats.holidayHours || 0 },
             ].map((card, index) => (
             <Card
               key={card.title}
-              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(91,60,196,0.08)] hover:border-[#5B3CC4]/30 transition-all duration-300 hover:scale-[1.02] group cursor-pointer`}
+              className="border border-[#5B3CC4]/30 hover:shadow-[0_0_20px_rgba(91,60,196,0.08)] hover:border-[#5B3CC4]/30 transition-all duration-300 hover:scale-[1.02] group cursor-pointer"
               style={{ animationDelay: `${index * 100}ms` }}
               onClick={() => openHourDetails(card.title, card.type)}
             >
@@ -521,12 +521,9 @@ export const Dashboard = () => {
                 <span className="text-sm text-[#64748B] transition-colors">
                   {card.title}
                 </span>
-                <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
-                  <card.icon className={`w-4 h-4 ${card.color}`} />
-                </div>
               </div>
               <div className="p-6 pt-0">
-                <div className={`text-3xl font-bold ${card.color} font-mono`}>
+                <div className="text-3xl font-bold text-[#1E293B] font-mono">
                   {formatHours(card.value)}
                 </div>
               </div>
