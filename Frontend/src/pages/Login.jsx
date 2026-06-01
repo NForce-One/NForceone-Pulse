@@ -61,7 +61,7 @@ export const Login = () => {
       {/* LEFT BRANDING PANEL */}
       <div className="hidden lg:flex w-1/2 items-center justify-center"
         style={{
-          background: "linear-gradient(135deg, #0f0f0f 0%, #1a0000 50%, #2b0000 100%)",
+          background: "linear-gradient(135deg, #000000 0%, #080808 50%, #111111 100%)",
         }}
       >
         <div className="flex flex-col items-center text-center px-12 max-w-lg">
