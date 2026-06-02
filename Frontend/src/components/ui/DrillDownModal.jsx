@@ -4,16 +4,10 @@ import { X } from "lucide-react";
 const BASE_COLUMNS = [
   { key: "entryDate", label: "Date" },
   { key: "day", label: "Day" },
-  { key: "userName", label: "Employee Name" },
-  { key: "extraWorkType", label: "Work Type" },
-  { key: "displayName", label: "Holiday Name" },
   { key: "clientWorked", label: "Client" },
   { key: "projectWorked", label: "Project" },
-  { key: "taskWorked", label: "Task" },
-  { key: "description", label: "Description" },
   { key: "hoursWorked", label: "Hours Worked" },
   { key: "reportedTo", label: "Reported To" },
-  { key: "managerComment", label: "Manager Comment" },
   { key: "approvalStatus", label: "Approval Status" },
 ];
 
