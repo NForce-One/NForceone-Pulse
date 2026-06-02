@@ -7,7 +7,7 @@ import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 
-import { Check, X, ChevronDown, MessageSquare } from "lucide-react";
+import { Check, X, ChevronDown, MessageSquare, Eye } from "lucide-react";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -50,50 +50,92 @@ const buildWeekTable = (entries) => {
     projectRows,
     dailyTotals,
     weekTotal,
-    weekLabel: `${format(start, "MMM dd")} — ${format(new Date(weekDates[6].date + "T00:00:00"), "MMM dd, yyyy")}`,
+    weekLabel: `${format(start, "MMM dd")} \u2014 ${format(new Date(weekDates[6].date + "T00:00:00"), "MMM dd, yyyy")}`,
+  };
+};
+
+const formatSubmissionDateTime = (dateStr) => {
+  if (!dateStr) return { date: "-", time: "" };
+  const d = new Date(dateStr);
+  return {
+    date: format(d, "MMM dd, yyyy"),
+    time: format(d, "hh:mm a"),
   };
 };
 
 export const Approvals = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
   const [expandedIds, setExpandedIds] = useState([]);
+  const [projectsPopover, setProjectsPopover] = useState({ groupKey: null, x: 0, y: 0 });
+  const [detailsKey, setDetailsKey] = useState(null);
+  const [detailsData, setDetailsData] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("pending");
 
-  // Group entries by employee
+  const pendingCount = useMemo(() => entries.filter((e) => e.status === "SUBMITTED").length, [entries]);
+  const approvedCount = useMemo(() => entries.filter((e) => e.status === "APPROVED").length, [entries]);
+  const allCount = entries.length;
+
+  const filteredEntries = useMemo(() => {
+    if (statusFilter === "pending") return entries.filter((e) => e.status === "SUBMITTED");
+    if (statusFilter === "approved") return entries.filter((e) => e.status === "APPROVED");
+    return entries;
+  }, [entries, statusFilter]);
+
+  // Group entries by employee + week
   const grouped = useMemo(() => {
     const map = {};
-    entries.forEach((entry) => {
-      const uid = entry.userId;
-      if (!map[uid]) map[uid] = [];
-      map[uid].push(entry);
+    filteredEntries.forEach((entry) => {
+      const weekStart = getWeekStart(entry.entryDate);
+      const key = `${entry.userId}_${weekStart}`;
+      if (!map[key]) {
+        map[key] = { userId: entry.userId, name: entry.User?.name || entry.user?.name || "Unknown", weekStart, entries: [] };
+      }
+      map[key].entries.push(entry);
     });
     return Object.values(map)
       .map((group) => {
-        group.sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
+        group.entries.sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
+        const totalHours = group.entries.reduce((s, e) => s + Number(e.hours || 0), 0);
+        const latestEntry = group.entries.reduce((latest, e) =>
+          new Date(e.entryDate) > new Date(latest.entryDate) ? e : latest
+        , group.entries[0]);
+        const ws = new Date(group.weekStart + "T00:00:00");
+        const we = new Date(ws);
+        we.setDate(ws.getDate() + 6);
+        const weekLabel = `${format(ws, "MMM dd")} \u2014 ${format(we, "MMM dd, yyyy")}`;
+        const projectSet = new Set();
+        const projectList = [];
+        group.entries.forEach((e) => {
+          const key = `${e.client || ""}_${e.project || ""}`;
+          if (!projectSet.has(key)) {
+            projectSet.add(key);
+            projectList.push({ client: e.client || "-", project: e.project || "-" });
+          }
+        });
+        const submissionDate = latestEntry.createdAt || latestEntry.updatedAt || latestEntry.entryDate;
         return {
-          userId: group[0].userId,
-          name: group[0].User?.name || group[0].user?.name || "Unknown",
-          entries: group,
-          totalHours: group.reduce((s, e) => s + Number(e.hours || 0), 0).toFixed(2),
-          latest: group[0],
+          key: group.weekStart,
+          userId: group.userId,
+          name: group.name,
+          entries: group.entries,
+          totalHours: totalHours.toFixed(2),
+          weekLabel,
+          weekStart: group.weekStart,
+          projectCount: projectList.length,
+          projectList,
+          submissionDate,
+          latestEntry,
         };
       })
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [entries]);
-
-  const toggleExpand = (userId, e) => {
-    e.stopPropagation();
-    setExpandedIds((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
-    );
-  };
+      .sort((a, b) => a.name.localeCompare(b.name) || b.weekStart.localeCompare(a.weekStart));
+  }, [filteredEntries]);
 
   // Comment modal state
   const [modal, setModal] = useState({
     isOpen: false,
     entryIds: [],
-    action: null, // "approve" | "reject"
+    action: null,
     comment: "",
     error: "",
   });
@@ -104,15 +146,9 @@ export const Approvals = () => {
 
       const response = await fetchTimeEntries({ for: "approvals" });
 
-      // ✅ FIX: correct backend response handling
       const data = response?.data || [];
 
-      // ✅ FIX: status should match backend (UPPERCASE)
-      const submittedEntries = data.filter(
-        (e) => e.status === "SUBMITTED"
-      );
-
-      setEntries(submittedEntries);
+      setEntries(data);
 
     } catch (error) {
       console.error("Failed to fetch approvals", error);
@@ -158,9 +194,19 @@ export const Approvals = () => {
     }
   };
 
+  const openDetails = (group) => {
+    const wt = buildWeekTable(group.entries);
+    setDetailsData({ group, weekTable: wt });
+    setDetailsKey(group.key);
+  };
+
+  const closeDetails = () => {
+    setDetailsKey(null);
+    setDetailsData(null);
+  };
+
   return (
     <div className="space-y-6">
-
       {/* HEADER */}
       <div>
         <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
@@ -172,242 +218,404 @@ export const Approvals = () => {
         </p>
       </div>
 
+      {/* STATUS FILTER TABS */}
+      <div className="flex items-center gap-1 bg-[#F8FAFC] rounded-xl p-1 border border-[#E2E8F0] w-fit">
+        {[
+          { key: "pending", label: "Pending", count: pendingCount },
+          { key: "approved", label: "Approved", count: approvedCount },
+          { key: "all", label: "All", count: allCount },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setStatusFilter(tab.key)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+              statusFilter === tab.key
+                ? "bg-white text-[#1E293B] shadow-sm border border-[#E2E8F0]"
+                : "text-[#64748B] hover:text-[#1E293B] hover:bg-white/50"
+            }`}
+          >
+            {tab.label}
+            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+              statusFilter === tab.key
+                ? "bg-[#5B3CC4]/10 text-[#5B3CC4]"
+                : "bg-[#E2E8F0] text-[#64748B]"
+            }`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {/* TABLE */}
       <Card>
         <div className="overflow-x-auto min-h-[300px]">
-
-          <table className="w-full text-sm min-w-[1000px]">
-
+          <table className="w-full text-sm min-w-[800px]">
             <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <tr>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">EmpID</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Name</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Client</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Project</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Task</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Description</th>
-                <th className="px-3 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Hours</th>
-                <th className="px-3 py-3 text-center text-sm font-semibold text-[#64748B] whitespace-nowrap">Status</th>
-                <th className="px-3 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Action</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Employee</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Week</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Projects</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Hours</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Submitted</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Actions</th>
               </tr>
             </thead>
-
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="10" className="text-center py-8 text-[#64748B]">
+                  <td colSpan="6" className="text-center py-8 text-[#64748B]">
                     Loading entries...
                   </td>
                 </tr>
-
               ) : grouped.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="text-center py-8 text-[#64748B]">
-                    No pending approvals
+                  <td colSpan="6" className="text-center py-8 text-[#64748B]">
+                    {statusFilter === "pending" ? "No pending approvals" : statusFilter === "approved" ? "No approved submissions found" : "No submissions found"}
                   </td>
                 </tr>
-
               ) : (
-                grouped.map((group) => (
-                  <React.Fragment key={group.userId}>
+                grouped.map((group) => {
+                  const subDateTime = formatSubmissionDateTime(group.submissionDate);
+                  return (
+                    <tr
+                      key={group.key}
+                      className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150"
+                    >
+                      {/* Employee */}
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-semibold text-[#1E293B]">{group.name}</div>
+                        <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.userId}</div>
+                      </td>
 
-                    {/* Parent row - employee summary */}
-                    <tr className="border-b border-[#E2E8F0] bg-[#FAFAFE] hover:bg-[#F1F0FE] transition-colors duration-150">
-                      <td className="px-3 py-3 text-[#1E293B] font-medium">{group.userId}</td>
-                      <td className="px-3 py-3 text-[#1E293B] font-semibold">
+                      {/* Week */}
+                      <td className="px-4 py-3 text-sm text-[#1E293B] whitespace-nowrap">
+                        {group.weekLabel}
+                      </td>
+
+                      {/* Projects */}
+                      <td className="px-4 py-3">
                         <button
                           type="button"
-                          onClick={(e) => toggleExpand(group.userId, e)}
-                          className="inline-flex items-center gap-1.5 hover:text-[#5B3CC4] transition-colors duration-150"
+                          onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setProjectsPopover((prev) =>
+                              prev.groupKey === group.key ? { groupKey: null, x: 0, y: 0 } : { groupKey: group.key, x: rect.left, y: rect.bottom + 4 }
+                            );
+                          }}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-[#5B3CC4] hover:text-[#4A2FA0] transition-colors"
                         >
-                          {group.name}
-                          <ChevronDown
-                            className={`w-4 h-4 transition-transform duration-200 ${
-                              expandedIds.includes(group.userId) ? "rotate-180" : ""
-                            }`}
-                          />
+                          {group.projectCount} {group.projectCount === 1 ? "Project" : "Projects"}
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${projectsPopover.groupKey === group.key ? "rotate-180" : ""}`} />
                         </button>
                       </td>
-                      <td className="px-3 py-3 text-[#1E293B]">{format(new Date(group.latest.entryDate), "dd-MMM-yyyy")}</td>
-                      <td className="px-3 py-3 text-[#64748B]">{group.latest.client || "-"}</td>
-                      <td className="px-3 py-3 text-[#64748B]">{group.latest.project || "-"}</td>
-                      <td className="px-3 py-3 text-[#94A3B8] italic">{group.entries.length} entr{group.entries.length === 1 ? "y" : "ies"}</td>
-                      <td className="px-3 py-3 text-[#94A3B8] text-xs">{group.entries.length} pending</td>
-                      <td className="px-3 py-3 text-right text-[#1E293B] font-medium">{group.totalHours}h</td>
-                      <td className="px-3 py-3 text-center">
-                        <Badge variant="warning">SUBMITTED</Badge>
+
+                      {/* Hours */}
+                      <td className="px-4 py-3 text-right text-sm font-semibold text-[#1E293B] whitespace-nowrap">
+                        {group.totalHours}h
                       </td>
-                      <td className="px-3 py-3 text-right whitespace-nowrap">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
+
+                      {/* Submitted */}
+                      <td className="px-4 py-3 text-sm whitespace-nowrap">
+                        <div className="text-[#1E293B]">{subDateTime.date}</div>
+                        <div className="text-[11px] text-[#94A3B8]">{subDateTime.time}</div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
                             type="button"
-                            className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 px-3 py-1 hover:scale-105 active:scale-95"
                             onClick={(e) => openModal(group.entries.map((entry) => entry.id), "approve", e)}
+                            className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 transition-all duration-150"
+                            title="Approve"
                           >
-                            <Check className="w-3.5 h-3.5" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
                             type="button"
-                            variant="danger"
-                            className="hover:scale-105 active:scale-95"
                             onClick={(e) => openModal(group.entries.map((entry) => entry.id), "reject", e)}
+                            className="p-2 rounded-lg bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 hover:text-red-600 transition-all duration-150"
+                            title="Reject"
                           >
-                            <X className="w-3.5 h-3.5" />
-                            Reject
-                          </Button>
+                            <X className="w-4 h-4" />
+                          </button>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => openDetails(group)}
+                              className="p-2 rounded-lg hover:bg-[#F1F5F9] text-[#94A3B8] hover:text-[#64748B] transition-all duration-150"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
-
-                    {/* Child rows - individual entries (expanded) */}
-                    {expandedIds.includes(group.userId) && (() => {
-                      const wt = buildWeekTable(group.entries);
-                      if (!wt) return null;
-                      return (
-                        <tr key={`exp-${group.userId}`}>
-                          <td colSpan={10} className="px-4 py-4 bg-[#FAFBFC]">
-                            <div className="text-[10px] font-semibold text-[#64748B] mb-2 uppercase tracking-wider">
-                              Week: {wt.weekLabel}
-                            </div>
-                            <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-x-auto">
-                              <table className="w-full text-xs">
-                                <thead>
-                                  <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                                    <th className="px-3 py-2 text-left font-semibold text-[#64748B] uppercase tracking-wider min-w-[140px]">Project</th>
-                                    {wt.weekDates.map((wd) => (
-                                      <th key={wd.date} className="px-2 py-2 text-center border-l border-[#E2E8F0]">
-                                        <div className="font-semibold text-[#64748B] uppercase tracking-wider">{wd.dayName}</div>
-                                        <div className="font-bold text-[#1E293B]">{wd.dateNum}</div>
-                                      </th>
-                                    ))}
-                                    <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[70px]">
-                                      <div className="font-semibold text-[#64748B] uppercase tracking-wider">Week</div>
-                                      <div className="font-semibold text-[#64748B] uppercase tracking-wider">Total</div>
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {wt.projectRows.map((row) => (
-                                    <tr key={row.project} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50">
-                                      <td className="px-3 py-2 border-r border-[#E2E8F0]">
-                                        <div className="flex items-center gap-2">
-                                          <div>
-                                            <div className="text-sm font-semibold text-[#1E293B]">{row.project}</div>
-                                            <div className="text-[10px] text-[#64748B]">{row.client}</div>
-                                          </div>
-                                          {row.comment && (
-                                            <span title={row.comment} className="text-[#5B3CC4] flex-shrink-0">
-                                              <MessageSquare className="w-3.5 h-3.5" />
-                                            </span>
-                                          )}
-                                        </div>
-                                      </td>
-                                      {wt.weekDates.map((wd) => (
-                                        <td key={wd.date} className="px-2 py-2 text-center border-l border-[#E2E8F0] text-sm font-medium text-[#1E293B]">
-                                          {row.days[wd.date] != null ? Number(row.days[wd.date]).toFixed(1) : ""}
-                                        </td>
-                                      ))}
-                                      <td className="px-2 py-2 text-center border-l border-[#E2E8F0] text-sm font-bold text-[#1E293B]">
-                                        {row.total.toFixed(1)}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                  <tr className="bg-[#F8FAFC] border-t-2 border-[#E2E8F0]">
-                                    <td className="px-3 py-2 border-r border-[#E2E8F0] text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
-                                      Daily Totals
-                                    </td>
-                                    {wt.weekDates.map((wd) => (
-                                      <td key={wd.date} className="px-2 py-2 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#1E293B]">
-                                        {(wt.dailyTotals[wd.date] || 0).toFixed(1)}
-                                      </td>
-                                    ))}
-                                    <td className="px-2 py-2 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#5B3CC4]">
-                                      {wt.weekTotal.toFixed(1)}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })()}
-
-                  </React.Fragment>
-                ))
+                  );
+                })
               )}
             </tbody>
-
           </table>
         </div>
       </Card>
 
-{/* APPROVE/REJECT MODAL */}
-        {modal.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal}></div>
-            <div className="relative w-full max-w-lg bg-white border border-[#E2E8F0] rounded-xl shadow-2xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
-                <h2 className="text-lg font-semibold text-[#1E293B] flex items-center gap-2">
-                  {modal.action === "approve" ? (
-                    <Check className="w-5 h-5 text-emerald-600" />
-                  ) : (
-                    <X className="w-5 h-5 text-red-600" />
-                  )}
-                  {modal.action === "approve" ? `Approve ${modal.entryIds.length} Entry` : `Reject ${modal.entryIds.length} Entry`}{modal.entryIds.length !== 1 ? "ies" : ""}
-                </h2>
-                <p className="text-sm text-[#64748B] mt-1">
-                  {modal.action === "approve"
-                    ? "This will approve all pending entries for this employee."
-                    : "This will reject all pending entries for this employee."}
-                </p>
+      {/* PROJECTS POPOVER */}
+      {projectsPopover.groupKey && (() => {
+        const group = grouped.find((g) => g.key === projectsPopover.groupKey);
+        if (!group) return null;
+        return (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setProjectsPopover({ groupKey: null, x: 0, y: 0 })} />
+            <div
+              className="fixed z-50 bg-white border border-[#E2E8F0] rounded-xl shadow-xl p-4 min-w-[280px] max-w-[360px]"
+              style={{ left: projectsPopover.x, top: projectsPopover.y }}
+            >
+              <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-3">
+                Projects ({group.projectCount})
               </div>
-              <div className="p-6">
-                <label className="block text-sm font-medium text-[#64748B] mb-2">
-                  Manager Comment / Note <span className="text-[#94A3B8] font-normal">(optional)</span>
-                </label>
-                <textarea
-                  value={modal.comment}
-                  onChange={(e) => setModal((prev) => ({ ...prev, comment: e.target.value }))}
-                  placeholder={modal.action === "approve" ? "e.g. Good work (optional)" : "e.g. Please improve (optional)"}
-                  rows={4}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors resize-none"
-                />
-                {modal.error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                    {modal.error}
+              <div className="space-y-2.5">
+                {group.projectList.map((item, idx) => (
+                  <div key={idx} className="pb-2 border-b border-[#E2E8F0] last:border-b-0 last:pb-0">
+                    <div className="text-[11px] text-[#64748B]">
+                      Client: <span className="text-[#1E293B] font-medium">{item.client}</span>
+                    </div>
+                    <div className="text-[11px] text-[#64748B]">
+                      Project: <span className="text-[#1E293B] font-medium">{item.project}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* DETAILS DRAWER */}
+      {detailsKey && detailsData && (() => {
+        const { group, weekTable } = detailsData;
+        const subDateTime = formatSubmissionDateTime(group.submissionDate);
+        return (
+          <>
+            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={closeDetails} />
+            <div className="fixed top-0 right-0 z-50 h-full w-full max-w-4xl bg-white border-l border-[#E2E8F0] shadow-2xl overflow-y-auto">
+              {/* Drawer Header */}
+              <div className="sticky top-0 z-10 bg-white border-b border-[#E2E8F0] px-6 py-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#1E293B]">Timesheet Details</h2>
+                  <p className="text-sm text-[#64748B]">{group.name} &middot; {group.weekLabel}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeDetails}
+                  className="p-2 rounded-lg text-[#64748B] hover:text-[#1E293B] hover:bg-[#F1F5F9] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Header Section */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                  <div>
+                    <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Employee</div>
+                    <div className="text-sm font-semibold text-[#1E293B] mt-0.5">{group.name}</div>
+                    <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.userId}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Week</div>
+                    <div className="text-sm text-[#1E293B] mt-0.5">{group.weekLabel}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Submitted</div>
+                    <div className="text-sm text-[#1E293B] mt-0.5">{subDateTime.date}</div>
+                    <div className="text-[11px] text-[#94A3B8]">{subDateTime.time}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Total Hours</div>
+                    <div className="text-lg font-bold text-[#5B3CC4] mt-0.5">{group.totalHours}h</div>
+                  </div>
+                </div>
+
+                {/* Employee Weekly Comment */}
+                {(() => {
+                  const comments = [...new Set(group.entries.filter((e) => e.comment).map((e) => e.comment))];
+                  if (comments.length === 0) return null;
+                  return (
+                    <div className="p-4 bg-amber-50/60 rounded-xl border border-amber-200/60">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="w-4 h-4 text-amber-600" />
+                        <div className="text-xs font-semibold text-amber-800 uppercase tracking-wider">Employee Weekly Comment</div>
+                      </div>
+                      {comments.map((c, idx) => (
+                        <div key={idx} className="text-sm text-amber-900 leading-relaxed">
+                          {c}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Timesheet Grid */}
+                {weekTable && (
+                  <div>
+                    <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-3">
+                      Daily Timesheet
+                    </div>
+                    <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-x-auto">
+                      <table className="w-full text-xs min-w-[700px]">
+                        <thead>
+                          <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[#64748B] uppercase tracking-wider min-w-[140px]">Project</th>
+                            {weekTable.weekDates.map((wd) => (
+                              <th key={wd.date} className="px-2 py-2.5 text-center border-l border-[#E2E8F0]">
+                                <div className="font-semibold text-[#64748B] uppercase tracking-wider">{wd.dayName}</div>
+                                <div className="font-bold text-[#1E293B] text-xs">{wd.dateNum}</div>
+                              </th>
+                            ))}
+                            <th className="px-2 py-2.5 text-center border-l border-[#E2E8F0] min-w-[70px]">
+                              <div className="font-semibold text-[#64748B] uppercase tracking-wider">Week</div>
+                              <div className="font-semibold text-[#64748B] uppercase tracking-wider">Total</div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {weekTable.projectRows.map((row) => (
+                            <tr key={row.project} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50">
+                              <td className="px-3 py-2.5 border-r border-[#E2E8F0]">
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <div className="text-sm font-semibold text-[#1E293B]">{row.project}</div>
+                                    <div className="text-[10px] text-[#64748B]">{row.client}</div>
+                                  </div>
+                                  {row.comment && (
+                                    <span title={row.comment} className="text-[#5B3CC4] flex-shrink-0">
+                                      <MessageSquare className="w-3.5 h-3.5" />
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              {weekTable.weekDates.map((wd) => (
+                                <td key={wd.date} className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-sm font-medium text-[#1E293B]">
+                              {row.days[wd.date] != null ? Number(row.days[wd.date]).toFixed(1) : "0.0"}
+                                </td>
+                              ))}
+                              <td className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-sm font-bold text-[#1E293B]">
+                                {row.total.toFixed(1)}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="bg-[#F8FAFC] border-t-2 border-[#E2E8F0]">
+                            <td className="px-3 py-2.5 border-r border-[#E2E8F0] text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
+                              Daily Totals
+                            </td>
+                            {weekTable.weekDates.map((wd) => (
+                              <td key={wd.date} className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#1E293B]">
+                                {(weekTable.dailyTotals[wd.date] || 0).toFixed(1)}
+                              </td>
+                            ))}
+                            <td className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#5B3CC4]">
+                              {weekTable.weekTotal.toFixed(1)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button variant="outline" onClick={closeModal}>
-                    Cancel
+
+                {/* Drawer Actions */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
+                  <Button
+                    className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
+                    onClick={(e) => {
+                      const entryIds = group.entries.map((entry) => entry.id);
+                      openModal(entryIds, "approve", { stopPropagation: () => {} });
+                    }}
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Approve Timesheet
                   </Button>
-                  {modal.action === "approve" ? (
-                    <Button
-                      onClick={handleConfirm}
-                      className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Approve All
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleConfirm}
-                      variant="danger"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Reject All
-                    </Button>
-                  )}
+                  <Button
+                    variant="danger"
+                    onClick={(e) => {
+                      const entryIds = group.entries.map((entry) => entry.id);
+                      openModal(entryIds, "reject", { stopPropagation: () => {} });
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Reject Timesheet
+                  </Button>
                 </div>
               </div>
             </div>
+          </>
+        );
+      })()}
+
+      {/* APPROVE/REJECT MODAL */}
+      {modal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal}></div>
+          <div className="relative w-full max-w-lg bg-white border border-[#E2E8F0] rounded-xl shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+              <h2 className="text-lg font-semibold text-[#1E293B] flex items-center gap-2">
+                {modal.action === "approve" ? (
+                  <Check className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <X className="w-5 h-5 text-red-600" />
+                )}
+                {modal.action === "approve" ? `Approve ${modal.entryIds.length} Entry` : `Reject ${modal.entryIds.length} Entry`}{modal.entryIds.length !== 1 ? "ies" : ""}
+              </h2>
+              <p className="text-sm text-[#64748B] mt-1">
+                {modal.action === "approve"
+                  ? "This will approve all pending entries for this employee."
+                  : "This will reject all pending entries for this employee."}
+              </p>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-[#64748B] mb-2">
+                Manager Comment / Note <span className="text-[#94A3B8] font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={modal.comment}
+                onChange={(e) => setModal((prev) => ({ ...prev, comment: e.target.value }))}
+                placeholder={modal.action === "approve" ? "e.g. Good work (optional)" : "e.g. Please improve (optional)"}
+                rows={4}
+                className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors resize-none"
+              />
+              {modal.error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {modal.error}
+                </div>
+              )}
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="outline" onClick={closeModal}>
+                  Cancel
+                </Button>
+                {modal.action === "approve" ? (
+                  <Button
+                    onClick={handleConfirm}
+                    className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Approve All
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleConfirm}
+                    variant="danger"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Reject All
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 };
