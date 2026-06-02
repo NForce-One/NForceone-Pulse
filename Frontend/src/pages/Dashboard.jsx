@@ -582,12 +582,11 @@ export const Dashboard = () => {
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Day</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Work Type</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Holiday Name</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Client</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Project</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Task</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Description</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Hours Worked</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Reported To</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Approval Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -598,20 +597,11 @@ export const Dashboard = () => {
                         >
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.entryDate || entry.rawDate || "-"}</td>
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.day || "-"}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {entry.type === "holiday" ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">Holiday</span>
-                            ) : entry.type === "weekend" ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">Weekend</span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">Regular</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.displayName || "-"}</td>
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.clientWorked || "-"}</td>
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.projectWorked || "-"}</td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.taskWorked || "-"}</td>
-                          <td className="px-4 py-3 text-[#64748B] whitespace-nowrap max-w-[200px] truncate">{entry.description || "-"}</td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{Number(entry.hoursWorked || 0).toFixed(2)}h</td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.reportedTo || "-"}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">{entry.approvalStatus || "-"}</td>
                         </tr>
                       ))}
                     </tbody>
