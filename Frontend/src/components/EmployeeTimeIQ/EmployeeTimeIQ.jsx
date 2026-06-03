@@ -28,13 +28,13 @@ import {
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const getWeekStart = (date) => {
-  const d = new Date(date + "T00:00:00");
+  const d = typeof date === "string" ? new Date(date + "T00:00:00") : new Date(date);
   d.setDate(d.getDate() - d.getDay());
   return format(d, "yyyy-MM-dd");
 };
 
 const getWeekEnd = (date) => {
-  const d = new Date(date + "T00:00:00");
+  const d = typeof date === "string" ? new Date(date + "T00:00:00") : new Date(date);
   d.setDate(d.getDate() - d.getDay() + 6);
   return format(d, "yyyy-MM-dd");
 };

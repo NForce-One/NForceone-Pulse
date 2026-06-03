@@ -36,7 +36,7 @@ const toLocalDateStr = (d) => {
 };
 
 const getWeekStart = (date) => {
-  const d = new Date(date + "T00:00:00");
+  const d = typeof date === "string" ? new Date(date + "T00:00:00") : new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
