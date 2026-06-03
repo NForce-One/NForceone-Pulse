@@ -56,7 +56,7 @@ const buildWeekTable = (entries) => {
 
 const formatSubmissionDateTime = (dateStr) => {
   if (!dateStr) return "-";
-  const d = new Date(dateStr);
+  const d = new Date(dateStr + "T00:00:00");
   return `${format(d, "dd-MMM-yyyy")} | ${format(d, "hh:mm a")}`;
 };
 

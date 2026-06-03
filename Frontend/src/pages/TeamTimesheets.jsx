@@ -28,8 +28,15 @@ const DATE_FILTERS = [
   { value: "CUSTOM_RANGE", label: "Custom Range" },
 ];
 
+const toLocalDateStr = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
 const getWeekStart = (date) => {
-  const d = new Date(date);
+  const d = new Date(date + "T00:00:00");
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
@@ -38,7 +45,7 @@ const getWeekStart = (date) => {
 
 const computeDateRange = (filter, customMonth, customFrom, customTo) => {
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
+  const todayStr = toLocalDateStr(now);
 
   switch (filter) {
     case "TODAY":
@@ -49,8 +56,8 @@ const computeDateRange = (filter, customMonth, customFrom, customTo) => {
       const sun = new Date(mon);
       sun.setDate(mon.getDate() + 6);
       return {
-        dateFrom: mon.toISOString().split("T")[0],
-        dateTo: sun.toISOString().split("T")[0],
+        dateFrom: toLocalDateStr(mon),
+        dateTo: toLocalDateStr(sun),
       };
     }
 
@@ -60,8 +67,8 @@ const computeDateRange = (filter, customMonth, customFrom, customTo) => {
       const sun = new Date(mon);
       sun.setDate(mon.getDate() + 6);
       return {
-        dateFrom: mon.toISOString().split("T")[0],
-        dateTo: sun.toISOString().split("T")[0],
+        dateFrom: toLocalDateStr(mon),
+        dateTo: toLocalDateStr(sun),
       };
     }
 
@@ -69,8 +76,8 @@ const computeDateRange = (filter, customMonth, customFrom, customTo) => {
       const first = new Date(now.getFullYear(), now.getMonth(), 1);
       const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       return {
-        dateFrom: first.toISOString().split("T")[0],
-        dateTo: last.toISOString().split("T")[0],
+        dateFrom: toLocalDateStr(first),
+        dateTo: toLocalDateStr(last),
       };
     }
 
@@ -78,8 +85,8 @@ const computeDateRange = (filter, customMonth, customFrom, customTo) => {
       const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const last = new Date(now.getFullYear(), now.getMonth(), 0);
       return {
-        dateFrom: first.toISOString().split("T")[0],
-        dateTo: last.toISOString().split("T")[0],
+        dateFrom: toLocalDateStr(first),
+        dateTo: toLocalDateStr(last),
       };
     }
 
@@ -95,8 +102,8 @@ const computeDateRange = (filter, customMonth, customFrom, customTo) => {
       const first = new Date(Number(year), Number(month) - 1, 1);
       const last = new Date(Number(year), Number(month), 0);
       return {
-        dateFrom: first.toISOString().split("T")[0],
-        dateTo: last.toISOString().split("T")[0],
+        dateFrom: toLocalDateStr(first),
+        dateTo: toLocalDateStr(last),
       };
     }
 
