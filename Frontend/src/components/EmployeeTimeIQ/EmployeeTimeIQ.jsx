@@ -21,6 +21,7 @@ import {
   Loader2,
   Clock,
   Trash2,
+  MessageSquare,
   FileText,
 } from "lucide-react";
 
