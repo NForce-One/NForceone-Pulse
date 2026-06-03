@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 const BASE_COLUMNS = [
   { key: "entryDate", label: "Date" },
   { key: "day", label: "Day" },
+  { key: "userName", label: "Employee Name" },
   { key: "clientWorked", label: "Client" },
   { key: "projectWorked", label: "Project" },
   { key: "hoursWorked", label: "Hours Worked" },

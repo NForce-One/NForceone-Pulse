@@ -582,6 +582,7 @@ export const Dashboard = () => {
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Day</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Employee Name</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Client</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Project</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Hours Worked</th>
@@ -597,6 +598,7 @@ export const Dashboard = () => {
                         >
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.entryDate || entry.rawDate || "-"}</td>
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.day || "-"}</td>
+                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.userName || "-"}</td>
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.clientWorked || "-"}</td>
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.projectWorked || "-"}</td>
                           <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{Number(entry.hoursWorked || 0).toFixed(2)}h</td>
