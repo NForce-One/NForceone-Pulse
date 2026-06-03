@@ -791,7 +791,7 @@ export const EmployeeTimeIQ = () => {
                               {managerAction.comment && (
                                 <button
                                   onClick={() => setManagerActionModal(managerAction)}
-                                  className="p-0.5 rounded hover:bg-[#F1F5F9] text-[#5B3CC4]"
+                                  className="p-0.5 rounded bg-[#5B3CC4]/10 text-[#5B3CC4] ring-1 ring-[#5B3CC4]/30"
                                   title="View comment"
                                 >
                                   <MessageSquare className="w-3 h-3" />
@@ -905,12 +905,12 @@ export const EmployeeTimeIQ = () => {
             <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <h2 className="text-lg font-semibold text-[#1E293B] flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-[#5B3CC4]" />
-                Manager Response
+                Admin Response
               </h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Manager Status</span>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Admin Status</span>
                 <div className="mt-1">
                   <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
                     managerActionModal.status === "APPROVED" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
@@ -920,7 +920,7 @@ export const EmployeeTimeIQ = () => {
                 </div>
               </div>
               <div>
-                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Manager</span>
+                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Admin</span>
                 <p className="mt-1 text-sm font-medium text-[#1E293B]">{managerActionModal.managerName}</p>
               </div>
               {managerActionModal.comment && (
