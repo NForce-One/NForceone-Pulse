@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect, useCallback } from "react";
 import { format } from "date-fns";
 
 import { fetchTimeEntries, approveTimeEntry, rejectTimeEntry } from "../services/api";
@@ -58,6 +58,12 @@ const formatSubmissionDateTime = (dateStr) => {
   if (!dateStr) return "-";
   const d = new Date(dateStr);
   return `${format(d, "dd-MMM-yyyy")} | ${format(d, "hh:mm a")}`;
+};
+
+const getSnackbarStyles = (type) => {
+  if (type === "success") return "bg-green-600 text-white";
+  if (type === "error") return "bg-red-600 text-white";
+  return "bg-[#1E293B] text-white";
 };
 
 export const Approvals = () => {
@@ -140,6 +146,14 @@ export const Approvals = () => {
     comment: "",
     error: "",
   });
+  const [processing, setProcessing] = useState(false);
+  const processingRef = useRef(false);
+  const [snackbar, setSnackbar] = useState(null);
+
+  const showSnackbar = useCallback((message, type = "info", duration = 3000) => {
+    setSnackbar({ message, type });
+    setTimeout(() => setSnackbar(null), duration);
+  }, []);
 
   const loadEntries = async () => {
     try {
@@ -189,6 +203,9 @@ export const Approvals = () => {
   };
 
   const handleConfirm = async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+    setProcessing(true);
     const { entryIds, action, comment } = modal;
     let failed = false;
     for (const id of entryIds) {
@@ -215,7 +232,15 @@ export const Approvals = () => {
         return updated;
       });
       closeModal();
+      showSnackbar(
+        action === "approve"
+          ? "Timesheet approved successfully."
+          : "Timesheet rejected successfully.",
+        "success"
+      );
     }
+    processingRef.current = false;
+    setProcessing(false);
   };
 
   const openDetails = (group) => {
@@ -595,10 +620,17 @@ export const Approvals = () => {
         );
       })()}
 
+      {/* SNACKBAR */}
+      {snackbar && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg animate-in slide-in-from-right-2 ${getSnackbarStyles(snackbar.type)}`}>
+          {snackbar.message}
+        </div>
+      )}
+
       {/* APPROVE/REJECT MODAL */}
       {modal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal}></div>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={processing ? undefined : closeModal}></div>
           <div className="relative w-full max-w-lg bg-white border border-[#E2E8F0] rounded-xl shadow-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <h2 className="text-lg font-semibold text-[#1E293B] flex items-center gap-2">
@@ -632,24 +664,26 @@ export const Approvals = () => {
                 </div>
               )}
               <div className="flex justify-end gap-3 mt-6">
-                <Button variant="outline" onClick={closeModal}>
+                <Button variant="outline" onClick={closeModal} disabled={processing}>
                   Cancel
                 </Button>
                 {modal.action === "approve" ? (
                   <Button
                     onClick={handleConfirm}
-                    className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
+                    disabled={processing}
+                    className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-4 h-4 mr-2" />
-                    Approve All
+                    {processing ? "Processing..." : "Approve All"}
                   </Button>
                 ) : (
                   <Button
                     onClick={handleConfirm}
+                    disabled={processing}
                     variant="danger"
                   >
                     <X className="w-4 h-4 mr-2" />
-                    Reject All
+                    {processing ? "Processing..." : "Reject All"}
                   </Button>
                 )}
               </div>
