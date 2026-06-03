@@ -619,9 +619,9 @@ export const EmployeeTimeIQ = () => {
             value={selectedClient}
             onChange={(e) => handleClientChange(e.target.value)}
             disabled={isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{clients.length === 0 ? "Loading..." : "-- Select Client --"}</option>
+            <option value="">{clients.length === 0 ? "Loading..." : "Select Client"}</option>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -633,7 +633,7 @@ export const EmployeeTimeIQ = () => {
             value={selectedProject}
             onChange={(e) => handleProjectChange(e.target.value)}
             disabled={!selectedClient || isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">{!selectedClient ? "Select client first" : filteredProjects.length === 0 ? "No projects" : "Select Project"}</option>
             {filteredProjects.map((p) => (
@@ -647,9 +647,9 @@ export const EmployeeTimeIQ = () => {
             value={selectedManager}
             onChange={(e) => setSelectedManager(e.target.value ? Number(e.target.value) : "")}
             disabled={isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{allManagers.length === 0 ? "Loading..." : "-- Select Manager --"}</option>
+            <option value="">{allManagers.length === 0 ? "Loading..." : "Select Manager"}</option>
             {allManagers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
@@ -714,9 +714,9 @@ export const EmployeeTimeIQ = () => {
                           <select
                             value={row.clientId || ""}
                             onChange={(e) => handlePendingClientChange(row.rowId, e.target.value)}
-                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent"
+                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent"
                           >
-                            <option value="">-- Select Client --</option>
+                            <option value="">Select Client</option>
                             {clients.map((c) => (
                               <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
@@ -725,7 +725,7 @@ export const EmployeeTimeIQ = () => {
                             value={row.projectId || ""}
                             onChange={(e) => handlePendingProjectChange(row.rowId, e.target.value)}
                             disabled={!row.clientId}
-                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <option value="">{!row.clientId ? "Select client first" : "Select Project"}</option>
                             {row.clientId && getProjectsForClient(row.clientId).map((p) => (

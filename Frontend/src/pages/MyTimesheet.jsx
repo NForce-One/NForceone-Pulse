@@ -323,7 +323,7 @@ const handleDelete = async (id) => {
               onChange={handleInputChange}
               className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200"
             >
-              <option value="">-- Select Client --</option>
+              <option value="">Select Client</option>
               {clients
                 .filter((c) => c.status === "ACTIVE")
                 .map((c) => (
@@ -339,7 +339,7 @@ const handleDelete = async (id) => {
             >
               <option value="">
                 {!formData.clientId
-                  ? "-- Select a client first --"
+                  ? "Select a client first"
                   : filteredProjects.length === 0
                   ? "No projects available"
                   : "Select Project"}

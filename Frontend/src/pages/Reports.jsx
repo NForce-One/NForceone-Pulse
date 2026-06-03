@@ -196,7 +196,7 @@ export const Reports = () => {
              >
                 <option value="">
                   {!filters.clientId
-                    ? "-- Select a client first --"
+                    ? "Select a client first"
                     : filteredProjects.length === 0
                     ? "No projects available"
                     : "All Projects"}

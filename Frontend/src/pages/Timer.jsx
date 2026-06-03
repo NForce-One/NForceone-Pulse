@@ -489,7 +489,7 @@ export const TimerPage = () => {
                   required
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors"
                 >
-                  <option value="">-- Select Client --</option>
+                  <option value="">Select Client</option>
                   {clients
                     .filter((c) => c.status === "ACTIVE")
                     .map((c) => (
@@ -515,7 +515,7 @@ export const TimerPage = () => {
                 >
                   <option value="">
                     {!form.clientId
-                      ? "-- Select a client first --"
+                      ? "Select a client first"
                       : filteredProjects.length === 0
                       ? "No projects available"
                       : "Select Project"}
