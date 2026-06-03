@@ -688,7 +688,6 @@ export const EmployeeTimeIQ = () => {
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">TOTAL</p>
               </th>
               <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[90px]">
-                <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">ADMIN</p>
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">STATUS</p>
               </th>
               <th className="px-2 py-2 text-center border-l border-[#E2E8F0] w-10"></th>
@@ -709,7 +708,8 @@ export const EmployeeTimeIQ = () => {
                 return (
                   <tr key={row.rowId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50 transition-colors">
                     <td className="px-3 py-2 border-r border-[#E2E8F0]">
-                      {row.isPending ? (
+                      {/* [TEMP-HIDE] Add Project dropdown logic commented out per requirement */}
+                      {/* {row.isPending ? (
                         <div className="flex flex-col gap-1.5 min-w-[180px]">
                           <select
                             value={row.clientId || ""}
@@ -733,12 +733,12 @@ export const EmployeeTimeIQ = () => {
                             ))}
                           </select>
                         </div>
-                      ) : (
+                      ) : ( */}
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-[#1E293B] truncate max-w-[160px]">{row.projectName}</span>
                           <span className="text-[10px] text-[#64748B] truncate max-w-[160px]">{row.clientName}</span>
                         </div>
-                      )}
+                      {/* )} */}
                     </td>
                     {weekDates.map((wd) => {
                       const dayData = row.days[wd.date] || { hours: "", description: "" };
