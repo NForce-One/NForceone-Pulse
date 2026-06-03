@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from "react";
 import { format } from "date-fns";
 
 import { fetchTimeEntries, approveTimeEntry, rejectTimeEntry } from "../services/api";
@@ -55,19 +55,17 @@ const buildWeekTable = (entries) => {
 };
 
 const formatSubmissionDateTime = (dateStr) => {
-  if (!dateStr) return { date: "-", time: "" };
+  if (!dateStr) return "-";
   const d = new Date(dateStr);
-  return {
-    date: format(d, "MMM dd, yyyy"),
-    time: format(d, "hh:mm a"),
-  };
+  return `${format(d, "dd-MMM-yyyy")} | ${format(d, "hh:mm a")}`;
 };
 
 export const Approvals = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState([]);
-  const [projectsPopover, setProjectsPopover] = useState({ groupKey: null, x: 0, y: 0 });
+  const [projectsPopover, setProjectsPopover] = useState({ groupKey: null, x: 0, y: 0, upward: false });
+  const popoverRef = useRef(null);
   const [detailsKey, setDetailsKey] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
   const [statusFilter, setStatusFilter] = useState("pending");
@@ -117,7 +115,7 @@ export const Approvals = () => {
         });
         const submissionDate = latestEntry.createdAt || latestEntry.updatedAt || latestEntry.entryDate;
         return {
-          key: group.weekStart,
+          key: `${group.userId}_${group.weekStart}`,
           userId: group.userId,
           name: group.name,
           entries: group.entries,
@@ -131,7 +129,7 @@ export const Approvals = () => {
           status: group.entries[0]?.status || "SUBMITTED",
         };
       })
-      .sort((a, b) => a.name.localeCompare(b.name) || b.weekStart.localeCompare(a.weekStart));
+      .sort((a, b) => b.weekStart.localeCompare(a.weekStart) || a.name.localeCompare(b.name));
   }, [filteredEntries]);
 
   // Comment modal state
@@ -162,6 +160,24 @@ export const Approvals = () => {
   useEffect(() => {
     loadEntries();
   }, []);
+
+  useLayoutEffect(() => {
+    if (!projectsPopover.groupKey || !popoverRef.current) return;
+    const el = popoverRef.current;
+    const r = el.getBoundingClientRect();
+    if (r.bottom > window.innerHeight) {
+      el.style.top = Math.max(4, window.innerHeight - r.height - 8) + "px";
+    }
+    if (r.top < 0) {
+      el.style.top = "8px";
+    }
+    if (r.left < 0) {
+      el.style.left = "8px";
+    }
+    if (r.right > window.innerWidth) {
+      el.style.left = Math.max(8, window.innerWidth - r.width - 8) + "px";
+    }
+  }, [projectsPopover.groupKey]);
 
   const openModal = (entryIds, action, e) => {
     e.stopPropagation();
@@ -308,9 +324,18 @@ export const Approvals = () => {
                           type="button"
                           onClick={(e) => {
                             const rect = e.currentTarget.getBoundingClientRect();
-                            setProjectsPopover((prev) =>
-                              prev.groupKey === group.key ? { groupKey: null, x: 0, y: 0 } : { groupKey: group.key, x: rect.left, y: rect.bottom + 4 }
-                            );
+                            setProjectsPopover((prev) => {
+                              if (prev.groupKey === group.key) return { groupKey: null, x: 0, y: 0, upward: false };
+                              const estHeight = 80 + group.projectList.length * 55;
+                              const spaceBelow = window.innerHeight - rect.bottom;
+                              const upward = spaceBelow < estHeight;
+                              return {
+                                groupKey: group.key,
+                                x: Math.min(rect.left, window.innerWidth - 360),
+                                y: upward ? rect.top - 12 : rect.bottom + 4,
+                                upward
+                              };
+                            });
                           }}
                           className="inline-flex items-center gap-1 text-sm font-medium text-[#5B3CC4] hover:text-[#4A2FA0] transition-colors"
                         >
@@ -325,9 +350,8 @@ export const Approvals = () => {
                       </td>
 
                       {/* Submitted */}
-                      <td className="px-4 py-3 text-sm whitespace-nowrap">
-                        <div className="text-[#1E293B]">{subDateTime.date}</div>
-                        <div className="text-[11px] text-[#94A3B8]">{subDateTime.time}</div>
+                      <td className="px-4 py-3 text-sm whitespace-nowrap text-[#1E293B]">
+                        {subDateTime}
                       </td>
 
                       {/* Actions */}
@@ -380,15 +404,18 @@ export const Approvals = () => {
         if (!group) return null;
         return (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setProjectsPopover({ groupKey: null, x: 0, y: 0 })} />
+            <div className="fixed inset-0 z-40" onClick={() => setProjectsPopover({ groupKey: null, x: 0, y: 0, upward: false })} />
             <div
-              className="fixed z-50 bg-white border border-[#E2E8F0] rounded-xl shadow-xl p-4 min-w-[280px] max-w-[360px]"
+              ref={popoverRef}
+              className="fixed z-50 bg-white border border-[#E2E8F0] rounded-xl shadow-xl min-w-[280px] max-w-[360px]"
               style={{ left: projectsPopover.x, top: projectsPopover.y }}
             >
-              <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-3">
-                Projects ({group.projectCount})
+              <div className="p-4 pb-0">
+                <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-3">
+                  Projects ({group.projectCount})
+                </div>
               </div>
-              <div className="space-y-2.5">
+              <div className="px-4 pb-4 max-h-[300px] overflow-y-auto">
                 {group.projectList.map((item, idx) => (
                   <div key={idx} className="pb-2 border-b border-[#E2E8F0] last:border-b-0 last:pb-0">
                     <div className="text-[11px] text-[#64748B]">
@@ -442,8 +469,7 @@ export const Approvals = () => {
                   </div>
                   <div>
                     <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Submitted</div>
-                    <div className="text-sm text-[#1E293B] mt-0.5">{subDateTime.date}</div>
-                    <div className="text-[11px] text-[#94A3B8]">{subDateTime.time}</div>
+                    <div className="text-sm text-[#1E293B] mt-0.5">{subDateTime}</div>
                   </div>
                   <div>
                     <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Total Hours</div>
