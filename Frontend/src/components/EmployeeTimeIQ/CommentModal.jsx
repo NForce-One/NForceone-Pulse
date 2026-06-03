@@ -1,20 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { X, Trash2 } from "lucide-react";
 
-const formatHours = (hours) => {
-  if (!hours && hours !== 0) return "0:00";
-  const h = Math.floor(parseFloat(hours));
-  const m = Math.round((parseFloat(hours) - h) * 60);
-  return `${h}:${m.toString().padStart(2, "0")}`;
-};
-
 export const CommentModal = ({
   isOpen,
   rowId,
   date,
-  dayName,
-  fullDate,
-  hoursLogged,
   value,
   onChange,
   onSave,
@@ -66,13 +56,6 @@ export const CommentModal = ({
           </button>
         </div>
 
-        <div className="px-5 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-          <p className="text-xs font-semibold text-[#1E293B]">{dayName}, {fullDate}</p>
-          <p className="text-[11px] text-[#64748B] mt-0.5">
-            Hours Logged: <span className="font-semibold text-[#1E293B]">{formatHours(hoursLogged)}</span>
-          </p>
-        </div>
-
         <div className="px-5 py-4">
           <textarea
             ref={textareaRef}
@@ -80,8 +63,10 @@ export const CommentModal = ({
             onChange={handleInput}
             placeholder="Describe work completed for this day..."
             rows={7}
+            maxLength={200}
             className="w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent resize-none"
           />
+          <p className="text-[11px] text-[#94A3B8] mt-1.5">Maximum 200 characters allowed</p>
         </div>
 
         <div className="flex items-center justify-between px-5 py-3.5 border-t border-[#E2E8F0] bg-[#F8FAFC]">
