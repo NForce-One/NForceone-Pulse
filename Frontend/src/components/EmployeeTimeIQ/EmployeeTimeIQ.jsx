@@ -21,8 +21,7 @@ import {
   Loader2,
   Clock,
   Trash2,
-  MessageSquare,
-  MessageSquareOff,
+  FileText,
 } from "lucide-react";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -649,7 +648,7 @@ export const EmployeeTimeIQ = () => {
             disabled={isReadOnly}
             className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{allManagers.length === 0 ? "Loading..." : "Select Manager"}</option>
+            <option value="">{allManagers.length === 0 ? "Loading..." : "Select Admin"}</option>
             {allManagers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
@@ -688,7 +687,7 @@ export const EmployeeTimeIQ = () => {
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">TOTAL</p>
               </th>
               <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[90px]">
-                <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">MANAGER</p>
+                <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">ADMIN</p>
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">STATUS</p>
               </th>
               <th className="px-2 py-2 text-center border-l border-[#E2E8F0] w-10"></th>
@@ -768,9 +767,9 @@ export const EmployeeTimeIQ = () => {
                         title={row.comment ? "Edit comment" : "Add comment"}
                       >
                         {row.comment ? (
-                          <MessageSquare className="w-4 h-4 text-[#5B3CC4]" />
+                          <FileText className="w-4 h-4 text-[#5B3CC4]" />
                         ) : (
-                          <MessageSquareOff className="w-4 h-4 text-[#94A3B8]" />
+                          <FileText className="w-4 h-4 text-[#94A3B8]" />
                         )}
                       </button>
                     </td>
