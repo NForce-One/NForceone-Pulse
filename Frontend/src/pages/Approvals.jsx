@@ -283,7 +283,7 @@ export const Approvals = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Projects</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Hours</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Submitted</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">Actions</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-[#64748B] whitespace-nowrap">View</th>
               </tr>
             </thead>
             <tbody>
