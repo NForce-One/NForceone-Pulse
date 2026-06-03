@@ -81,7 +81,7 @@ export const getEntriesByManager = async (managerId) => {
 
 // ================= GET SUBMITTED ENTRIES FOR MANAGER APPROVAL =================
 export const getSubmittedToManager = async (managerId) => {
-  return await getEntriesWithUser({ managerId, status: "SUBMITTED" });
+  return await getEntriesWithUser({ managerId });
 };
 
 // ================= GET MANAGER ENTRIES FOR ADMIN APPROVAL =================

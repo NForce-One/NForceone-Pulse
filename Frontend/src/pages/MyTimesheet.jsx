@@ -342,7 +342,7 @@ const handleDelete = async (id) => {
                   ? "-- Select a client first --"
                   : filteredProjects.length === 0
                   ? "No projects available"
-                  : "-- Select Project --"}
+                  : "Select Project"}
               </option>
               {filteredProjects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>

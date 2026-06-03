@@ -74,11 +74,13 @@ export const Approvals = () => {
 
   const pendingCount = useMemo(() => entries.filter((e) => e.status === "SUBMITTED").length, [entries]);
   const approvedCount = useMemo(() => entries.filter((e) => e.status === "APPROVED").length, [entries]);
+  const rejectedCount = useMemo(() => entries.filter((e) => e.status === "REJECTED").length, [entries]);
   const allCount = entries.length;
 
   const filteredEntries = useMemo(() => {
     if (statusFilter === "pending") return entries.filter((e) => e.status === "SUBMITTED");
     if (statusFilter === "approved") return entries.filter((e) => e.status === "APPROVED");
+    if (statusFilter === "rejected") return entries.filter((e) => e.status === "REJECTED");
     return entries;
   }, [entries, statusFilter]);
 
@@ -126,6 +128,7 @@ export const Approvals = () => {
           projectList,
           submissionDate,
           latestEntry,
+          status: group.entries[0]?.status || "SUBMITTED",
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name) || b.weekStart.localeCompare(a.weekStart));
@@ -147,7 +150,6 @@ export const Approvals = () => {
       const response = await fetchTimeEntries({ for: "approvals" });
 
       const data = response?.data || [];
-
       setEntries(data);
 
     } catch (error) {
@@ -189,8 +191,14 @@ export const Approvals = () => {
       }
     }
     if (!failed) {
+      const newStatus = action === "approve" ? "APPROVED" : "REJECTED";
+      setEntries((prev) => {
+        const updated = prev.map((entry) =>
+          entryIds.includes(entry.id) ? { ...entry, status: newStatus } : entry
+        );
+        return updated;
+      });
       closeModal();
-      await loadEntries();
     }
   };
 
@@ -223,6 +231,7 @@ export const Approvals = () => {
         {[
           { key: "pending", label: "Pending", count: pendingCount },
           { key: "approved", label: "Approved", count: approvedCount },
+          { key: "rejected", label: "Rejected", count: rejectedCount },
           { key: "all", label: "All", count: allCount },
         ].map((tab) => (
           <button
@@ -271,7 +280,7 @@ export const Approvals = () => {
               ) : grouped.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-8 text-[#64748B]">
-                    {statusFilter === "pending" ? "No pending approvals" : statusFilter === "approved" ? "No approved submissions found" : "No submissions found"}
+                    {statusFilter === "pending" ? "No pending approvals" : statusFilter === "approved" ? "No approved submissions found" : statusFilter === "rejected" ? "No rejected submissions" : "No submissions found"}
                   </td>
                 </tr>
               ) : (
@@ -324,22 +333,26 @@ export const Approvals = () => {
                       {/* Actions */}
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={(e) => openModal(group.entries.map((entry) => entry.id), "approve", e)}
-                            className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 transition-all duration-150"
-                            title="Approve"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => openModal(group.entries.map((entry) => entry.id), "reject", e)}
-                            className="p-2 rounded-lg bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 hover:text-red-600 transition-all duration-150"
-                            title="Reject"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                          {group.status === "SUBMITTED" && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => openModal(group.entries.map((entry) => entry.id), "approve", e)}
+                                className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700 transition-all duration-150"
+                                title="Approve"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => openModal(group.entries.map((entry) => entry.id), "reject", e)}
+                                className="p-2 rounded-lg bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 hover:text-red-600 transition-all duration-150"
+                                title="Reject"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                           <div className="relative">
                             <button
                               type="button"
@@ -526,28 +539,30 @@ export const Approvals = () => {
                 )}
 
                 {/* Drawer Actions */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
-                  <Button
-                    className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
-                    onClick={(e) => {
-                      const entryIds = group.entries.map((entry) => entry.id);
-                      openModal(entryIds, "approve", { stopPropagation: () => {} });
-                    }}
-                  >
-                    <Check className="w-4 h-4 mr-2" />
-                    Approve Timesheet
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={(e) => {
-                      const entryIds = group.entries.map((entry) => entry.id);
-                      openModal(entryIds, "reject", { stopPropagation: () => {} });
-                    }}
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Reject Timesheet
-                  </Button>
-                </div>
+                {group.status === "SUBMITTED" && (
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
+                    <Button
+                      className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
+                      onClick={(e) => {
+                        const entryIds = group.entries.map((entry) => entry.id);
+                        openModal(entryIds, "approve", { stopPropagation: () => {} });
+                      }}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Approve Timesheet
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={(e) => {
+                        const entryIds = group.entries.map((entry) => entry.id);
+                        openModal(entryIds, "reject", { stopPropagation: () => {} });
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Reject Timesheet
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </>

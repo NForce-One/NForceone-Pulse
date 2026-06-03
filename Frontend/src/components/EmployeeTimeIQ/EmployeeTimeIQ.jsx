@@ -635,7 +635,7 @@ export const EmployeeTimeIQ = () => {
             disabled={!selectedClient || isReadOnly}
             className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{!selectedClient ? "Select client first" : filteredProjects.length === 0 ? "No projects" : "-- Select Project --"}</option>
+            <option value="">{!selectedClient ? "Select client first" : filteredProjects.length === 0 ? "No projects" : "Select Project"}</option>
             {filteredProjects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -727,7 +727,7 @@ export const EmployeeTimeIQ = () => {
                             disabled={!row.clientId}
                             className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <option value="">{!row.clientId ? "Select client first" : "-- Select Project --"}</option>
+                            <option value="">{!row.clientId ? "Select client first" : "Select Project"}</option>
                             {row.clientId && getProjectsForClient(row.clientId).map((p) => (
                               <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
