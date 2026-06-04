@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getDashboardStats, getHourDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
-import { AdminListModal } from "../components/ui/AdminListModal";
 import { useAuth } from "../context/AuthContext";
+import { useCachedData } from "../hooks/useCachedData";
+import { AdminListModal } from "../components/ui/AdminListModal";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { DrillDownModal } from "../components/ui/DrillDownModal";
 import { Users, FolderOpen, Building, ChevronDown, Clock, Briefcase, CalendarDays, Gift } from "lucide-react";
@@ -57,8 +58,6 @@ const formatHours = (hours) => {
 };
 
 export const Dashboard = () => {
-  const [stats, setStats] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   const [filterPeriod, setFilterPeriod] = useState("thisMonth");
@@ -142,6 +141,21 @@ export const Dashboard = () => {
         return { startDate: "", endDate: "" };
     }
   }, [filterPeriod, customMonth, customYear, fromDate, toDate]);
+
+  const buildParams = () => {
+    const { startDate, endDate } = getFilterDateRange();
+    const p = {};
+    if (startDate && endDate) { p.startDate = startDate; p.endDate = endDate; }
+    if (user?.role === "MANAGER" && dashboardView === "self") p.self = true;
+    return p;
+  };
+  const fetchParamsRef = useRef(buildParams());
+  const { data: rawStats, isLoading, refresh } = useCachedData("dashboard", () => getDashboardStats(fetchParamsRef.current));
+  const stats = rawStats ?? {};
+
+  useEffect(() => {
+    fetchParamsRef.current = buildParams();
+  });
 
   const openHourDetails = async (title, type, date = "") => {
     const entries = stats?.dashboardEntries;
@@ -322,47 +336,25 @@ export const Dashboard = () => {
     }
   }, []);
 
-  const loadStats = useCallback(async (startDate, endDate) => {
-    try {
-      setIsLoading(true);
-      const params = {};
-      if (startDate && endDate) {
-        params.startDate = startDate;
-        params.endDate = endDate;
-      }
-      if (user?.role === "MANAGER" && dashboardView === "self") {
-        params.self = true;
-      }
-      const response = await getDashboardStats(params);
-      setStats(response || {});
-      console.log(`[DEBUG Dashboard] Stats loaded. totalWeekHours=${response?.totalWeekHours}, normalHours=${response?.normalHours}, dashboardEntries count=${Array.isArray(response?.dashboardEntries) ? response.dashboardEntries.length : 'N/A'}`);
-    } catch (error) {
-      console.error("Failed to load dashboard data", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [dashboardView, user?.role]);
+  const filterKeyRef = useRef(`${filterPeriod}-${customMonth}-${customYear}-${fromDate}-${toDate}-${dashboardView}`);
 
   useEffect(() => {
-    const { startDate, endDate } = getFilterDateRange();
-    loadStats(startDate, endDate);
+    const newKey = `${filterPeriod}-${customMonth}-${customYear}-${fromDate}-${toDate}-${dashboardView}`;
+    if (newKey !== filterKeyRef.current) {
+      filterKeyRef.current = newKey;
+      refresh();
+    }
+  }, [filterPeriod, customMonth, customYear, fromDate, toDate, dashboardView, refresh]);
 
-    const interval = setInterval(() => {
-      const { startDate: sd, endDate: ed } = getFilterDateRange();
-      loadStats(sd, ed);
-    }, 30000);
-
-    const handleFocus = () => {
-      const { startDate: sd, endDate: ed } = getFilterDateRange();
-      loadStats(sd, ed);
-    };
+  useEffect(() => {
+    const interval = setInterval(() => refresh(), 30000);
+    const handleFocus = () => refresh();
     window.addEventListener("focus", handleFocus);
-
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", handleFocus);
     };
-  }, [getFilterDateRange, loadStats]);
+  }, [refresh]);
 
   const filteredDashboardData = useMemo(() => {
     const entries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];

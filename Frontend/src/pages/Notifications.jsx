@@ -3,8 +3,9 @@ import {
   fetchNotifications,
   markNotificationRead,
   markAllNotificationsRead,
-  deleteNotification,
+  deleteNotification
 } from "../services/api";
+import { useCachedData, clearPageCache } from "../hooks/useCachedData";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
@@ -100,26 +101,34 @@ function getTypeBadge(type) {
 
 export const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  const loadNotifications = async (silent = false) => {
-    try {
-      const response = await fetchNotifications();
-      const sorted = (response?.data || []).sort(
+  const {
+    data: fetchedNotifications,
+    isLoading,
+  } = useCachedData("notifications", fetchNotifications);
+
+  useEffect(() => {
+    if (fetchedNotifications) {
+      const sorted = (Array.isArray(fetchedNotifications) ? fetchedNotifications : []).sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
       setNotifications(sorted);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      if (!silent) setIsLoading(false);
     }
-  };
+  }, [fetchedNotifications]);
 
+  // Polling for real-time updates
   useEffect(() => {
-    loadNotifications();
-    const interval = setInterval(() => loadNotifications(true), 30000);
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetchNotifications();
+        const sorted = (response?.data || []).sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setNotifications(sorted);
+        sessionStorage.setItem("c_notifications", JSON.stringify({ data: sorted, timestamp: Date.now() }));
+      } catch { /* silent */ }
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -129,6 +138,7 @@ export const Notifications = () => {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
       );
+      clearPageCache("notifications");
     } catch (error) {
       console.error(error);
     }
@@ -138,6 +148,7 @@ export const Notifications = () => {
     try {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      clearPageCache("notifications");
     } catch (error) {
       console.error(error);
     }
@@ -148,6 +159,7 @@ export const Notifications = () => {
     try {
       await deleteNotification(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
+      clearPageCache("notifications");
     } catch (error) {
       console.error(error);
     }

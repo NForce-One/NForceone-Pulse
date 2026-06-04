@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   fetchAllUsers,
   fetchTeamTimesheets,
@@ -7,6 +7,7 @@ import {
   fetchTimesheetById,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { clearPageCache } from "../hooks/useCachedData";
 
 import {
   Card,
@@ -119,11 +120,21 @@ export const TeamTimesheets = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
 
-  // ================= DATA STATE =================
-  const [allUsers, setAllUsers] = useState([]);
-  const [timesheets, setTimesheets] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [allUsers, setAllUsers] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem("c_team_users");
+      return cached ? JSON.parse(cached).data : [];
+    } catch { return []; }
+  });
+  const [timesheets, setTimesheets] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem("c_team_timesheets");
+      return cached ? JSON.parse(cached).data : [];
+    } catch { return []; }
+  });
+  const [isLoading, setIsLoading] = useState(() => !sessionStorage.getItem("c_team_timesheets"));
   const [usersLoading, setUsersLoading] = useState(true);
+  const hasCachedRef = useRef(!!(() => { try { return sessionStorage.getItem("c_team_timesheets"); } catch { return null; } })());
 
   // ================= FILTER STATE =================
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("ALL");
@@ -170,6 +181,7 @@ export const TeamTimesheets = () => {
         const users = await fetchAllUsers();
         if (!isMounted) return;
         setAllUsers(Array.isArray(users) ? users : []);
+        sessionStorage.setItem("c_team_users", JSON.stringify({ data: Array.isArray(users) ? users : [], timestamp: Date.now() }));
       } catch (err) {
         console.error("Failed to load users:", err?.response?.data || err?.message || err);
         if (isMounted) setAllUsers([]);
@@ -189,7 +201,8 @@ export const TeamTimesheets = () => {
 
     const fetchData = async () => {
       try {
-        setIsLoading(true);
+        if (!hasCachedRef.current) setIsLoading(true);
+        hasCachedRef.current = false;
         const filters = {};
 
         if (statusFilter !== "ALL") filters.status = statusFilter;
@@ -206,8 +219,10 @@ export const TeamTimesheets = () => {
 
         if (cancelled) return;
         const data = result?.data || result || [];
-        setTimesheets(Array.isArray(data) ? data : []);
-        console.log("[TeamTimesheets] Timesheets set:", Array.isArray(data) ? data.length : 0);
+        const arr = Array.isArray(data) ? data : [];
+        setTimesheets(arr);
+        sessionStorage.setItem("c_team_timesheets", JSON.stringify({ data: arr, timestamp: Date.now() }));
+        console.log("[TeamTimesheets] Timesheets set:", arr.length);
       } catch (err) {
         console.error("[TeamTimesheets] Fetch error:", err?.response?.data || err?.message || err);
         if (!cancelled) setTimesheets([]);
@@ -254,6 +269,7 @@ export const TeamTimesheets = () => {
     if (!window.confirm("Approve this timesheet?")) return;
     try {
       await approveTimesheet(id, "Approved by manager");
+      clearPageCache("team_timesheets");
       setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       alert(err?.response?.data?.message || "Failed to approve timesheet");
@@ -276,6 +292,7 @@ export const TeamTimesheets = () => {
       setShowRejectModal(false);
       setRejectTimesheetId(null);
       setRejectComment("");
+      clearPageCache("team_timesheets");
       setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       alert(err?.response?.data?.message || "Failed to reject timesheet");

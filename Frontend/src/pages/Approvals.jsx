@@ -3,6 +3,8 @@ import { format } from "date-fns";
 
 import { fetchTimeEntries, approveTimeEntry, rejectTimeEntry } from "../services/api";
 
+import { useCachedData, clearPageCache } from "../hooks/useCachedData";
+
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
@@ -68,13 +70,24 @@ const getSnackbarStyles = (type) => {
 
 export const Approvals = () => {
   const [entries, setEntries] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState([]);
   const [projectsPopover, setProjectsPopover] = useState({ groupKey: null, x: 0, y: 0, upward: false });
   const popoverRef = useRef(null);
   const [detailsKey, setDetailsKey] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
   const [statusFilter, setStatusFilter] = useState("pending");
+
+  const {
+    data: fetchedEntries,
+    isLoading,
+    refresh: refreshEntries,
+  } = useCachedData("approvals", () => fetchTimeEntries({ for: "approvals" }));
+
+  useEffect(() => {
+    if (fetchedEntries) {
+      setEntries(fetchedEntries);
+    }
+  }, [fetchedEntries]);
 
   const pendingCount = useMemo(() => entries.filter((e) => e.status === "SUBMITTED").length, [entries]);
   const approvedCount = useMemo(() => entries.filter((e) => e.status === "APPROVED").length, [entries]);
@@ -155,26 +168,6 @@ export const Approvals = () => {
     setTimeout(() => setSnackbar(null), duration);
   }, []);
 
-  const loadEntries = async () => {
-    try {
-      setIsLoading(true);
-
-      const response = await fetchTimeEntries({ for: "approvals" });
-
-      const data = response?.data || [];
-      setEntries(data);
-
-    } catch (error) {
-      console.error("Failed to fetch approvals", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadEntries();
-  }, []);
-
   useLayoutEffect(() => {
     if (!projectsPopover.groupKey || !popoverRef.current) return;
     const el = popoverRef.current;
@@ -238,6 +231,8 @@ export const Approvals = () => {
           : "Timesheet rejected successfully.",
         "success"
       );
+      clearPageCache("approvals");
+      refreshEntries();
     }
     processingRef.current = false;
     setProcessing(false);

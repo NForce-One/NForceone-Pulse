@@ -9,6 +9,7 @@ import {
   fetchClients,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useCachedData } from "../hooks/useCachedData";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -32,26 +33,21 @@ export const Reports = () => {
   });
   const [message, setMessage] = useState({ text: "", type: "" });
 
+  const { data: cachedProjects } = useCachedData("reports_projects", async () => {
+    const res = await fetchProjects();
+    return res?.data || [];
+  });
+  const { data: cachedClients } = useCachedData("reports_clients", async () => {
+    const res = await fetchClients();
+    return res?.data || [];
+  });
+
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const res = await fetchProjects();
-        setProjects(res?.data || []);
-      } catch (err) {
-        setProjects([]);
-      }
-    };
-    const loadClients = async () => {
-      try {
-        const res = await fetchClients();
-        setClients(res?.data || []);
-      } catch (err) {
-        setClients([]);
-      }
-    };
-    loadProjects();
-    loadClients();
-  }, []);
+    if (cachedProjects) setProjects(cachedProjects);
+  }, [cachedProjects]);
+  useEffect(() => {
+    if (cachedClients) setClients(cachedClients);
+  }, [cachedClients]);
 
   useEffect(() => {
     loadReport();

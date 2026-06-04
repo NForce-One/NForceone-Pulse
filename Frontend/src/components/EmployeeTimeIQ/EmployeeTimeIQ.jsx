@@ -142,6 +142,17 @@ export const EmployeeTimeIQ = () => {
   }, [allProjects]);
 
   useEffect(() => {
+    // Restore cached dropdown data for instant display
+    try {
+      const cached = sessionStorage.getItem("c_timeiq_dropdowns");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.data.clients) setClients(parsed.data.clients);
+        if (parsed.data.projects) setAllProjects(parsed.data.projects);
+        if (parsed.data.managers) setAllManagers(parsed.data.managers);
+      }
+    } catch (_e) { /* ignore */ }
+
     (async () => {
       try {
         const [clientsRes, projectsRes, managersRes] = await Promise.all([
@@ -149,10 +160,17 @@ export const EmployeeTimeIQ = () => {
           fetchProjects(),
           getManagers(),
         ]);
-        setClients(clientsRes?.data || []);
-        setAllProjects(projectsRes?.data || []);
+        const clients = clientsRes?.data || [];
+        const projects = projectsRes?.data || [];
         const mgrData = managersRes?.data || managersRes || [];
-        setAllManagers(Array.isArray(mgrData) ? mgrData : []);
+        const managers = Array.isArray(mgrData) ? mgrData : [];
+        setClients(clients);
+        setAllProjects(projects);
+        setAllManagers(managers);
+        sessionStorage.setItem("c_timeiq_dropdowns", JSON.stringify({
+          data: { clients, projects, managers },
+          timestamp: Date.now(),
+        }));
       } catch (err) {
         console.error("Failed to load dropdown data", err);
       }

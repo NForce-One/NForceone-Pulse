@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getMe, updateProfile, changePassword } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useCachedData, clearPageCache } from "../hooks/useCachedData";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -19,27 +20,27 @@ export const Profile = () => {
   const [profileErrors, setProfileErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  const {
+    data: cachedProfile,
+    isLoading: isProfileLoading,
+    refresh: refreshProfile,
+  } = useCachedData("profile", getMe);
 
-  const loadProfile = async () => {
-    try {
-      const response = await getMe();
-      const data = response?.data;
-      setProfile(data);
+  useEffect(() => {
+    if (cachedProfile) {
+      setProfile(cachedProfile);
       setProfileForm({
-        name: data.name || "",
-        department: data.department || "",
-        defaultHours: data.defaultHours || 8,
+        name: cachedProfile.name || "",
+        department: cachedProfile.department || "",
+        defaultHours: cachedProfile.defaultHours || 8,
       });
-    } catch (error) {
-      console.error(error);
-      setError("Failed to load profile");
-    } finally {
       setIsLoading(false);
     }
-  };
+  }, [cachedProfile]);
+
+  useEffect(() => {
+    setIsLoading(isProfileLoading);
+  }, [isProfileLoading]);
 
   const validateProfile = () => {
     const errors = {};
@@ -83,7 +84,8 @@ export const Profile = () => {
         defaultHours: Number(profileForm.defaultHours),
       });
       setMessage("Profile updated successfully");
-      await loadProfile();
+      clearPageCache("profile");
+      await refreshProfile();
     } catch (err) {
       setError(err.response?.data?.message || "Update failed");
     } finally {

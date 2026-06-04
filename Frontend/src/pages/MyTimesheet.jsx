@@ -13,6 +13,7 @@ import {
   fetchProjects,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { clearPageCache, useCachedData } from "../hooks/useCachedData";
 
 import {
   Card,
@@ -29,8 +30,6 @@ import { Plus, Send, Pencil, Trash2, Save, X } from "lucide-react";
 export const MyTimesheet = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const [entries, setEntries] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [managers, setManagers] = useState([]);
@@ -62,20 +61,14 @@ export const MyTimesheet = () => {
     taskId: null,
   });
 
-  // LOAD ENTRIES
-  const loadEntries = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetchTimeEntries();
-      const raw = response?.data || response || [];
-      const sorted = [...raw].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
-      setEntries(sorted);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: entriesData, refresh: refreshEntries } = useCachedData("my_entries", async () => {
+    const response = await fetchTimeEntries();
+    const raw = response?.data || response || [];
+    return [...raw].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
+  });
+  const entries = entriesData ?? [];
+
+  const loadEntries = () => refreshEntries();
 
   // LOAD MANAGERS
   const loadManagers = async () => {
@@ -102,7 +95,6 @@ export const MyTimesheet = () => {
   };
 
   useEffect(() => {
-    loadEntries();
     loadManagers();
     loadWorkingHours();
     loadDropdownData();
@@ -260,8 +252,8 @@ const handleDelete = async (id) => {
 
     const result = await deleteTimeEntry(id);
 
-    // 🔥 remove from UI immediately
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    clearPageCache("my_entries");
+    await loadEntries();
 
     if (result.workingHours) {
       setWorkingHours((prev) => ({ ...prev, ...result.workingHours }));
