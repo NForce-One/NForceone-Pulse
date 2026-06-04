@@ -639,7 +639,7 @@ export const Approvals = () => {
                 ) : (
                   <X className="w-5 h-5 text-red-600" />
                 )}
-                {modal.action === "approve" ? `Approve ${modal.entryIds.length} Entry` : `Reject ${modal.entryIds.length} Entry`}{modal.entryIds.length !== 1 ? "ies" : ""}
+                {modal.action === "approve" ? `Approve ${modal.entryIds.length} ${modal.entryIds.length === 1 ? "Entry" : "Entries"}` : `Reject ${modal.entryIds.length} ${modal.entryIds.length === 1 ? "Entry" : "Entries"}`}
               </h2>
               <p className="text-sm text-[#64748B] mt-1">
                 {modal.action === "approve"

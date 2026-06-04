@@ -649,7 +649,7 @@ export const EmployeeTimeIQ = () => {
             disabled={isReadOnly}
             className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{allManagers.length === 0 ? "Loading..." : "Select Admin"}</option>
+            <option value="">{allManagers.length === 0 ? "Loading..." : "Select Manager"}</option>
             {allManagers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
