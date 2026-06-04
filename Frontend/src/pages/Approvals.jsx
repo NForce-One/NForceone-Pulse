@@ -201,21 +201,21 @@ export const Approvals = () => {
     setProcessing(true);
     const { entryIds, action, comment } = modal;
     let failed = false;
-    for (const id of entryIds) {
-      try {
-        if (action === "approve") {
-          await approveTimeEntry(id, comment);
-        } else if (action === "reject") {
-          await rejectTimeEntry(id, comment);
-        }
-      } catch (error) {
+    const results = await Promise.allSettled(
+      entryIds.map((id) =>
+        action === "approve" ? approveTimeEntry(id, comment) : rejectTimeEntry(id, comment)
+      )
+    );
+    results.forEach((result, i) => {
+      if (result.status === "rejected") {
         failed = true;
+        const id = entryIds[i];
         setModal((prev) => ({
           ...prev,
-          error: error?.response?.data?.message || error?.message || `Failed to ${action} entry ${id}`,
+          error: result.reason?.response?.data?.message || result.reason?.message || `Failed to ${action} entry ${id}`,
         }));
       }
-    }
+    });
     if (!failed) {
       const newStatus = action === "approve" ? "APPROVED" : "REJECTED";
       setEntries((prev) => {
