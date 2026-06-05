@@ -365,7 +365,7 @@ export const TeamTimesheets = () => {
                 <select
                   value={selectedEmployeeId}
                   onChange={handleEmployeeChange}
-                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] min-w-[160px]"
+                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] min-w-[160px]"
                 >
                   <option value="ALL" className="bg-white">All Employees</option>
                   {employeeOptions.length === 0 && !usersLoading && (
@@ -385,7 +385,7 @@ export const TeamTimesheets = () => {
                 <select
                   value={selectedReportingManagerId}
                   onChange={handleReportingManagerChange}
-                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] min-w-[160px]"
+                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] min-w-[160px]"
                 >
                   <option value="" className="bg-white">All Managers</option>
                   {managerOptions.length === 0 && !usersLoading && (
@@ -403,7 +403,7 @@ export const TeamTimesheets = () => {
                 <select
                   value={dateFilter}
                   onChange={handleDateFilterChange}
-                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] min-w-[140px]"
+                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] min-w-[140px]"
                 >
                   {DATE_FILTERS.map((f) => (
                     <option key={f.value} value={f.value} className="bg-white">{f.label}</option>
@@ -419,7 +419,7 @@ export const TeamTimesheets = () => {
                     type="month"
                     value={customMonth}
                     onChange={(e) => setCustomMonth(e.target.value)}
-                    className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4]"
+                    className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F]"
                   />
                 </div>
               )}
@@ -433,7 +433,7 @@ export const TeamTimesheets = () => {
                       type="date"
                       value={customDateFrom}
                       onChange={(e) => setCustomDateFrom(e.target.value)}
-                      className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4]"
+                      className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F]"
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -442,7 +442,7 @@ export const TeamTimesheets = () => {
                       type="date"
                       value={customDateTo}
                       onChange={(e) => setCustomDateTo(e.target.value)}
-                      className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4]"
+                      className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F]"
                     />
                   </div>
                 </>
@@ -454,7 +454,7 @@ export const TeamTimesheets = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4]"
+                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F]"
                 >
                   <option value="ALL" className="bg-white">All Status</option>
                   <option value="DRAFT" className="bg-white">Draft</option>
@@ -682,7 +682,7 @@ export const TeamTimesheets = () => {
                 onChange={(e) => setRejectComment(e.target.value)}
                 placeholder="Enter rejection reason..."
                 rows={4}
-                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] resize-none"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] resize-none"
               />
               <div className="flex justify-end gap-3">
                 <Button variant="ghost" onClick={() => setShowRejectModal(false)}>Cancel</Button>

@@ -105,7 +105,7 @@ export const DrillDownModal = ({ isOpen, onClose, title, type, data, totals, isL
                   type="date"
                   value={date || ""}
                   onChange={(e) => onDateChange(e.target.value)}
-                  className="bg-white border border-[#E2E8F0] rounded-lg px-3 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:border-[#5B3CC4]/50"
+                  className="bg-white border border-[#E2E8F0] rounded-lg px-3 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:border-[#B33A2F]/50"
                 />
               </div>
             )}
@@ -122,7 +122,7 @@ export const DrillDownModal = ({ isOpen, onClose, title, type, data, totals, isL
           {isLoading ? (
             <div className="flex items-center justify-center h-48">
               <div className="flex items-center gap-2 text-[#64748B]">
-                <div className="w-5 h-5 border-2 border-[#5B3CC4] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-[#B33A2F] border-t-transparent rounded-full animate-spin"></div>
                 Loading...
               </div>
             </div>
@@ -136,7 +136,7 @@ export const DrillDownModal = ({ isOpen, onClose, title, type, data, totals, isL
                 {type === "working" ? (
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-[#64748B]">Working Hours:</span>
-                    <span className="text-[#5B3CC4] font-semibold">{Number(normalHours).toFixed(2)}h</span>
+                    <span className="text-[#B33A2F] font-semibold">{Number(normalHours).toFixed(2)}h</span>
                   </div>
                 ) : type === "weekend" ? (
                   <div className="flex items-center gap-2 text-sm">
@@ -152,7 +152,7 @@ export const DrillDownModal = ({ isOpen, onClose, title, type, data, totals, isL
                   <>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-[#64748B]">Weekday Working Hours:</span>
-                      <span className="text-[#5B3CC4] font-semibold">{Number(normalHours).toFixed(2)}h</span>
+                      <span className="text-[#B33A2F] font-semibold">{Number(normalHours).toFixed(2)}h</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-[#64748B]">Weekend Working Hours:</span>

@@ -2,10 +2,10 @@
 
 @theme {
   --font-sans: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  --color-primary: #5B3CC4;
-  --color-primary-hover: #6D4AE6;
-  --color-primary-light: #8B6EF3;
-  --color-primary-glow: rgba(91, 60, 196, 0.5);
+  --color-primary: #B33A2F;
+  --color-primary-hover: #CC4A3F;
+  --color-primary-light: #D45A4F;
+  --color-primary-glow: rgba(179, 58, 47, 0.5);
   --color-sidebar-bg: #0D0D0D;
   --color-sidebar-active: #991B1B;
   --color-sidebar-hover: #991B1B;
@@ -37,7 +37,7 @@
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #5B3CC4;
+    background: #B33A2F;
   }
 
   .overflow-x-auto::-webkit-scrollbar {
@@ -53,6 +53,6 @@
     border: 2px solid #F1F5F9;
   }
   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: #5B3CC4;
+    background: #B33A2F;
   }
 }

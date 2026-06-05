@@ -4,7 +4,7 @@ import { cn } from "../../utils/twMerge";
 const Card = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("rounded-xl border border-[#E2E8F0] bg-white text-[#1E293B] shadow-sm hover:shadow-[rgba(91,60,196,0.08)] hover:border-[#5B3CC4]/30 transition-all duration-200", className)}
+    className={cn("rounded-xl border border-[#E2E8F0] bg-white text-[#1E293B] shadow-sm hover:shadow-[rgba(179,58,47,0.08)] hover:border-[#B33A2F]/30 transition-all duration-200", className)}
     {...props}
   />
 ));

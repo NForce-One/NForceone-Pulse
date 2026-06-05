@@ -142,7 +142,7 @@ export const Reports = () => {
       <div className="flex justify-between items-center">
 <div>
            <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
-             <BarChart3 className="w-6 h-6 text-[#5B3CC4]" />
+             <BarChart3 className="w-6 h-6 text-[#B33A2F]" />
              Reports
            </h1>
            <p className="text-[#64748B]">View and export time tracking reports</p>
@@ -172,7 +172,7 @@ export const Reports = () => {
                 name="clientId"
                 value={filters.clientId}
                 onChange={handleFilterChange}
-                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200"
+                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
               >
                 <option value="">All Clients</option>
                 {clients
@@ -188,7 +188,7 @@ export const Reports = () => {
                value={filters.projectId}
                onChange={handleFilterChange}
                disabled={!filters.clientId}
-               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
              >
                 <option value="">
                   {!filters.clientId

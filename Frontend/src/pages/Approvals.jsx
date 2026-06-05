@@ -254,7 +254,7 @@ export const Approvals = () => {
       {/* HEADER */}
       <div>
         <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
-          <Check className="w-6 h-6 text-[#5B3CC4]" />
+          <Check className="w-6 h-6 text-[#B33A2F]" />
           Approvals
         </h1>
         <p className="text-[#64748B]">
@@ -283,7 +283,7 @@ export const Approvals = () => {
             {tab.label}
             <span className={`text-xs px-1.5 py-0.5 rounded-full ${
               statusFilter === tab.key
-                ? "bg-[#5B3CC4]/10 text-[#5B3CC4]"
+                ? "bg-[#B33A2F]/10 text-[#B33A2F]"
                 : "bg-[#E2E8F0] text-[#64748B]"
             }`}>
               {tab.count}
@@ -357,7 +357,7 @@ export const Approvals = () => {
                               };
                             });
                           }}
-                          className="inline-flex items-center gap-1 text-sm font-medium text-[#5B3CC4] hover:text-[#4A2FA0] transition-colors"
+                          className="inline-flex items-center gap-1 text-sm font-medium text-[#B33A2F] hover:text-[#992E25] transition-colors"
                         >
                           {group.projectCount} {group.projectCount === 1 ? "Project" : "Projects"}
                           <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${projectsPopover.groupKey === group.key ? "rotate-180" : ""}`} />
@@ -493,7 +493,7 @@ export const Approvals = () => {
                   </div>
                   <div>
                     <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Total Hours</div>
-                    <div className="text-lg font-bold text-[#5B3CC4] mt-0.5">{group.totalHours}h</div>
+                    <div className="text-lg font-bold text-[#B33A2F] mt-0.5">{group.totalHours}h</div>
                   </div>
                 </div>
 
@@ -549,7 +549,7 @@ export const Approvals = () => {
                                     <div className="text-[10px] text-[#64748B]">{row.client}</div>
                                   </div>
                                   {row.comment && (
-                                    <span title={row.comment} className="text-[#5B3CC4] flex-shrink-0">
+                                    <span title={row.comment} className="text-[#B33A2F] flex-shrink-0">
                                       <MessageSquare className="w-3.5 h-3.5" />
                                     </span>
                                   )}
@@ -574,7 +574,7 @@ export const Approvals = () => {
                                 {(weekTable.dailyTotals[wd.date] || 0).toFixed(1)}
                               </td>
                             ))}
-                            <td className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#5B3CC4]">
+                            <td className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#B33A2F]">
                               {weekTable.weekTotal.toFixed(1)}
                             </td>
                           </tr>
@@ -651,7 +651,7 @@ export const Approvals = () => {
                 onChange={(e) => setModal((prev) => ({ ...prev, comment: e.target.value }))}
                 placeholder={modal.action === "approve" ? "e.g. Good work (optional)" : "e.g. Please improve (optional)"}
                 rows={4}
-                className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors resize-none"
+                className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:border-[#B33A2F] focus:ring-1 focus:ring-[#B33A2F]/30 transition-colors resize-none"
               />
               {modal.error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">

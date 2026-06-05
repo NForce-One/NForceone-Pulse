@@ -114,16 +114,16 @@ export const Tasks = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input name="title" value={formData.title} onChange={handleInputChange} placeholder="Task Title" required />
-              <select name="projectId" value={formData.projectId} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+              <select name="projectId" value={formData.projectId} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                 <option value="" className="bg-white">Select Project</option>
                 {projects.map((p) => <option key={p.id} value={p.id} className="bg-white">{p.name}</option>)}
               </select>
               <Input name="category" value={formData.category} onChange={handleInputChange} placeholder="Category" />
-              <select name="isBillableDefault" value={formData.isBillableDefault} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+              <select name="isBillableDefault" value={formData.isBillableDefault} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                 <option value="true" className="bg-white">Billable</option>
                 <option value="false" className="bg-white">Non-Billable</option>
               </select>
-              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                 <option value="PENDING" className="bg-white">Pending</option>
                 <option value="IN_PROGRESS" className="bg-white">In Progress</option>
                 <option value="COMPLETED" className="bg-white">Completed</option>

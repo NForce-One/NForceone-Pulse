@@ -372,7 +372,7 @@ export const TimerPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
-          <Play className="w-6 h-6 text-[#5B3CC4]" />
+          <Play className="w-6 h-6 text-[#B33A2F]" />
           Timer
         </h1>
         <p className="text-[#64748B]">Track time with start, pause, resume, and stop controls</p>
@@ -393,7 +393,7 @@ export const TimerPage = () => {
 
       {/* ACTIVE TIMER DISPLAY */}
       {timer && (
-        <Card className="border-[#5B3CC4]/20 shadow-[0_0_30px_rgba(91,60,196,0.08)]">
+        <Card className="border-[#B33A2F]/20 shadow-[0_0_30px_rgba(179,58,47,0.08)]">
           <CardContent className="pt-6">
             <div className="text-center">
               <div className="flex justify-center mb-4">
@@ -449,7 +449,7 @@ export const TimerPage = () => {
                 <Button
                   onClick={handleConvertToEntry}
                   disabled={isLoading}
-                  className="bg-[#5B3CC4] hover:bg-[#4B2CB4] shadow-lg shadow-[#5B3CC4]/30 hover:scale-105 active:scale-95"
+                  className="bg-[#B33A2F] hover:bg-[#8B2B20] shadow-lg shadow-[#B33A2F]/30 hover:scale-105 active:scale-95"
                 >
                   <ArrowRight className="w-4 h-4 mr-2" />
                   Stop & Add to Timesheet
@@ -480,14 +480,14 @@ export const TimerPage = () => {
               {/* CLIENT */}
               <div>
                 <label className="block text-sm font-medium text-[#64748B] mb-1">
-                  Client <span className="text-[#5B3CC4]">*</span>
+                  Client <span className="text-[#B33A2F]">*</span>
                 </label>
                 <select
                   name="clientId"
                   value={form.clientId}
                   onChange={handleInputChange}
                   required
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#B33A2F] focus:ring-1 focus:ring-[#B33A2F]/30 transition-colors"
                 >
                   <option value="">Select Client</option>
                   {clients
@@ -503,7 +503,7 @@ export const TimerPage = () => {
               {/* PROJECT */}
               <div>
                 <label className="block text-sm font-medium text-[#64748B] mb-1">
-                  Project <span className="text-[#5B3CC4]">*</span>
+                  Project <span className="text-[#B33A2F]">*</span>
                 </label>
                 <select
                   name="projectId"
@@ -511,7 +511,7 @@ export const TimerPage = () => {
                   onChange={handleInputChange}
                   required
                   disabled={!form.clientId}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#5B3CC4] focus:ring-1 focus:ring-[#5B3CC4]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#64748B] focus:outline-none focus:border-[#B33A2F] focus:ring-1 focus:ring-[#B33A2F]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {!form.clientId
@@ -531,7 +531,7 @@ export const TimerPage = () => {
               {/* TASK */}
               <div>
                 <label className="block text-sm font-medium text-[#64748B] mb-1">
-                  Task <span className="text-[#5B3CC4]">*</span>
+                  Task <span className="text-[#B33A2F]">*</span>
                 </label>
                 <Input
                   name="task"
@@ -545,7 +545,7 @@ export const TimerPage = () => {
               {/* DESCRIPTION */}
               <div>
                 <label className="block text-sm font-medium text-[#64748B] mb-1">
-                  Description <span className="text-[#5B3CC4]">*</span>
+                  Description <span className="text-[#B33A2F]">*</span>
                 </label>
                 <Input
                   name="description"

@@ -76,7 +76,7 @@ const ResetPassword = () => {
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-3 text-[#1E293B]">
 
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#5B3CC4]">
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#B33A2F]">
               <img src={logo} alt="logo" className="w-full h-full object-cover" />
             </div>
 
@@ -169,7 +169,7 @@ const ResetPassword = () => {
           backdrop-filter: blur(20px);
           border-radius: 20px;
           border: 1px solid #E2E8F0;
-          box-shadow: 0 0 30px rgba(91,60,196,0.3);
+          box-shadow: 0 0 30px rgba(179,58,47,0.3);
           transition: transform 0.3s;
         }
 
@@ -184,12 +184,12 @@ const ResetPassword = () => {
         }
 
         .input-modern:focus {
-          border-color: #5B3CC4;
-          box-shadow: 0 0 10px rgba(91,60,196,0.3);
+          border-color: #B33A2F;
+          box-shadow: 0 0 10px rgba(179,58,47,0.3);
         }
 
         .btn-modern {
-          background: #5B3CC4;
+          background: #B33A2F;
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -197,12 +197,12 @@ const ResetPassword = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 20px rgba(91,60,196,0.3);
+          box-shadow: 0 0 20px rgba(179,58,47,0.3);
         }
 
         .error-anim {
-          background: rgba(91,60,196,0.1);
-          border: 1px solid #5B3CC4;
+          background: rgba(179,58,47,0.1);
+          border: 1px solid #B33A2F;
           color: #ff6b6b;
           padding: 10px;
           border-radius: 8px;
@@ -210,9 +210,9 @@ const ResetPassword = () => {
         }
 
         .success-anim {
-          background: rgba(91,60,196,0.1);
-          border: 1px solid #5B3CC4;
-          color: #5B3CC4;
+          background: rgba(179,58,47,0.1);
+          border: 1px solid #B33A2F;
+          color: #B33A2F;
           padding: 10px;
           border-radius: 8px;
           animation: fadeIn 0.5s;
@@ -230,7 +230,7 @@ const ResetPassword = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(91,60,196,0.15), transparent);
+          background: linear-gradient(120deg, transparent, rgba(179,58,47,0.15), transparent);
           animation: beamMove 6s linear infinite;
         }
 

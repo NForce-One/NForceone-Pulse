@@ -178,7 +178,7 @@ export const Notifications = () => {
       <div className="flex justify-between items-center">
 <div>
            <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
-             <Bell className="w-6 h-6 text-[#5B3CC4]" />
+             <Bell className="w-6 h-6 text-[#B33A2F]" />
              Notifications
            </h1>
            <p className="text-[#64748B]">
@@ -242,7 +242,7 @@ export const Notifications = () => {
                {filtered.map((n) => (
                  <div
                    key={n.id}
-                   className={`flex items-start gap-4 p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(91,60,196,0.08)] ${getNotificationBg(
+                   className={`flex items-start gap-4 p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(179,58,47,0.08)] ${getNotificationBg(
                      n.type,
                      n.isRead
                    )}`}

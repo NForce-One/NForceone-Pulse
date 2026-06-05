@@ -105,7 +105,7 @@ export const Clients = () => {
               <Input name="company" value={formData.company} onChange={handleInputChange} placeholder="Company" />
               <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" />
               <Input name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Phone" />
-              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                 <option value="ACTIVE" className="bg-white">Active</option>
                 <option value="INACTIVE" className="bg-white">Inactive</option>
               </select>

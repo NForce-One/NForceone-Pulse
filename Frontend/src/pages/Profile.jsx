@@ -122,7 +122,7 @@ export const Profile = () => {
     <div className="space-y-6">
 <div>
          <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
-           <User className="w-6 h-6 text-[#5B3CC4]" />
+           <User className="w-6 h-6 text-[#B33A2F]" />
            Profile
          </h1>
          <p className="text-[#64748B]">Manage your account settings</p>
@@ -143,7 +143,7 @@ export const Profile = () => {
          <Card>
            <CardHeader>
              <CardTitle className="flex items-center gap-2 text-[#1E293B]">
-               <User className="w-5 h-5 text-[#5B3CC4]" />
+               <User className="w-5 h-5 text-[#B33A2F]" />
                Personal Information
              </CardTitle>
            </CardHeader>
@@ -218,7 +218,7 @@ export const Profile = () => {
         <Card>
 <CardHeader>
              <CardTitle className="flex items-center gap-2 text-[#1E293B]">
-               <Key className="w-5 h-5 text-[#5B3CC4]" />
+               <Key className="w-5 h-5 text-[#B33A2F]" />
                Change Password
              </CardTitle>
            </CardHeader>

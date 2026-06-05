@@ -11,7 +11,7 @@ export const DashboardLayout = () => {
     return (
       <div className="h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex items-center gap-2 text-[#64748B]">
-          <div className="w-5 h-5 border-2 border-[#5B3CC4] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-5 h-5 border-2 border-[#B33A2F] border-t-transparent rounded-full animate-spin"></div>
           Loading...
         </div>
       </div>

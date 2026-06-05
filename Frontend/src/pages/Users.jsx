@@ -136,19 +136,19 @@ export const Users = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
+                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
+                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <Input name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"}
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
+                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <select name="role" value={formData.role} onChange={handleInputChange}
-                 className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+                 className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                  <option value="EMPLOYEE" className="bg-white">Employee</option>
                  <option value="MANAGER" className="bg-white">Manager</option>
                  <option value="ADMIN" className="bg-white">Admin</option>
                </select>
                <Input name="department" value={formData.department} onChange={handleInputChange} placeholder="Department"
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
+                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <div className="flex flex-col">
                  <span className="text-xs text-[#64748B] mb-1">Employee ID</span>
                  <div className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#64748B] flex items-center">

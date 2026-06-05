@@ -51,7 +51,7 @@ export const ForgotPassword = () => {
 
         {/* 🔥 LOGO */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#5B3CC4] flex items-center justify-center overflow-hidden">
+          <div className="w-12 h-12 rounded-full bg-[#B33A2F] flex items-center justify-center overflow-hidden">
             <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
           </div>
           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight tracking-wide">
@@ -98,7 +98,7 @@ export const ForgotPassword = () => {
 
               <div className="text-center text-sm mt-2">
                 <span
-                  className="text-[#5B3CC4] cursor-pointer hover:underline hover:text-[#4A2FA0] transition"
+                  className="text-[#B33A2F] cursor-pointer hover:underline hover:text-[#992E25] transition"
                   onClick={() => navigate("/login")}
                 >
                   Back to Login
@@ -129,7 +129,7 @@ export const ForgotPassword = () => {
           background: white;
           backdrop-filter: blur(15px);
           border: 1px solid #E2E8F0;
-          box-shadow: 0 0 25px rgba(91,60,196,0.15);
+          box-shadow: 0 0 25px rgba(179,58,47,0.15);
         }
 
         /* 🔴 GLOW BORDER */
@@ -138,7 +138,7 @@ export const ForgotPassword = () => {
           position: absolute;
           inset: -1px;
           border-radius: 16px;
-          background: linear-gradient(90deg, transparent, #5B3CC4, transparent);
+          background: linear-gradient(90deg, transparent, #B33A2F, transparent);
           animation: borderGlow 4s linear infinite;
           z-index: -1;
         }
@@ -158,13 +158,13 @@ export const ForgotPassword = () => {
         }
 
         .input-modern:focus {
-          border-color: #5B3CC4;
-          box-shadow: 0 0 8px rgba(91,60,196,0.3);
+          border-color: #B33A2F;
+          box-shadow: 0 0 8px rgba(179,58,47,0.3);
         }
 
         /* BUTTON */
         .btn-modern {
-          background: #5B3CC4;
+          background: #B33A2F;
           color: white;
           font-weight: 600;
           transition: all 0.3s;
@@ -172,7 +172,7 @@ export const ForgotPassword = () => {
 
         .btn-modern:hover {
           transform: scale(1.03);
-          box-shadow: 0 0 15px rgba(91,60,196,0.3);
+          box-shadow: 0 0 15px rgba(179,58,47,0.3);
         }
 
         /* SUCCESS ANIMATION */
@@ -196,7 +196,7 @@ export const ForgotPassword = () => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background-image: radial-gradient(#5B3CC4 1px, transparent 1px);
+          background-image: radial-gradient(#B33A2F 1px, transparent 1px);
           background-size: 40px 40px;
           animation: moveParticles 20s linear infinite;
           opacity: 0.2;

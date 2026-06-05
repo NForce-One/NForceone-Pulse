@@ -96,7 +96,6 @@ export const MyTimesheet = () => {
 
   useEffect(() => {
     loadManagers();
-    loadWorkingHours();
     loadDropdownData();
 
     const client = searchParams.get("client") || "";
@@ -302,7 +301,7 @@ const handleDelete = async (id) => {
       <Card>
         <CardHeader>
           <CardTitle className="text-[#1E293B] flex items-center gap-2">
-            <Plus className="w-5 h-5 text-[#5B3CC4]" />
+            <Plus className="w-5 h-5 text-[#B33A2F]" />
             Log Time
           </CardTitle>
         </CardHeader>
@@ -313,7 +312,7 @@ const handleDelete = async (id) => {
               name="clientId"
               value={formData.clientId || ""}
               onChange={handleInputChange}
-              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200"
+              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent transition-all duration-200"
             >
               <option value="">Select Client</option>
               {clients
@@ -327,7 +326,7 @@ const handleDelete = async (id) => {
               value={formData.projectId || ""}
               onChange={handleInputChange}
               disabled={!formData.clientId}
-              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">
                 {!formData.clientId
@@ -347,7 +346,7 @@ const handleDelete = async (id) => {
             <select
               value={selectedManager || ""}
               onChange={(e) => setSelectedManager(e.target.value)}
-              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent transition-all duration-200"
+              className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent transition-all duration-200"
             >
               <option value="" className="bg-white">{user?.role === "MANAGER" ? "Select Manager" : "Select Manager"}</option>
               {managers.map((m) => (

@@ -576,7 +576,7 @@ export const EmployeeTimeIQ = () => {
   if (loading && projectRows.length === 0 && !timesheetStatus) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-[#5B3CC4] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#B33A2F] animate-spin" />
       </div>
     );
   }
@@ -594,14 +594,14 @@ export const EmployeeTimeIQ = () => {
       {/* ===== SECTION 1: Week Nav + Total Hours (UNTOUCHABLE) ===== */}
       <div className="flex items-center justify-between mb-3 bg-white rounded-xl border border-[#E2E8F0] px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigateWeek("prev")} className="p-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#5B3CC4]/30 transition-all" title="Previous week">
+          <button onClick={() => navigateWeek("prev")} className="p-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#B33A2F]/30 transition-all" title="Previous week">
             <ChevronLeft className="w-4 h-4 text-[#64748B]" />
           </button>
           <div className="text-center min-w-[180px]">
             <p className="text-sm font-semibold text-[#1E293B]">
               {format(new Date(currentWeekStart + "T00:00:00"), "MMM dd")} — {format(new Date(weekEnd + "T00:00:00"), "MMM dd, yyyy")}
             </p>
-            <p className="text-[11px] font-medium text-[#5B3CC4] mt-0.5">
+            <p className="text-[11px] font-medium text-[#B33A2F] mt-0.5">
               {format(new Date(), "EEEE, MMMM d, yyyy")}
             </p>
             {timesheetStatus && (
@@ -613,15 +613,15 @@ export const EmployeeTimeIQ = () => {
               }`}>{timesheetStatus}</span>
             )}
           </div>
-          <button onClick={() => navigateWeek("next")} className="p-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#5B3CC4]/30 transition-all" title="Next week">
+          <button onClick={() => navigateWeek("next")} className="p-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#B33A2F]/30 transition-all" title="Next week">
             <ChevronRight className="w-4 h-4 text-[#64748B]" />
           </button>
-          <button onClick={goToCurrentWeek} className="ml-1 px-2.5 py-1.5 text-[11px] font-medium text-[#5B3CC4] border border-[#5B3CC4]/30 rounded-lg hover:bg-[#5B3CC4]/5 transition-all">
+          <button onClick={goToCurrentWeek} className="ml-1 px-2.5 py-1.5 text-[11px] font-medium text-[#B33A2F] border border-[#B33A2F]/30 rounded-lg hover:bg-[#B33A2F]/5 transition-all">
             Today
           </button>
         </div>
-        <div className="flex items-center gap-2 bg-gradient-to-r from-[#5B3CC4]/10 to-[#8B6EF3]/5 px-4 py-2 rounded-lg border border-[#5B3CC4]/20">
-          <Clock className="w-4 h-4 text-[#5B3CC4]" />
+        <div className="flex items-center gap-2 bg-gradient-to-r from-[#B33A2F]/10 to-[#D45A4F]/5 px-4 py-2 rounded-lg border border-[#B33A2F]/20">
+          <Clock className="w-4 h-4 text-[#B33A2F]" />
           <div>
             <p className="text-[10px] text-[#64748B] font-semibold uppercase tracking-wider leading-tight">Total</p>
             <p className="text-lg font-bold text-[#1E293B] leading-tight">{totalHours.toFixed(2)}</p>
@@ -637,7 +637,7 @@ export const EmployeeTimeIQ = () => {
             value={selectedClient}
             onChange={(e) => handleClientChange(e.target.value)}
             disabled={isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">{clients.length === 0 ? "Loading..." : "Select Client"}</option>
             {clients.map((c) => (
@@ -651,7 +651,7 @@ export const EmployeeTimeIQ = () => {
             value={selectedProject}
             onChange={(e) => handleProjectChange(e.target.value)}
             disabled={!selectedClient || isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">{!selectedClient ? "Select client first" : filteredProjects.length === 0 ? "No projects" : "Select Project"}</option>
             {filteredProjects.map((p) => (
@@ -665,7 +665,7 @@ export const EmployeeTimeIQ = () => {
             value={selectedManager}
             onChange={(e) => setSelectedManager(e.target.value ? Number(e.target.value) : "")}
             disabled={isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">{allManagers.length === 0 ? "Loading..." : "Select Manager"}</option>
             {allManagers.map((m) => (
@@ -678,7 +678,7 @@ export const EmployeeTimeIQ = () => {
       {!isReadOnly && (
         <button
           onClick={handleAddProject}
-          className="mb-3 h-9 rounded-lg border-2 border-dashed border-[#E2E8F0] text-sm font-medium text-[#5B3CC4] hover:border-[#5B3CC4] hover:bg-[#5B3CC4]/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed px-4"
+          className="mb-3 h-9 rounded-lg border-2 border-dashed border-[#E2E8F0] text-sm font-medium text-[#B33A2F] hover:border-[#B33A2F] hover:bg-[#B33A2F]/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed px-4"
         >
           + Add New Project
         </button>
@@ -693,9 +693,9 @@ export const EmployeeTimeIQ = () => {
                 Project
               </th>
               {weekDates.map((wd) => (
-                <th key={wd.date} className={`px-1.5 py-2 text-center border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#5B3CC4]/5" : ""}`}>
+                <th key={wd.date} className={`px-1.5 py-2 text-center border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/5" : ""}`}>
                   <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{wd.dayName}</p>
-                  <p className={`text-xs font-bold ${wd.isToday ? "text-[#5B3CC4]" : "text-[#1E293B]"}`}>{wd.dateNum}</p>
+                  <p className={`text-xs font-bold ${wd.isToday ? "text-[#B33A2F]" : "text-[#1E293B]"}`}>{wd.dateNum}</p>
                 </th>
               ))}
               <th className="px-2 py-2 text-center border-l border-[#E2E8F0] w-14">
@@ -732,7 +732,7 @@ export const EmployeeTimeIQ = () => {
                           <select
                             value={row.clientId || ""}
                             onChange={(e) => handlePendingClientChange(row.rowId, e.target.value)}
-                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent"
+                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
                           >
                             <option value="">Select Client</option>
                             {clients.map((c) => (
@@ -743,7 +743,7 @@ export const EmployeeTimeIQ = () => {
                             value={row.projectId || ""}
                             onChange={(e) => handlePendingProjectChange(row.rowId, e.target.value)}
                             disabled={!row.clientId}
-                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <option value="">{!row.clientId ? "Select client first" : "Select Project"}</option>
                             {row.clientId && getProjectsForClient(row.clientId).map((p) => (
@@ -761,7 +761,7 @@ export const EmployeeTimeIQ = () => {
                     {weekDates.map((wd) => {
                       const dayData = row.days[wd.date] || { hours: "", description: "" };
                       return (
-                        <td key={wd.date} className={`px-1.5 py-1.5 border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#5B3CC4]/[0.02]" : ""}`}>
+                        <td key={wd.date} className={`px-1.5 py-1.5 border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
                           <input
                             type="number"
                             min="0"
@@ -770,7 +770,7 @@ export const EmployeeTimeIQ = () => {
                             value={dayData.hours}
                             onChange={(e) => handleCellChange(row.rowId, wd.date, e.target.value)}
                             disabled={isReadOnly || row.isPending}
-                            className="w-full h-7 rounded-md border border-[#E2E8F0] bg-white text-xs text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#5B3CC4] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full h-7 rounded-md border border-[#E2E8F0] bg-white text-xs text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                             placeholder="0"
                           />
                         </td>
@@ -786,7 +786,7 @@ export const EmployeeTimeIQ = () => {
                         title={row.comment ? "Edit comment" : "Add comment"}
                       >
                         {row.comment ? (
-                          <FileText className="w-4 h-4 text-[#5B3CC4]" />
+                          <FileText className="w-4 h-4 text-[#B33A2F]" />
                         ) : (
                           <FileText className="w-4 h-4 text-[#94A3B8]" />
                         )}
@@ -809,7 +809,7 @@ export const EmployeeTimeIQ = () => {
                               {managerAction.comment && (
                                 <button
                                   onClick={() => setManagerActionModal(managerAction)}
-                                  className="p-0.5 rounded bg-[#5B3CC4]/10 text-[#5B3CC4] ring-1 ring-[#5B3CC4]/30"
+                                  className="p-0.5 rounded bg-[#B33A2F]/10 text-[#B33A2F] ring-1 ring-[#B33A2F]/30"
                                   title="View comment"
                                 >
                                   <MessageSquare className="w-3 h-3" />
@@ -858,7 +858,7 @@ export const EmployeeTimeIQ = () => {
                 })}
                 <td className="px-2 py-2 border-l border-[#E2E8F0]"></td>
                 <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
-                  <span className="text-xs font-bold text-[#5B3CC4]">{formatHoursToHHMM(totalHours)}</span>
+                  <span className="text-xs font-bold text-[#B33A2F]">{formatHoursToHHMM(totalHours)}</span>
                 </td>
                 <td className="px-2 py-2 border-l border-[#E2E8F0]"></td>
                 <td className="px-2 py-2 border-l border-[#E2E8F0]"></td>
@@ -922,7 +922,7 @@ export const EmployeeTimeIQ = () => {
           <div className="relative w-full max-w-md bg-white border border-[#E2E8F0] rounded-xl shadow-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <h2 className="text-lg font-semibold text-[#1E293B] flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#5B3CC4]" />
+                <MessageSquare className="w-5 h-5 text-[#B33A2F]" />
                 Admin Response
               </h2>
             </div>

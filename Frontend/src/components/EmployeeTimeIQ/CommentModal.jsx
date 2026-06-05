@@ -64,7 +64,7 @@ export const CommentModal = ({
             placeholder="Describe work completed for this day..."
             rows={7}
             maxLength={200}
-            className="w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] focus:border-transparent resize-none"
+            className="w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent resize-none"
           />
           <p className="text-[11px] text-[#94A3B8] mt-1.5">Maximum 200 characters allowed</p>
         </div>
@@ -86,7 +86,7 @@ export const CommentModal = ({
             </button>
             <button
               onClick={handleSave}
-              className="h-8 px-4 text-xs font-semibold rounded-lg bg-[#5B3CC4] text-white hover:bg-[#4A2FA0] transition-colors"
+              className="h-8 px-4 text-xs font-semibold rounded-lg bg-[#B33A2F] text-white hover:bg-[#992E25] transition-colors"
             >
               Save Comment
             </button>

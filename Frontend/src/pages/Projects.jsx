@@ -120,16 +120,16 @@ export const Projects = () => {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Project Name" required />
               <Input name="code" value={formData.code} onChange={handleInputChange} placeholder="Project Code" />
-              <select name="clientId" value={formData.clientId} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+              <select name="clientId" value={formData.clientId} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                 <option value="" className="bg-white">Select Client</option>
                 {clients.map((c) => <option key={c.id} value={c.id} className="bg-white">{c.name}</option>)}
               </select>
 
-              <Input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} className="bg-white border border-[#E2E8F0] text-[#1E293B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
-              <Input name="endDate" type="date" value={formData.endDate} onChange={handleInputChange} className="bg-white border border-[#E2E8F0] text-[#1E293B] focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200" />
+              <Input name="startDate" type="date" value={formData.startDate} onChange={handleInputChange} className="bg-white border border-[#E2E8F0] text-[#1E293B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
+              <Input name="endDate" type="date" value={formData.endDate} onChange={handleInputChange} className="bg-white border border-[#E2E8F0] text-[#1E293B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
               <Input name="budgetHours" type="number" value={formData.budgetHours} onChange={handleInputChange} placeholder="Budget Hours" />
               <Input name="budgetAmount" type="number" value={formData.budgetAmount} onChange={handleInputChange} placeholder="Budget Amount" />
-              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#5B3CC4] transition-all duration-200">
+              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                 <option value="ACTIVE" className="bg-white">Active</option>
                 <option value="INACTIVE" className="bg-white">Inactive</option>
                 <option value="COMPLETED" className="bg-white">Completed</option>

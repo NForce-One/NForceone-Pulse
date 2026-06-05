@@ -401,7 +401,7 @@ export const Dashboard = () => {
               <select
                 value={dashboardView}
                 onChange={(e) => setDashboardView(e.target.value)}
-                className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#5B3CC4]/50 focus:ring-1 focus:ring-[#5B3CC4]/20 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
+                className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-1 focus:ring-[#B33A2F]/20 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
               >
                 <option value="self">Self Dashboard</option>
                 <option value="team">Team Dashboard</option>
@@ -413,7 +413,7 @@ export const Dashboard = () => {
             <select
               value={selectedMetric}
               onChange={(e) => setSelectedMetric(e.target.value)}
-              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#5B3CC4]/50 focus:ring-1 focus:ring-[#5B3CC4]/20 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
+              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-1 focus:ring-[#B33A2F]/20 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
             >
               {METRIC_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -425,7 +425,7 @@ export const Dashboard = () => {
             <select
               value={filterPeriod}
               onChange={(e) => setFilterPeriod(e.target.value)}
-              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#5B3CC4]/50 focus:ring-1 focus:ring-[#5B3CC4]/20 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
+              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-1 focus:ring-[#B33A2F]/20 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
             >
               {FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -438,7 +438,7 @@ export const Dashboard = () => {
               <select
                 value={customMonth}
                 onChange={(e) => setCustomMonth(Number(e.target.value))}
-                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
+                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
               >
                 {MONTHS.map((name, idx) => (
                   <option key={idx} value={idx}>{name}</option>
@@ -447,7 +447,7 @@ export const Dashboard = () => {
               <select
                 value={customYear}
                 onChange={(e) => setCustomYear(Number(e.target.value))}
-                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors"
+                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
               >
                 {YEARS.map((year) => (
                   <option key={year} value={year}>{year}</option>
@@ -463,7 +463,7 @@ export const Dashboard = () => {
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors w-[140px]"
+                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors w-[140px]"
                 />
               </div>
               <div className="flex items-center gap-1">
@@ -472,7 +472,7 @@ export const Dashboard = () => {
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#5B3CC4]/50 cursor-pointer hover:border-[#5B3CC4]/30 transition-colors w-[140px]"
+                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors w-[140px]"
                 />
               </div>
             </>
@@ -505,7 +505,7 @@ export const Dashboard = () => {
             ].map((card, index) => (
             <Card
               key={card.title}
-              className="border border-[#5B3CC4]/30 hover:shadow-[0_0_20px_rgba(91,60,196,0.08)] hover:border-[#5B3CC4]/30 transition-all duration-300 hover:scale-[1.02] group cursor-pointer"
+              className="border border-[#B33A2F]/30 hover:shadow-[0_0_20px_rgba(179,58,47,0.08)] hover:border-[#B33A2F]/30 transition-all duration-300 hover:scale-[1.02] group cursor-pointer"
               style={{ animationDelay: `${index * 100}ms` }}
               onClick={() => openHourDetails(card.title, card.type)}
             >
@@ -530,7 +530,7 @@ export const Dashboard = () => {
           {statCards.map((card, index) => (
             <Card
               key={card.title}
-              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(91,60,196,0.08)] hover:border-[#5B3CC4]/30 transition-all duration-300 hover:scale-[1.02] group ${card.clickable ? "cursor-pointer" : ""}`}
+              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(179,58,47,0.08)] hover:border-[#B33A2F]/30 transition-all duration-300 hover:scale-[1.02] group ${card.clickable ? "cursor-pointer" : ""}`}
               style={{
                 animationDelay: `${index * 100}ms`,
               }}
@@ -611,7 +611,7 @@ export const Dashboard = () => {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#5B3CC4]" />
+              <Users className="w-5 h-5 text-[#B33A2F]" />
               Team Overview
             </CardTitle>
           </CardHeader>
