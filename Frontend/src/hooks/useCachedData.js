@@ -40,10 +40,10 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
   fetchFnRef.current = fetchFn;
 
   const load = useCallback(
-    async (force = false) => {
+    async (force = false, silent = false) => {
       if (!enabled) return;
 
-      if (force || !hasCachedRef.current) setIsLoading(true);
+      if (!silent && (force || !hasCachedRef.current)) setIsLoading(true);
       hasCachedRef.current = false;
 
       try {
@@ -58,7 +58,7 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
       } catch (err) {
         setError(err);
       } finally {
-        setIsLoading(false);
+        if (!silent) setIsLoading(false);
       }
     },
     [enabled, storageKey]
@@ -69,6 +69,7 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
   }, [load]);
 
   const refresh = useCallback(() => load(true), [load]);
+  const silentRefresh = useCallback(() => load(true, true), [load]);
 
-  return { data, isLoading, error, refresh };
+  return { data, isLoading, error, refresh, silentRefresh };
 };

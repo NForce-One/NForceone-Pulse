@@ -150,7 +150,7 @@ export const Dashboard = () => {
     return p;
   };
   const fetchParamsRef = useRef(buildParams());
-  const { data: rawStats, isLoading, refresh } = useCachedData("dashboard", () => getDashboardStats(fetchParamsRef.current));
+  const { data: rawStats, isLoading, refresh, silentRefresh } = useCachedData("dashboard", () => getDashboardStats(fetchParamsRef.current));
   const stats = rawStats ?? {};
 
   useEffect(() => {
@@ -347,14 +347,14 @@ export const Dashboard = () => {
   }, [filterPeriod, customMonth, customYear, fromDate, toDate, dashboardView, refresh]);
 
   useEffect(() => {
-    const interval = setInterval(() => refresh(), 30000);
-    const handleFocus = () => refresh();
+    const interval = setInterval(() => silentRefresh(), 30000);
+    const handleFocus = () => silentRefresh();
     window.addEventListener("focus", handleFocus);
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", handleFocus);
     };
-  }, [refresh]);
+  }, [silentRefresh]);
 
   const filteredDashboardData = useMemo(() => {
     const entries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];
