@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
+import CustomSelect from "../components/ui/CustomSelect";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
@@ -210,14 +211,17 @@ export const Reports = () => {
          </div>
         <div className="flex items-center gap-1">
           {user?.role === "MANAGER" && (
-            <select
+            <CustomSelect
               value={reportType}
               onChange={handleReportTypeChange}
-              className="h-10 rounded-lg bg-[#B33A2F] text-white px-3 py-2 text-sm hover:bg-[#992E25] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:ring-offset-2 transition-all duration-200"
-            >
-              <option value="team">Team Reports</option>
-              <option value="self">Self Reports</option>
-            </select>
+              name="reportType"
+              options={[
+                { value: "team", label: "Team Reports" },
+                { value: "self", label: "Self Reports" },
+              ]}
+              className="w-48"
+              buttonClassName="bg-[#B33A2F] text-white hover:bg-[#992E25] border-[#B33A2F]"
+            />
           )}
           <Button onClick={exportCSV} disabled={!data.length} className="hover:scale-105 active:scale-95">
             <Download className="w-4 h-4 mr-2" />
@@ -236,88 +240,64 @@ export const Reports = () => {
          </div>
        )}
 
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="overflow-visible">
+        <CardContent className="pt-6 overflow-visible">
           <div className="flex gap-4 mb-4 flex-wrap">
             <Input name="startDate" type="date" value={filters.startDate} onChange={handleFilterChange} />
             <Input name="endDate" type="date" value={filters.endDate} onChange={handleFilterChange} />
-<select
+            <CustomSelect
                 name="clientId"
                 value={filters.clientId}
                 onChange={handleFilterChange}
-                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
-              >
-                <option value="">All Clients</option>
-                {clients
+                placeholder="All Clients"
+                options={clients
                   .filter((c) => c.status === "ACTIVE")
-                  .map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <select
+                  .map((c) => ({ value: String(c.id), label: c.name }))
+                }
+                className="min-w-[160px]"
+              />
+            <CustomSelect
                name="projectId"
                value={filters.projectId}
                onChange={handleFilterChange}
                disabled={!filters.clientId}
-               className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-             >
-                <option value="">
-                  {!filters.clientId
-                    ? "Select a client first"
-                    : filteredProjects.length === 0
-                    ? "No projects available"
-                    : "All Projects"}
-                </option>
-                {filteredProjects.map((p) => (
-                  <option key={p.id} value={String(p.id)}>
-                    {p.name}
-                  </option>
-                ))}
-             </select>
+               placeholder={
+                 !filters.clientId
+                   ? "Select a client first"
+                   : filteredProjects.length === 0
+                   ? "No projects available"
+                   : "All Projects"
+               }
+               options={filteredProjects.map((p) => ({ value: String(p.id), label: p.name }))}
+               className="min-w-[160px]"
+             />
             {user?.role === "ADMIN" && (
               <>
-                <select
+                <CustomSelect
                   value={employeeFilter}
                   onChange={handleEmployeeFilterChange}
-                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
-                >
-                  <option value="">All Employees</option>
-                  {allEmployeesForAdmin.map((e) => (
-                    <option key={e.id} value={String(e.id)}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
-                <select
+                  placeholder="All Employees"
+                  options={allEmployeesForAdmin.map((e) => ({ value: String(e.id), label: e.name }))}
+                  className="min-w-[160px]"
+                />
+                <CustomSelect
                   value={managerFilter}
                   onChange={handleManagerFilterChange}
-                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
-                >
-                  <option value="">All Managers</option>
-                  {allManagers.map((m) => (
-                    <option key={m.id} value={String(m.id)}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="All Managers"
+                  options={allManagers.map((m) => ({ value: String(m.id), label: m.name }))}
+                  className="min-w-[160px]"
+                />
               </>
             )}
             {user?.role === "MANAGER" && reportType === "team" && (
-              <select
+              <CustomSelect
                 name="userId"
                 value={filters.userId}
                 onChange={handleFilterChange}
-                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
-              >
-                <option value="">All Employees</option>
-                {employees.map((e) => (
-                  <option key={e.id} value={String(e.id)}>
-                    {e.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="All Employees"
+                options={employees.map((e) => ({ value: String(e.id), label: e.name }))}
+                className="min-w-[160px]"
+              />
             )}
             <Button onClick={loadReport} className="hover:scale-105 active:scale-95">
               <BarChart3 className="w-4 h-4 mr-2" />
