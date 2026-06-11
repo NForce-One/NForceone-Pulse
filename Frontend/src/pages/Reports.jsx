@@ -208,10 +208,22 @@ export const Reports = () => {
            </h1>
            <p className="text-[#64748B]">View and export time tracking reports</p>
          </div>
-        <Button onClick={exportCSV} disabled={!data.length} className="hover:scale-105 active:scale-95">
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-1">
+          {user?.role === "MANAGER" && (
+            <select
+              value={reportType}
+              onChange={handleReportTypeChange}
+              className="h-10 rounded-lg bg-[#B33A2F] text-white px-3 py-2 text-sm hover:bg-[#992E25] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:ring-offset-2 transition-all duration-200"
+            >
+              <option value="team">Team Reports</option>
+              <option value="self">Self Reports</option>
+            </select>
+          )}
+          <Button onClick={exportCSV} disabled={!data.length} className="hover:scale-105 active:scale-95">
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
 {message.text && (
@@ -311,16 +323,6 @@ export const Reports = () => {
               <BarChart3 className="w-4 h-4 mr-2" />
               Generate
             </Button>
-            {user?.role === "MANAGER" && (
-              <select
-                value={reportType}
-                onChange={handleReportTypeChange}
-                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
-              >
-                <option value="team">Team Reports</option>
-                <option value="self">Self Reports</option>
-              </select>
-            )}
           </div>
         </CardContent>
       </Card>
