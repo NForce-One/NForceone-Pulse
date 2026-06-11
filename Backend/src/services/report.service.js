@@ -10,6 +10,46 @@ import { Op } from "sequelize";
 import { classifyEntry, getDayName, getDisplayName, getExtraWorkType } from "../utils/holidayConfig.js";
 import { toDateOnlyString } from "../utils/dateUtils.js";
 
+export const getApprovedEmployeeIds = async (managerId) => {
+  const approvals = await ApprovalHistory.findAll({
+    where: { actorId: managerId, action: "APPROVED" },
+    attributes: ["timesheetId", "timeEntryId"],
+  });
+
+  const timesheetIds = [];
+  const entryIds = [];
+  for (const a of approvals) {
+    if (a.timesheetId) timesheetIds.push(a.timesheetId);
+    if (a.timeEntryId) entryIds.push(a.timeEntryId);
+  }
+
+  let userIds = [];
+
+  if (timesheetIds.length > 0) {
+    const sheets = await Timesheet.findAll({
+      where: { id: { [Op.in]: timesheetIds } },
+      attributes: ["userId"],
+    });
+    userIds.push(...sheets.map((s) => s.userId));
+  }
+
+  if (entryIds.length > 0) {
+    const entries = await TimeEntry.findAll({
+      where: { id: { [Op.in]: entryIds } },
+      attributes: ["userId"],
+    });
+    userIds.push(...entries.map((e) => e.userId));
+  }
+
+  const directEntries = await TimeEntry.findAll({
+    where: { managerId, status: "APPROVED" },
+    attributes: ["userId"],
+  });
+  userIds.push(...directEntries.map((e) => e.userId));
+
+  return [...new Set(userIds.filter(Boolean))];
+};
+
 export const getEmployeeHoursReport = async (filters) => {
   const { startDate, endDate, from_date, to_date, userId, managerId, department, projectId, clientId } = filters;
   const fromDate = startDate || from_date;
@@ -19,7 +59,9 @@ export const getEmployeeHoursReport = async (filters) => {
   if (fromDate && toDate) {
     whereClause.entryDate = { [Op.between]: [fromDate, toDate] };
   }
-  if (userId) whereClause.userId = parseInt(userId);
+  if (userId) {
+    whereClause.userId = Array.isArray(userId) ? { [Op.in]: userId.map(Number) } : parseInt(userId);
+  }
   if (managerId) whereClause.managerId = parseInt(managerId);
   if (projectId) whereClause.projectId = parseInt(projectId);
   if (clientId) whereClause.clientId = parseInt(clientId);
@@ -63,7 +105,9 @@ export const getProjectHoursReport = async (filters) => {
   if (clientId) whereClause.clientId = parseInt(clientId);
 
   const userWhere = {};
-  if (userId) userWhere.id = userId;
+  if (userId) {
+    userWhere.id = Array.isArray(userId) ? { [Op.in]: userId.map(Number) } : parseInt(userId);
+  }
   if (department) userWhere.department = department;
 
   const entries = await TimeEntry.findAll({
@@ -149,7 +193,9 @@ export const getBillingSummary = async (filters) => {
   }
   if (projectId) whereClause.projectId = parseInt(projectId);
   if (clientId) whereClause.clientId = parseInt(clientId);
-  if (userId) whereClause.userId = parseInt(userId);
+  if (userId) {
+    whereClause.userId = Array.isArray(userId) ? { [Op.in]: userId.map(Number) } : parseInt(userId);
+  }
 
   const entries = await TimeEntry.findAll({
     where: whereClause,
@@ -680,7 +726,7 @@ export const exportReportCSV = async (filters) => {
     case "employee_hours": {
       console.log("Getting employee hours report...");
       data = await getEmployeeHoursReport(filters);
-      const headers = ["Employee Name", "Client", "Project", "Task", "Date", "Hours", "Billable", "Status", "Description"];
+      const headers = ["Employee Name", "Client", "Project", "Task", "Date", "Hours", "Status"];
       const rows = data.map((entry) => [
         entry.User?.name || "-",
         entry.clientName || "-",
@@ -688,9 +734,7 @@ export const exportReportCSV = async (filters) => {
         entry.taskTitle || entry.Task?.title || "-",
         entry.entryDate || "-",
         entry.hours || 0,
-        entry.isBillable ? "Yes" : "No",
         entry.status || "-",
-        (entry.description || "").replace(/"/g, '""'),
       ]);
       csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${v}"`).join(","))].join("\n");
       break;
