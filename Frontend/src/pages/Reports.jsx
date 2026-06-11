@@ -7,6 +7,7 @@ import {
   exportReportCSV,
   fetchProjects,
   fetchClients,
+  getApprovedEmployees,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
@@ -24,12 +25,14 @@ export const Reports = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [projects, setProjects] = useState([]);
   const [clients, setClients] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [filters, setFilters] = useState({
     startDate: format(new Date(new Date().setDate(1)), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
     projectId: "",
     clientId: "",
     department: "",
+    userId: "",
   });
   const [message, setMessage] = useState({ text: "", type: "" });
 
@@ -48,6 +51,14 @@ export const Reports = () => {
   useEffect(() => {
     if (cachedClients) setClients(cachedClients);
   }, [cachedClients]);
+
+  useEffect(() => {
+    if (user?.role === "MANAGER") {
+      getApprovedEmployees().then((res) => {
+        setEmployees(res?.data || []);
+      }).catch(() => setEmployees([]));
+    }
+  }, [user]);
 
   useEffect(() => {
     loadReport();
@@ -203,7 +214,21 @@ export const Reports = () => {
                   </option>
                 ))}
              </select>
-            <Input name="department" value={filters.department} onChange={handleFilterChange} placeholder="Department" />
+            {user?.role === "MANAGER" && (
+              <select
+                name="userId"
+                value={filters.userId}
+                onChange={handleFilterChange}
+                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
+              >
+                <option value="">All Employees</option>
+                {employees.map((e) => (
+                  <option key={e.id} value={String(e.id)}>
+                    {e.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <Button onClick={loadReport} className="hover:scale-105 active:scale-95">
               <BarChart3 className="w-4 h-4 mr-2" />
               Generate
@@ -230,9 +255,8 @@ export const Reports = () => {
                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Project</th>
                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Task</th>
                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Date</th>
-                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
-                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Billable</th>
-                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Status</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Status</th>
                        </>
                      )}
                      {activeTab === "project-hours" && (
@@ -270,13 +294,8 @@ export const Reports = () => {
                        <td className="px-4 py-3 text-[#1E293B]">{entry.projectName || entry.Project?.name || "-"}</td>
                        <td className="px-4 py-3 text-[#1E293B]">{entry.taskTitle || entry.Task?.title || "-"}</td>
                        <td className="px-4 py-3 text-[#64748B]">{entry.entryDate}</td>
-                       <td className="px-4 py-3 text-[#1E293B] font-medium">{entry.hours}h</td>
-                       <td className="px-4 py-3">
-                         <Badge variant={entry.isBillable ? "success" : "warning"}>
-                           {entry.isBillable ? "Yes" : "No"}
-                         </Badge>
-                       </td>
-                       <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-[#1E293B] font-medium">{entry.hours}h</td>
+                        <td className="px-4 py-3">
                          <Badge variant={entry.status === "APPROVED" ? "success" : entry.status === "SUBMITTED" ? "warning" : "default"}>
                            {entry.status}
                          </Badge>

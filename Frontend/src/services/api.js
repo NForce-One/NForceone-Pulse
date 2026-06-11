@@ -438,6 +438,11 @@ export const getTimesheetStatusReport = async (params) => {
   return response.data;
 };
 
+export const getApprovedEmployees = async () => {
+  const response = await api.get("/reports/approved-employees");
+  return response.data;
+};
+
 export const exportReportCSV = async (params) => {
   const response = await api.get("/reports/export", {
     params,
