@@ -51,7 +51,7 @@ export const getApprovedEmployeeIds = async (managerId) => {
 };
 
 export const getEmployeeHoursReport = async (filters) => {
-  const { startDate, endDate, from_date, to_date, userId, managerId, department, projectId, clientId } = filters;
+  const { startDate, endDate, from_date, to_date, userId, managerId, department, projectId, clientId, role } = filters;
   const fromDate = startDate || from_date;
   const toDate = endDate || to_date;
   const whereClause = {};
@@ -68,6 +68,7 @@ export const getEmployeeHoursReport = async (filters) => {
 
   const userWhere = {};
   if (department) userWhere.department = department;
+  if (role) userWhere.role = role;
 
   const entries = await TimeEntry.findAll({
     where: whereClause,
@@ -93,7 +94,7 @@ export const getEmployeeHoursReport = async (filters) => {
 };
 
 export const getProjectHoursReport = async (filters) => {
-  const { startDate, endDate, from_date, to_date, projectId, clientId, userId, department } = filters;
+  const { startDate, endDate, from_date, to_date, projectId, clientId, userId, department, role } = filters;
   const fromDate = startDate || from_date;
   const toDate = endDate || to_date;
   const whereClause = {};
@@ -109,6 +110,7 @@ export const getProjectHoursReport = async (filters) => {
     userWhere.id = Array.isArray(userId) ? { [Op.in]: userId.map(Number) } : parseInt(userId);
   }
   if (department) userWhere.department = department;
+  if (role) userWhere.role = role;
 
   const entries = await TimeEntry.findAll({
     where: whereClause,
@@ -131,7 +133,7 @@ export const getProjectHoursReport = async (filters) => {
 };
 
 export const getUtilizationReport = async (filters) => {
-  const { startDate, endDate, from_date, to_date, department, userId } = filters;
+  const { startDate, endDate, from_date, to_date, department, userId, role } = filters;
   const fromDate = startDate || from_date;
   const toDate = endDate || to_date;
   const whereClause = {};
@@ -145,6 +147,7 @@ export const getUtilizationReport = async (filters) => {
     userWhere.id = Array.isArray(userId) ? { [Op.in]: userId.map(Number) } : parseInt(userId);
   }
   if (department) userWhere.department = department;
+  if (role) userWhere.role = role;
 
   const users = await User.findAll({
     where: userWhere,
@@ -185,7 +188,7 @@ export const getUtilizationReport = async (filters) => {
 };
 
 export const getBillingSummary = async (filters) => {
-  const { startDate, endDate, from_date, to_date, projectId, clientId, userId } = filters;
+  const { startDate, endDate, from_date, to_date, projectId, clientId, userId, role } = filters;
   const fromDate = startDate || from_date;
   const toDate = endDate || to_date;
   const whereClause = { isBillable: true };
@@ -204,7 +207,7 @@ export const getBillingSummary = async (filters) => {
     include: [
       { model: Project, attributes: ["id", "name", "code"] },
       { model: Client, attributes: ["id", "name", "code"] },
-      { model: User, attributes: ["id", "name"] },
+      { model: User, attributes: ["id", "name"], ...(role ? { where: { role } } : {}) },
     ],
   });
 

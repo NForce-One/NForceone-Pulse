@@ -8,6 +8,8 @@ import {
   fetchProjects,
   fetchClients,
   getApprovedEmployees,
+  getManagers,
+  fetchUsers,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
@@ -36,6 +38,10 @@ export const Reports = () => {
   });
   const [message, setMessage] = useState({ text: "", type: "" });
   const [reportType, setReportType] = useState("team");
+  const [allManagers, setAllManagers] = useState([]);
+  const [allEmployeesForAdmin, setAllEmployeesForAdmin] = useState([]);
+  const [employeeFilter, setEmployeeFilter] = useState("");
+  const [managerFilter, setManagerFilter] = useState("");
 
   const { data: cachedProjects } = useCachedData("reports_projects", async () => {
     const res = await fetchProjects();
@@ -59,6 +65,15 @@ export const Reports = () => {
         setEmployees(res?.data || []);
       }).catch(() => setEmployees([]));
     }
+    if (user?.role === "ADMIN") {
+      getManagers().then((res) => {
+        setAllManagers(res?.data || []);
+      }).catch(() => setAllManagers([]));
+      fetchUsers().then((res) => {
+        const employeeList = (res?.data || []).filter((u) => u.role === "EMPLOYEE");
+        setAllEmployeesForAdmin(employeeList);
+      }).catch(() => setAllEmployeesForAdmin([]));
+    }
   }, [user]);
 
   useEffect(() => {
@@ -68,19 +83,20 @@ export const Reports = () => {
   const loadReport = async () => {
     setIsLoading(true);
     try {
+      const params = { ...filters, ...getAdminParams() };
       let response;
       switch (activeTab) {
         case "employee-hours":
-          response = await getEmployeeHoursReport(filters);
+          response = await getEmployeeHoursReport(params);
           break;
         case "project-hours":
-          response = await getProjectHoursReport(filters);
+          response = await getProjectHoursReport(params);
           break;
         case "utilization":
-          response = await getUtilizationReport(filters);
+          response = await getUtilizationReport(params);
           break;
         case "billing":
-          response = await getBillingSummary(filters);
+          response = await getBillingSummary(params);
           break;
         default:
           response = { data: [] };
@@ -128,6 +144,27 @@ export const Reports = () => {
     setMessage({ text: "", type: "" });
   };
 
+  const handleEmployeeFilterChange = (e) => {
+    setEmployeeFilter(e.target.value);
+    setMessage({ text: "", type: "" });
+  };
+
+  const handleManagerFilterChange = (e) => {
+    setManagerFilter(e.target.value);
+    setMessage({ text: "", type: "" });
+  };
+
+  const getAdminParams = () => {
+    if (user?.role !== "ADMIN") return {};
+    const params = {};
+    if (employeeFilter) {
+      params.userId = employeeFilter;
+    } else if (managerFilter) {
+      params.managedBy = managerFilter;
+    }
+    return params;
+  };
+
   const exportCSV = async () => {
     try {
       const reportTypeMap = {
@@ -138,6 +175,7 @@ export const Reports = () => {
       };
       const params = {
         ...filters,
+        ...getAdminParams(),
         report_type: reportTypeMap[activeTab] || "employee_hours",
       };
       const response = await exportReportCSV(params);
@@ -226,6 +264,34 @@ export const Reports = () => {
                   </option>
                 ))}
              </select>
+            {user?.role === "ADMIN" && (
+              <>
+                <select
+                  value={employeeFilter}
+                  onChange={handleEmployeeFilterChange}
+                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
+                >
+                  <option value="">All Employees</option>
+                  {allEmployeesForAdmin.map((e) => (
+                    <option key={e.id} value={String(e.id)}>
+                      {e.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={managerFilter}
+                  onChange={handleManagerFilterChange}
+                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
+                >
+                  <option value="">All Managers</option>
+                  {allManagers.map((m) => (
+                    <option key={m.id} value={String(m.id)}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
             {user?.role === "MANAGER" && reportType === "team" && (
               <select
                 name="userId"

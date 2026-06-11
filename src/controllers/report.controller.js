@@ -35,12 +35,22 @@ export const getApprovedEmployees = async (req, res) => {
   }
 };
 
+const applyAdminFilter = async (req, filters) => {
+  if (req.user.role !== "ADMIN") return;
+  if (filters.managedBy) {
+    const managerId = parseInt(filters.managedBy);
+    const approvedIds = await reportService.getApprovedEmployeeIds(managerId);
+    filters.userId = approvedIds.length > 0 ? approvedIds : [-1];
+  }
+};
+
 export const getEmployeeHoursReport = async (req, res) => {
   try {
     const filters = { ...req.query };
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    await applyAdminFilter(req, filters);
     const authError = await applyManagerFilter(req, filters);
     if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getEmployeeHoursReport(filters);
@@ -56,6 +66,7 @@ export const getProjectHoursReport = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    await applyAdminFilter(req, filters);
     const authError = await applyManagerFilter(req, filters);
     if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getProjectHoursReport(filters);
@@ -71,6 +82,7 @@ export const getUtilizationReport = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    await applyAdminFilter(req, filters);
     const authError = await applyManagerFilter(req, filters);
     if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getUtilizationReport(filters);
@@ -86,6 +98,7 @@ export const getBillingSummary = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    await applyAdminFilter(req, filters);
     const authError = await applyManagerFilter(req, filters);
     if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getBillingSummary(filters);
@@ -134,6 +147,7 @@ export const exportReport = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    await applyAdminFilter(req, filters);
     const authError = await applyManagerFilter(req, filters);
     if (authError) return res.status(403).json({ success: false, message: authError.error });
 
