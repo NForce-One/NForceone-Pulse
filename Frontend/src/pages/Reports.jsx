@@ -35,6 +35,7 @@ export const Reports = () => {
     userId: "",
   });
   const [message, setMessage] = useState({ text: "", type: "" });
+  const [reportType, setReportType] = useState("team");
 
   const { data: cachedProjects } = useCachedData("reports_projects", async () => {
     const res = await fetchProjects();
@@ -105,6 +106,17 @@ export const Reports = () => {
       (p) => Number(p.clientId) === Number(filters.clientId) && p.status === "ACTIVE"
     );
   }, [filters.clientId, projects]);
+
+  const handleReportTypeChange = (e) => {
+    const value = e.target.value;
+    setReportType(value);
+    if (value === "self") {
+      setFilters((prev) => ({ ...prev, userId: String(user.id) }));
+    } else {
+      setFilters((prev) => ({ ...prev, userId: "" }));
+    }
+    setMessage({ text: "", type: "" });
+  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -214,7 +226,7 @@ export const Reports = () => {
                   </option>
                 ))}
              </select>
-            {user?.role === "MANAGER" && (
+            {user?.role === "MANAGER" && reportType === "team" && (
               <select
                 name="userId"
                 value={filters.userId}
@@ -233,6 +245,16 @@ export const Reports = () => {
               <BarChart3 className="w-4 h-4 mr-2" />
               Generate
             </Button>
+            {user?.role === "MANAGER" && (
+              <select
+                value={reportType}
+                onChange={handleReportTypeChange}
+                className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
+              >
+                <option value="team">Team Reports</option>
+                <option value="self">Self Reports</option>
+              </select>
+            )}
           </div>
         </CardContent>
       </Card>

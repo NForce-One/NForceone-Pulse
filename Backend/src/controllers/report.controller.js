@@ -2,6 +2,10 @@ import * as reportService from "../services/report.service.js";
 
 const applyManagerFilter = async (req, filters) => {
   if (req.user.role !== "MANAGER") return null;
+  if (filters.reportType === "self") {
+    filters.userId = req.user.id;
+    return null;
+  }
   const approvedIds = await reportService.getApprovedEmployeeIds(req.user.id);
   const requestedUserId = filters.userId ? parseInt(filters.userId) : null;
   if (requestedUserId) {
