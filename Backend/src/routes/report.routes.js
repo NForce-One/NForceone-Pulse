@@ -8,6 +8,7 @@ import {
   getDashboardStats,
   getHourDetails,
   exportReport,
+  getApprovedEmployees,
 } from "../controllers/report.controller.js";
 
 import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
@@ -22,5 +23,6 @@ router.get("/utilization", protect, getUtilizationReport);
 router.get("/billing-summary", protect, getBillingSummary);
 router.get("/timesheet-status", protect, getTimesheetStatusReport);
 router.get("/export", protect, exportReport);
+router.get("/approved-employees", protect, getApprovedEmployees);
 
 export default router;

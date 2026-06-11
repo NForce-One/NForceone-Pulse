@@ -1,11 +1,44 @@
 import * as reportService from "../services/report.service.js";
 
+const applyManagerFilter = async (req, filters) => {
+  if (req.user.role !== "MANAGER") return null;
+  const approvedIds = await reportService.getApprovedEmployeeIds(req.user.id);
+  const requestedUserId = filters.userId ? parseInt(filters.userId) : null;
+  if (requestedUserId) {
+    if (!approvedIds.includes(requestedUserId)) {
+      return { error: "Unauthorized to view this employee's data" };
+    }
+  } else {
+    filters.userId = approvedIds.length > 0 ? approvedIds : [-1];
+  }
+  return null;
+};
+
+export const getApprovedEmployees = async (req, res) => {
+  try {
+    if (req.user.role === "MANAGER") {
+      const ids = await reportService.getApprovedEmployeeIds(req.user.id);
+      const employees = await (await import("../models/user.model.js")).default.findAll({
+        where: { id: ids, isActive: true },
+        attributes: ["id", "name", "email"],
+        order: [["name", "ASC"]],
+      });
+      return res.json({ success: true, data: employees });
+    }
+    res.json({ success: true, data: [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getEmployeeHoursReport = async (req, res) => {
   try {
     const filters = { ...req.query };
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    const authError = await applyManagerFilter(req, filters);
+    if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getEmployeeHoursReport(filters);
     res.json({ success: true, data: report });
   } catch (error) {
@@ -19,6 +52,8 @@ export const getProjectHoursReport = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    const authError = await applyManagerFilter(req, filters);
+    if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getProjectHoursReport(filters);
     res.json({ success: true, data: report });
   } catch (error) {
@@ -32,6 +67,8 @@ export const getUtilizationReport = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    const authError = await applyManagerFilter(req, filters);
+    if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getUtilizationReport(filters);
     res.json({ success: true, data: report });
   } catch (error) {
@@ -45,6 +82,8 @@ export const getBillingSummary = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    const authError = await applyManagerFilter(req, filters);
+    if (authError) return res.status(403).json({ success: false, message: authError.error });
     const report = await reportService.getBillingSummary(filters);
     res.json({ success: true, data: report });
   } catch (error) {
@@ -91,6 +130,8 @@ export const exportReport = async (req, res) => {
     if (req.user.role === "EMPLOYEE") {
       filters.userId = req.user.id;
     }
+    const authError = await applyManagerFilter(req, filters);
+    if (authError) return res.status(403).json({ success: false, message: authError.error });
 
     const csv = await reportService.exportReportCSV(filters);
     const date = new Date().toISOString().split("T")[0];
