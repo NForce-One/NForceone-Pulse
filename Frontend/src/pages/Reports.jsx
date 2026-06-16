@@ -41,8 +41,7 @@ export const Reports = () => {
   const [reportType, setReportType] = useState("team");
   const [allManagers, setAllManagers] = useState([]);
   const [allEmployeesForAdmin, setAllEmployeesForAdmin] = useState([]);
-  const [employeeFilter, setEmployeeFilter] = useState("");
-  const [managerFilter, setManagerFilter] = useState("");
+  const [selectedFilterValue, setSelectedFilterValue] = useState("");
 
   const { data: cachedProjects } = useCachedData("reports_projects", async () => {
     const res = await fetchProjects();
@@ -145,25 +144,16 @@ export const Reports = () => {
     setMessage({ text: "", type: "" });
   };
 
-  const handleEmployeeFilterChange = (e) => {
-    setEmployeeFilter(e.target.value);
-    setMessage({ text: "", type: "" });
-  };
-
-  const handleManagerFilterChange = (e) => {
-    setManagerFilter(e.target.value);
+  const handleCombinedFilterChange = (e) => {
+    setSelectedFilterValue(e.target.value);
     setMessage({ text: "", type: "" });
   };
 
   const getAdminParams = () => {
     if (user?.role !== "ADMIN") return {};
-    const params = {};
-    if (employeeFilter) {
-      params.userId = employeeFilter;
-    } else if (managerFilter) {
-      params.managedBy = managerFilter;
-    }
-    return params;
+    if (!selectedFilterValue) return {};
+    const isManager = allManagers.some((m) => String(m.id) === selectedFilterValue);
+    return isManager ? { managedBy: selectedFilterValue } : { userId: selectedFilterValue };
   };
 
   const exportCSV = async () => {
@@ -272,22 +262,17 @@ export const Reports = () => {
                className="min-w-[160px]"
              />
             {user?.role === "ADMIN" && (
-              <>
-                <CustomSelect
-                  value={employeeFilter}
-                  onChange={handleEmployeeFilterChange}
-                  placeholder="All Employees"
-                  options={allEmployeesForAdmin.map((e) => ({ value: String(e.id), label: e.name }))}
-                  className="min-w-[160px]"
-                />
-                <CustomSelect
-                  value={managerFilter}
-                  onChange={handleManagerFilterChange}
-                  placeholder="All Managers"
-                  options={allManagers.map((m) => ({ value: String(m.id), label: m.name }))}
-                  className="min-w-[160px]"
-                />
-              </>
+              <CustomSelect
+                value={selectedFilterValue}
+                onChange={handleCombinedFilterChange}
+                placeholder="All Employees"
+                options={[
+                  { value: "", label: "All Employees" },
+                  ...allManagers.map((m) => ({ value: String(m.id), label: m.name, name: "manager" })),
+                  ...allEmployeesForAdmin.map((e) => ({ value: String(e.id), label: e.name, name: "employee" })),
+                ]}
+                className="min-w-[160px]"
+              />
             )}
             {user?.role === "MANAGER" && reportType === "team" && (
               <CustomSelect

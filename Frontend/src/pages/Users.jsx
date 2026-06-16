@@ -149,12 +149,10 @@ export const Users = () => {
                </select>
                <Input name="department" value={formData.department} onChange={handleInputChange} placeholder="Department"
                  className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
-               <div className="flex flex-col">
-                 <span className="text-xs text-[#64748B] mb-1">Employee ID</span>
-                 <div className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#64748B] flex items-center">
-                   {formData.employeeId || (editingId ? "Assigned" : "Generating...")}
-                 </div>
-               </div>
+               <div className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#64748B] flex items-center gap-1">
+                  <span className="text-xs text-[#64748B]">Employee ID:</span>
+                  {formData.employeeId || (editingId ? "Assigned" : "Generating...")}
+                </div>
               <div className="flex gap-2">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
                 <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setNextEmployeeId(null); }}>Cancel</Button>
