@@ -78,12 +78,13 @@ export const Reports = () => {
 
   useEffect(() => {
     loadReport();
-  }, [activeTab]);
+  }, [activeTab, reportType]);
 
   const loadReport = async () => {
     setIsLoading(true);
     try {
       const params = { ...filters, ...getAdminParams() };
+      if (user?.role === "MANAGER") params.reportType = reportType;
       let response;
       switch (activeTab) {
         case "employee-hours":
@@ -169,6 +170,7 @@ export const Reports = () => {
         ...getAdminParams(),
         report_type: reportTypeMap[activeTab] || "employee_hours",
       };
+      if (user?.role === "MANAGER") params.reportType = reportType;
       const response = await exportReportCSV(params);
       const url = URL.createObjectURL(response.data);
       const a = document.createElement("a");
