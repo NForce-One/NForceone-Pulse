@@ -12,11 +12,8 @@ export const Clients = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
-    code: "",
     company: "",
-    email: "",
-    phone: "",
+    name: "",
     status: "ACTIVE",
   });
 
@@ -48,7 +45,7 @@ export const Clients = () => {
       } else {
         await createClient(formData);
       }
-      setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE" });
+      setFormData({ company: "", name: "", status: "ACTIVE" });
       setShowForm(false);
       setEditingId(null);
       await loadClients();
@@ -59,11 +56,8 @@ export const Clients = () => {
 
   const handleEdit = (client) => {
     setFormData({
-      name: client.name,
-      code: client.code || "",
       company: client.company || "",
-      email: client.email || "",
-      phone: client.phone || "",
+      name: client.name,
       status: client.status,
     });
     setEditingId(client.id);
@@ -87,7 +81,7 @@ export const Clients = () => {
           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">Client Management</h1>
           <p className="text-base text-[#64748B]">Manage clients and billing types</p>
         </div>
-        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", code: "", company: "", email: "", phone: "", status: "ACTIVE" }); }}>
+        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ company: "", name: "", status: "ACTIVE" }); }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Client
         </Button>
@@ -98,18 +92,15 @@ export const Clients = () => {
           <CardHeader>
             <CardTitle>{editingId ? "Edit Client" : "Create Client"}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Client Name" required />
-              <Input name="code" value={formData.code} onChange={handleInputChange} placeholder="Client Code" />
-              <Input name="company" value={formData.company} onChange={handleInputChange} placeholder="Company" />
-              <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" />
-              <Input name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Phone" />
-              <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
-                <option value="ACTIVE" className="bg-white">Active</option>
-                <option value="INACTIVE" className="bg-white">Inactive</option>
-              </select>
-              <div className="flex gap-2">
+               <Input name="company" value={formData.company} onChange={handleInputChange} placeholder="Company" required />
+               <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Client Name" required />
+               <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
+                 <option value="ACTIVE" className="bg-white">Active</option>
+                 <option value="INACTIVE" className="bg-white">Inactive</option>
+               </select>
+               <div className="flex gap-2 md:col-span-3">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
                 <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</Button>
               </div>
@@ -123,28 +114,22 @@ export const Clients = () => {
           <table className="w-full text-sm">
             <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <tr>
-                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Name</th>
-                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Code</th>
                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Company</th>
-                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Email</th>
-                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Billing Type</th>
+                <th className="px-4 py-3 text-left text-[#64748B] font-medium">Client Name</th>
                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Status</th>
                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="7" className="text-center py-8 text-[#64748B]">Loading...</td></tr>
+                <tr><td colSpan="4" className="text-center py-8 text-[#64748B]">Loading...</td></tr>
               ) : clients.length === 0 ? (
-                <tr><td colSpan="7" className="text-center py-8 text-[#64748B]">No clients found</td></tr>
+                <tr><td colSpan="4" className="text-center py-8 text-[#64748B]">No clients found</td></tr>
               ) : (
                 clients.map((client) => (
                   <tr key={client.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
-                    <td className="px-4 py-3 font-medium text-[#1E293B]">{client.name}</td>
-                    <td className="px-4 py-3 text-[#64748B]">{client.code || "-"}</td>
-                    <td className="px-4 py-3 text-[#64748B]">{client.company || "-"}</td>
-                    <td className="px-4 py-3 text-[#64748B]">{client.email || "-"}</td>
-                    <td className="px-4 py-3"><Badge variant="primary">{client.billingType}</Badge></td>
+                    <td className="px-4 py-3 font-medium text-[#1E293B]">{client.company || "-"}</td>
+                    <td className="px-4 py-3 text-[#64748B]">{client.name}</td>
                     <td className="px-4 py-3">
                       <Badge variant={client.status === "ACTIVE" ? "success" : "danger"}>{client.status}</Badge>
                     </td>
