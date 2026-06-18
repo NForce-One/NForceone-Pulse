@@ -281,8 +281,11 @@ export const Reports = () => {
                 name="userId"
                 value={filters.userId}
                 onChange={handleFilterChange}
-                placeholder="All Employees"
-                options={employees.map((e) => ({ value: String(e.id), label: e.name }))}
+                placeholder="Select Employee"
+                options={[
+                  { value: "", label: "All Employees" },
+                  ...employees.map((e) => ({ value: String(e.id), label: e.name })),
+                ]}
                 className="min-w-[160px]"
               />
             )}
