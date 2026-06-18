@@ -24,7 +24,6 @@ export const Users = () => {
     email: "",
     password: "",
     role: "EMPLOYEE",
-    department: "",
     employeeId: "",
   });
 
@@ -58,7 +57,7 @@ export const Users = () => {
       } else {
         await createUser(payload);
       }
-      setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", department: "", employeeId: "" });
+      setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", employeeId: "" });
       setShowForm(false);
       setEditingId(null);
       setNextEmployeeId(null);
@@ -74,7 +73,6 @@ export const Users = () => {
       email: user.email,
       password: "",
       role: user.role,
-      department: user.department || "",
       employeeId: user.employeeId || "",
     });
     setNextEmployeeId(null);
@@ -84,7 +82,7 @@ export const Users = () => {
 
   const openCreateForm = async () => {
     setEditingId(null);
-    setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", department: "", employeeId: "" });
+    setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", employeeId: "" });
     try {
       const res = await getNextEmployeeId();
       const empId = res?.data?.employeeId;
@@ -133,7 +131,7 @@ export const Users = () => {
           <CardHeader>
             <CardTitle>{editingId ? "Edit User" : "Create User"}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required
                  className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
@@ -147,8 +145,6 @@ export const Users = () => {
                  <option value="MANAGER" className="bg-white">Manager</option>
                  <option value="ADMIN" className="bg-white">Admin</option>
                </select>
-               <Input name="department" value={formData.department} onChange={handleInputChange} placeholder="Department"
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <div className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#64748B] flex items-center gap-1">
                   <span className="text-xs text-[#64748B]">Employee ID:</span>
                   {formData.employeeId || (editingId ? "Assigned" : "Generating...")}
@@ -163,42 +159,38 @@ export const Users = () => {
       )}
 
       <Card>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto p-6">
           <table className="w-full text-sm">
 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                <tr>
-                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Name</th>
-                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Email</th>
-                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Role</th>
-                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Department</th>
-                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Manager</th>
-                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Status</th>
-                 <th className="px-4 py-3 text-left text-[#64748B] font-medium">Actions</th>
+                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Name</th>
+                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Email</th>
+                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Role</th>
+                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Status</th>
+                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Actions</th>
                </tr>
              </thead>
              <tbody>
                {isLoading ? (
-                 <tr><td colSpan="7" className="text-center py-8 text-[#64748B]">Loading...</td></tr>
-               ) : users.length === 0 ? (
-                 <tr><td colSpan="7" className="text-center py-8 text-[#64748B]">No users found</td></tr>
+                  <tr><td colSpan="5" className="text-center py-8 text-[#64748B]">Loading...</td></tr>
+                ) : users.length === 0 ? (
+                  <tr><td colSpan="5" className="text-center py-8 text-[#64748B]">No users found</td></tr>
                ) : (
                  users.map((user) => (
                    <tr key={user.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
-                     <td className="px-4 py-3 text-[#1E293B] font-medium">{user.name}</td>
-                     <td className="px-4 py-3 text-[#64748B]">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={user.role === "ADMIN" ? "danger" : user.role === "MANAGER" ? "warning" : "default"}>
-                        {user.role}
-                      </Badge>
-                    </td>
-<td className="px-4 py-3 text-[#64748B]">{user.department || "-"}</td>
-                     <td className="px-4 py-3 text-[#64748B]">{user.Manager?.name || "-"}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={user.isActive ? "success" : "danger"}>
-                        {user.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 space-x-2">
+                      <td className="px-4 py-3.5 text-[#1E293B] font-medium align-middle">{user.name}</td>
+                      <td className="px-4 py-3.5 text-[#64748B] align-middle">{user.email}</td>
+                     <td className="px-4 py-3.5 align-middle">
+                       <Badge variant={user.role === "ADMIN" ? "danger" : user.role === "MANAGER" ? "warning" : "default"}>
+                         {user.role}
+                       </Badge>
+                     </td>
+                     <td className="px-4 py-3.5 align-middle">
+                       <Badge variant={user.isActive ? "success" : "danger"}>
+                         {user.isActive ? "Active" : "Inactive"}
+                       </Badge>
+                     </td>
+                     <td className="px-4 py-3.5 align-middle space-x-2">
                       <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
                         <Pencil className="w-4 h-4" />
                       </Button>
