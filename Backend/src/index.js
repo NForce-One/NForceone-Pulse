@@ -255,6 +255,41 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
 
+    // Clean up existing duplicate time entries before applying unique constraint
+    try {
+      const [duplicates] = await sequelize.query(`
+        SELECT userId, entryDate, projectId, COUNT(*) as cnt
+        FROM time_entries
+        GROUP BY userId, entryDate, projectId
+        HAVING cnt > 1
+      `);
+      if (duplicates.length > 0) {
+        console.log(`Found ${duplicates.length} duplicate time entry groups. Cleaning up...`);
+        for (const dup of duplicates) {
+          const projectIdCondition = dup.projectId !== null
+            ? `projectId = ${dup.projectId}`
+            : "projectId IS NULL";
+          await sequelize.query(`
+            DELETE FROM time_entries
+            WHERE userId = ${dup.userId}
+              AND entryDate = '${dup.entryDate}'
+              AND ${projectIdCondition}
+              AND id NOT IN (
+                SELECT id FROM (
+                  SELECT MIN(id) as id FROM time_entries
+                  WHERE userId = ${dup.userId}
+                    AND entryDate = '${dup.entryDate}'
+                    AND ${projectIdCondition}
+                ) as tmp
+              )
+          `);
+        }
+        console.log(`Cleaned up duplicate time entries.`);
+      }
+    } catch (dedupErr) {
+      console.error("Failed to deduplicate time entries:", dedupErr.message);
+    }
+
     // Using sync without alter to avoid "too many keys" error
     // The notification model is already correctly defined
     await sequelize.sync();

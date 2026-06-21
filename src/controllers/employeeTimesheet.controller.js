@@ -82,6 +82,19 @@ export const getManagerAction = async (req, res) => {
   }
 };
 
+export const cancelTimesheet = async (req, res) => {
+  try {
+    const { weekStartDate } = req.body;
+    if (!weekStartDate) {
+      return res.status(400).json({ success: false, message: "weekStartDate is required" });
+    }
+    const result = await employeeTimesheetService.cancelTimesheet(req.user.id, weekStartDate);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const deleteProjectEntries = async (req, res) => {
   try {
     const { projectId, weekStartDate } = req.params;

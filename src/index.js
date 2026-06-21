@@ -261,6 +261,42 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 /* ======================
    DB CONNECTION (non-blocking)
 ====================== */
+const deduplicateTimeEntries = async () => {
+  try {
+    const [duplicates] = await sequelize.query(`
+      SELECT userId, entryDate, projectId, COUNT(*) as cnt
+      FROM time_entries
+      GROUP BY userId, entryDate, projectId
+      HAVING cnt > 1
+    `);
+    if (duplicates.length > 0) {
+      console.log(`Found ${duplicates.length} duplicate time entry groups. Cleaning up...`);
+      for (const dup of duplicates) {
+        const projectIdCondition = dup.projectId !== null
+          ? `projectId = ${dup.projectId}`
+          : "projectId IS NULL";
+        await sequelize.query(`
+          DELETE FROM time_entries
+          WHERE userId = ${dup.userId}
+            AND entryDate = '${dup.entryDate}'
+            AND ${projectIdCondition}
+            AND id NOT IN (
+              SELECT id FROM (
+                SELECT MIN(id) as id FROM time_entries
+                WHERE userId = ${dup.userId}
+                  AND entryDate = '${dup.entryDate}'
+                  AND ${projectIdCondition}
+              ) as tmp
+            )
+        `);
+      }
+      console.log(`Cleaned up duplicate time entries.`);
+    }
+  } catch (err) {
+    console.error("Failed to deduplicate time entries:", err.message);
+  }
+};
+
 (async () => {
   try {
     const timeout = new Promise((_, reject) =>
@@ -268,6 +304,7 @@ const server = app.listen(PORT, "0.0.0.0", () => {
     );
     await Promise.race([sequelize.authenticate(), timeout]);
     console.log("Database connected successfully");
+    await deduplicateTimeEntries();
     await sequelize.sync({ alter: false });
     console.log("Database synced successfully");
 

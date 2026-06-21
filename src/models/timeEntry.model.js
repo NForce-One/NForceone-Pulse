@@ -81,6 +81,12 @@ const TimeEntry = sequelize.define(
   {
     tableName: "time_entries",
     timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ["userId", "entryDate", "projectId"],
+      },
+    ],
   }
 );
 

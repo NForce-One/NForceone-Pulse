@@ -356,27 +356,35 @@ export const Dashboard = () => {
     };
   }, [silentRefresh]);
 
+  const [expandedDates, setExpandedDates] = useState(new Set());
+
+  const toggleExpand = (rawDate) => {
+    setExpandedDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(rawDate)) next.delete(rawDate);
+      else next.add(rawDate);
+      return next;
+    });
+  };
+
   const filteredDashboardData = useMemo(() => {
-    const entries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];
+    const entries = Array.isArray(stats?.dailySummary) ? stats.dailySummary : [];
     let filtered = [];
     if (selectedMetric === "total") {
       filtered = entries;
     } else if (selectedMetric === "working") {
       filtered = entries.filter(e => e.type === "working");
     } else if (selectedMetric === "weekend") {
-      filtered = entries.filter(e => e.type === "weekend");
+      filtered = entries.filter(e => e.isWeekend);
     } else if (selectedMetric === "holiday") {
-      filtered = entries.filter(e => e.type === "holiday");
+      filtered = entries.filter(e => e.isHoliday);
     }
-    const totalHours = filtered.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
-    const normalHours = filtered.filter(e => e.type === "working").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
-    const weekendHours = filtered.filter(e => e.type === "weekend").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
-    const holidayHours = filtered.filter(e => e.type === "holiday").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+    const totalHours = filtered.reduce((sum, e) => sum + (e.totalHours || 0), 0);
     return {
       entries: filtered,
-      totals: { normalHours, weekendHours, holidayHours, totalExtraHours: weekendHours + holidayHours, totalHours },
+      totals: { totalHours },
     };
-  }, [stats?.dashboardEntries, selectedMetric]);
+  }, [stats?.dailySummary, selectedMetric]);
 
   const statCards = [];
 
@@ -574,29 +582,73 @@ export const Dashboard = () => {
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Day</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Employee Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Client</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Project</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Hours Worked</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Total Hours</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Reported To</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Approval Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredDashboardData.entries.map((entry, idx) => (
-                        <tr
-                          key={idx}
-                          className={`border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150 ${entry.type === "holiday" ? "bg-emerald-50 border-l-4 border-l-emerald-500" : entry.type === "weekend" ? "bg-amber-50 border-l-4 border-l-amber-500" : ""}`}
-                        >
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.entryDate || entry.rawDate || "-"}</td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.day || "-"}</td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.userName || "-"}</td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.clientWorked || "-"}</td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.projectWorked || "-"}</td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{Number(entry.hoursWorked || 0).toFixed(2)}h</td>
-                          <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{entry.reportedTo || "-"}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">{entry.approvalStatus || "-"}</td>
-                        </tr>
+                      {filteredDashboardData.entries.map((day, idx) => (
+                        <React.Fragment key={day.rawDate || idx}>
+                          <tr
+                            className={`border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150 ${day.isWeekend || day.isHoliday ? "bg-amber-50 border-l-4 border-l-amber-500" : ""}`}
+                          >
+                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                {day.projectCount > 1 && (
+                                  <button
+                                    onClick={() => toggleExpand(day.rawDate)}
+                                    className="w-4 h-4 flex items-center justify-center text-[#64748B] hover:text-[#1E293B] transition-colors"
+                                  >
+                                    <ChevronDown
+                                      className={`w-4 h-4 transition-transform duration-200 ${expandedDates.has(day.rawDate) ? "rotate-0" : "-rotate-90"}`}
+                                    />
+                                  </button>
+                                )}
+                                {day.projectCount <= 1 && <span className="w-4" />}
+                                <span>{day.date || day.rawDate || "-"}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.day || "-"}</td>
+                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{Number(day.totalHours || 0).toFixed(2)}h</td>
+                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.reportedTo || "-"}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {day.projectCount > 1 && (
+                                <span className="text-xs text-[#64748B]">{day.projectCount} projects</span>
+                              )}
+                            </td>
+                          </tr>
+                          {expandedDates.has(day.rawDate) && (
+                            <tr>
+                              <td colSpan={5} className="px-0 py-0">
+                                <div className="bg-[#FAFBFC]">
+                                  <table className="w-full text-xs">
+                                    <thead>
+                                      <tr className="border-b border-[#E2E8F0]">
+                                        <th className="px-4 py-2 text-left font-semibold text-[#64748B] pl-12">Project Name</th>
+                                        <th className="px-4 py-2 text-left font-semibold text-[#64748B]">Client</th>
+                                        <th className="px-4 py-2 text-left font-semibold text-[#64748B]">Hours</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {day.projects.map((proj, pIdx) => (
+                                        <tr key={pIdx} className="border-b border-[#E2E8F0]">
+                                          <td className="px-4 py-2 text-[#1E293B] pl-12">{proj.projectWorked}</td>
+                                          <td className="px-4 py-2 text-[#1E293B]">{proj.clientWorked}</td>
+                                          <td className="px-4 py-2 text-[#1E293B] font-medium">{Number(proj.hoursWorked || 0).toFixed(2)}h</td>
+                                        </tr>
+                                      ))}
+                                      <tr className="bg-[#F1F5F9]">
+                                        <td colSpan={2} className="px-4 py-2 text-[#1E293B] font-semibold pl-12">Total</td>
+                                        <td className="px-4 py-2 text-[#1E293B] font-semibold">{Number(day.totalHours || 0).toFixed(2)}h</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>

@@ -8,6 +8,7 @@ import {
   saveDraftTimesheet,
   submitTimesheet,
   updateTimesheet,
+  cancelTimesheet,
   deleteProjectEntries,
   getManagerAction,
 } from "../controllers/employeeTimesheet.controller.js";
@@ -21,6 +22,7 @@ router.get("/weekly", protect, getWeeklyTimesheet);
 router.post("/save", protect, saveDraftTimesheet);
 router.post("/submit", protect, submitTimesheet);
 router.put("/update", protect, updateTimesheet);
+router.post("/cancel", protect, cancelTimesheet);
 router.get("/manager-action/:timesheetId", protect, getManagerAction);
 router.delete("/project/:projectId/week/:weekStartDate", protect, deleteProjectEntries);
 

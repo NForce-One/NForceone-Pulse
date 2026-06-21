@@ -10,6 +10,19 @@ import { Op } from "sequelize";
 import { classifyEntry, getDayName, getDisplayName, getExtraWorkType } from "../utils/holidayConfig.js";
 import { toDateOnlyString } from "../utils/dateUtils.js";
 
+const deduplicateEntries = (entries) => {
+  const seen = new Map();
+  return entries.filter((entry) => {
+    const { userId, entryDate, projectId } = entry;
+    const key = `${userId}|${entryDate}|${projectId ?? "null"}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.set(key, true);
+    return true;
+  });
+};
+
 export const getApprovedEmployeeIds = async (managerId) => {
   const approvals = await ApprovalHistory.findAll({
     where: { actorId: managerId, action: "APPROVED" },
@@ -356,8 +369,11 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     ],
   });
 
-  const totalWeekHours = weekEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
-  const billableWeekHours = weekEntries
+  const uniqueWeekEntries = deduplicateEntries(weekEntries);
+  const uniqueMonthEntries = deduplicateEntries(monthEntries);
+
+  const totalWeekHours = uniqueWeekEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+  const billableWeekHours = uniqueWeekEntries
     .filter((e) => e.isBillable)
     .reduce((sum, e) => sum + Number(e.hours || 0), 0);
   const nonBillableWeekHours = totalWeekHours - billableWeekHours;
@@ -369,7 +385,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
   let normalHours = 0;
 
   const entryClassification = {};
-  monthEntries.forEach((entry) => {
+  uniqueMonthEntries.forEach((entry) => {
     const json = entry.toJSON();
     const dateStr = json.entryDate;
     const hours = parseFloat(json.hours || 0);
@@ -391,7 +407,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     }
   });
 
-  const totalMonthHours = monthEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+  const totalMonthHours = uniqueMonthEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
   const formatDate = (dateStr) => {
     const dt = new Date(dateStr + "T00:00:00");
@@ -403,7 +419,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
   };
 
   let dashboardEntries = [];
-  if (monthEntries.length > 0) {
+  if (uniqueMonthEntries.length > 0) {
     const entryIds = monthEntries.map((e) => e.id);
     let commentMap = {};
     const approvalHistories = await ApprovalHistory.findAll({
@@ -416,7 +432,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
       }
     });
 
-    dashboardEntries = monthEntries.map((entry) => {
+    dashboardEntries = uniqueMonthEntries.map((entry) => {
       const json = entry.toJSON();
       const dateStr = json.entryDate;
       const entryType = entryClassification[json.id] || "working";
@@ -440,10 +456,54 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     });
   }
 
-  console.log(`[DEBUG Dashboard] monthEntries count: ${monthEntries.length}, dashboardEntries built: ${dashboardEntries.length}`);
+  let dailySummary = [];
+  if (uniqueMonthEntries.length > 0) {
+    const groupedByDate = {};
+    uniqueMonthEntries.forEach((entry) => {
+      const json = entry.toJSON();
+      const dateStr = json.entryDate;
+      if (!groupedByDate[dateStr]) {
+        const entryType = entryClassification[json.id] || "working";
+        groupedByDate[dateStr] = {
+          date: formatDate(dateStr),
+          rawDate: dateStr,
+          day: getDayName(dateStr),
+          displayName: getDisplayName(dateStr),
+          extraWorkType: getExtraWorkType(dateStr),
+          type: entryType,
+          totalHours: 0,
+          projectCount: 0,
+          isWeekend: entryType === "weekend",
+          isHoliday: entryType === "holiday",
+          reportedTo: json.Manager?.name || "-",
+          projects: [],
+          projectNames: new Set(),
+        };
+      }
+      const group = groupedByDate[dateStr];
+      group.totalHours += Number(json.hours || 0);
+      group.projects.push({
+        projectWorked: json.Project?.name || json.project || "-",
+        clientWorked: json.Client?.name || json.client || "-",
+        hoursWorked: Number(json.hours || 0),
+      });
+      group.projectNames.add(json.Project?.name || json.project || "-");
+    });
+
+    dailySummary = Object.values(groupedByDate)
+      .map((g) => {
+        g.projectCount = g.projectNames.size;
+        delete g.projectNames;
+        g.totalHours = Math.round(g.totalHours * 100) / 100;
+        return g;
+      })
+      .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+  }
+
+  console.log(`[DEBUG Dashboard] monthEntries count: ${monthEntries.length}, dashboardEntries built: ${dashboardEntries.length}, dailySummary: ${dailySummary.length}`);
   console.log(`[DEBUG Dashboard] normalHours: ${normalHours}, weekendHours: ${weekendHours}, holidayHours: ${holidayHours}`);
 
-  const draftCount = weekEntries.filter((e) => e.status === "DRAFT").length;
+  const draftCount = uniqueWeekEntries.filter((e) => e.status === "DRAFT").length;
 
   let pendingApprovals = 0;
   let teamData = [];
@@ -503,7 +563,8 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
               entryDate: { [Op.between]: [startOfWeekStr, endOfWeekStr] },
             },
           });
-          const memberHours = memberEntries.reduce(
+          const uniqueMemberEntries = deduplicateEntries(memberEntries);
+          const memberHours = uniqueMemberEntries.reduce(
             (sum, e) => sum + Number(e.hours || 0),
             0
           );
@@ -512,7 +573,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
             name: member.name,
             email: member.email,
             weekHours: Math.round(memberHours * 100) / 100,
-            entriesCount: memberEntries.length,
+            entriesCount: uniqueMemberEntries.length,
           };
         })
       );
@@ -530,7 +591,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
         }));
 
       const projectHoursMap = {};
-      weekEntries.forEach((entry) => {
+      uniqueWeekEntries.forEach((entry) => {
         const projectName = entry.Project?.name || entry.project || "Unknown";
         if (!projectHoursMap[projectName]) {
           projectHoursMap[projectName] = 0;
@@ -558,16 +619,17 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
         const weekStartStr = toDateOnlyString(weekStart);
         const weekEndStr = toDateOnlyString(weekEnd);
 
-        const weekData = await TimeEntry.findAll({
-          where: {
-            userId: { [Op.in]: teamMemberIds },
-            status: "APPROVED",
-            entryDate: { [Op.between]: [weekStartStr, weekEndStr] },
-          },
-        });
+          const weekData = await TimeEntry.findAll({
+            where: {
+              userId: { [Op.in]: teamMemberIds },
+              status: "APPROVED",
+              entryDate: { [Op.between]: [weekStartStr, weekEndStr] },
+            },
+          });
 
-        const weekTotal = weekData.reduce((sum, e) => sum + Number(e.hours || 0), 0);
-        const weekBillable = weekData
+          const uniqueWeekData = deduplicateEntries(weekData);
+          const weekTotal = uniqueWeekData.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+          const weekBillable = uniqueWeekData
           .filter((e) => e.isBillable)
           .reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
@@ -593,7 +655,8 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     const allWeekEntries = await TimeEntry.findAll({
       where: { entryDate: { [Op.between]: [startOfWeekStr, endOfWeekStr] } },
     });
-    const orgTotalHours = allWeekEntries.reduce(
+    const uniqueAllWeekEntries = deduplicateEntries(allWeekEntries);
+    const orgTotalHours = uniqueAllWeekEntries.reduce(
       (sum, e) => sum + Number(e.hours || 0),
       0
     );
@@ -623,6 +686,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     weekendHours: Math.round(weekendHours * 100) / 100,
     weekendEntries,
     holidayHours: Math.round(holidayHours * 100) / 100,
+    dailySummary,
     normalHours: Math.round(normalHours * 100) / 100,
     holidayEntries,
     totalExtraHours: Math.round((weekendHours + holidayHours) * 100) / 100,
@@ -653,11 +717,13 @@ export const getUserWorkingHours = async (userId) => {
     },
   });
 
+  const uniqueEntries = deduplicateEntries(entries);
+
   let normalHours = 0;
   let weekendHours = 0;
   let holidayHours = 0;
 
-  entries.forEach((entry) => {
+  uniqueEntries.forEach((entry) => {
     const json = entry.toJSON();
     const dateStr = json.entryDate;
     const hours = Number(json.hours || 0);
@@ -681,7 +747,7 @@ export const getUserWorkingHours = async (userId) => {
     weekendHours: Math.round(weekendHours * 100) / 100,
     holidayHours: Math.round(holidayHours * 100) / 100,
     totalHours: Math.round((normalHours + weekendHours + holidayHours) * 100) / 100,
-    totalEntries: entries.length,
+    totalEntries: uniqueEntries.length,
   };
 };
 

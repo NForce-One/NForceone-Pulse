@@ -6,6 +6,7 @@ import {
   saveETDraft,
   submitETTimesheet,
   updateETTimesheet,
+  cancelETTimesheet,
   deleteETProjectEntries,
   fetchETManagerAction,
 } from "../../services/employeeTimeIQApi";
@@ -298,6 +299,7 @@ export const EmployeeTimeIQ = () => {
     }).catch(() => setManagerAction(null));
   }, [timesheetId]);
 
+  const saveTimeoutRef = useRef(null);
   const dataRef = useRef({ projectRows: [], isReadOnly: false, currentWeekStart: "", weekDates: [] });
   dataRef.current = { projectRows, isReadOnly, currentWeekStart, weekDates };
   const unmountDataRef = useRef({ rows: [], isReadOnly: false, weekStart: "" });
@@ -316,26 +318,29 @@ export const EmployeeTimeIQ = () => {
             }
       )
     );
-    const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd } = dataRef.current;
-    if (ro || curRows.length === 0) return;
-    const row = curRows.find((r) => r.rowId === rowId);
-    if (!row || row.isPending) return;
-    const dayData = row.days[date] || { hours: "", description: "" };
-    const updatedHours = value;
-    const data = {
-      weekStartDate: ws,
-      dailyEntries: wd.map((w) => ({
-        entryDate: w.date,
-        hours: w.date === date ? (parseFloat(updatedHours) || 0) : (parseFloat(row.days[w.date]?.hours) || 0),
-        description: (w.date === date ? (dayData.description || "") : (row.days[w.date]?.description || "")),
-        clientId: row.clientId,
-        projectId: row.projectId,
-        managerId: row.managerId,
-        clientName: row.clientName,
-        projectName: row.projectName,
-      })),
-    };
-    saveETDraft(data).catch(() => {});
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd } = dataRef.current;
+      if (ro || curRows.length === 0) return;
+      const row = curRows.find((r) => r.rowId === rowId);
+      if (!row || row.isPending) return;
+      const data = {
+        weekStartDate: ws,
+        dailyEntries: wd.map((w) => ({
+          entryDate: w.date,
+          hours: parseFloat(row.days[w.date]?.hours) || 0,
+          description: row.days[w.date]?.description || "",
+          clientId: row.clientId,
+          projectId: row.projectId,
+          managerId: row.managerId,
+          clientName: row.clientName,
+          projectName: row.projectName,
+        })),
+      };
+      saveETDraft(data).catch(() => {});
+    }, 800);
   }, []);
 
 
@@ -558,10 +563,24 @@ export const EmployeeTimeIQ = () => {
     }
   }, [currentWeekStart, showSnackbar]);
 
-  const handleCancel = useCallback(() => {
-    loadWeekData(currentWeekStart);
-    showSnackbar("Changes reverted", "info");
-  }, [currentWeekStart, loadWeekData, showSnackbar]);
+  const handleCancel = useCallback(async () => {
+    if (timesheetStatus === "SUBMITTED") {
+      loadWeekData(currentWeekStart);
+      showSnackbar("Changes reverted", "info");
+      return;
+    }
+    try {
+      const res = await cancelETTimesheet(currentWeekStart);
+      if (res?.success) {
+        await loadWeekData(currentWeekStart);
+        showSnackbar("Timesheet cancelled. All entries removed.", "info");
+      } else {
+        showSnackbar("Failed to cancel timesheet", "error");
+      }
+    } catch (err) {
+      showSnackbar(err.response?.data?.message || err.message || "Failed to cancel", "error");
+    }
+  }, [currentWeekStart, timesheetStatus, loadWeekData, showSnackbar]);
 
   const navigateWeek = useCallback((direction) => {
     const cur = new Date(currentWeekStart + "T00:00:00");

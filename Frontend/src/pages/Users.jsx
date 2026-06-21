@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card"
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
-import { Plus, Pencil, Trash2, UserPlus, Power } from "lucide-react";
+import { Plus, Pencil, Trash2, UserPlus, Power, Eye, EyeOff } from "lucide-react";
 
 export const Users = () => {
   const [users, setUsers] = useState([]);
@@ -19,6 +19,7 @@ export const Users = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [nextEmployeeId, setNextEmployeeId] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -61,6 +62,7 @@ export const Users = () => {
       setShowForm(false);
       setEditingId(null);
       setNextEmployeeId(null);
+      setShowPassword(false);
       await loadData();
     } catch (error) {
       alert(error.response?.data?.message || "Operation failed");
@@ -77,11 +79,13 @@ export const Users = () => {
     });
     setNextEmployeeId(null);
     setEditingId(user.id);
+    setShowPassword(false);
     setShowForm(true);
   };
 
   const openCreateForm = async () => {
     setEditingId(null);
+    setShowPassword(false);
     setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", employeeId: "" });
     try {
       const res = await getNextEmployeeId();
@@ -137,8 +141,14 @@ export const Users = () => {
                  className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
                  className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
-               <Input name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"}
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
+               <div className="relative">
+                  <Input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"}
+                    className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200 pr-10" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#64748B] hover:text-[#1E293B] transition-colors duration-200">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                <select name="role" value={formData.role} onChange={handleInputChange}
                  className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                  <option value="EMPLOYEE" className="bg-white">Employee</option>
@@ -151,7 +161,7 @@ export const Users = () => {
                 </div>
               <div className="flex gap-2">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setNextEmployeeId(null); }}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setNextEmployeeId(null); setShowPassword(false); }}>Cancel</Button>
               </div>
             </form>
           </CardContent>

@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, UniqueConstraintError } from "sequelize";
 import Client from "../models/client.model.js";
 import Project from "../models/project.model.js";
 import User from "../models/user.model.js";
@@ -202,12 +202,8 @@ export const saveDraftTimesheet = async (userId, data) => {
     } else {
       findWhere.projectId = { [Op.is]: null };
     }
-    const existingEntry = await TimeEntry.findOne({
-      where: findWhere,
-    });
 
     const hasNoData = h === 0 && !description;
-    if (hasNoData && !existingEntry) continue;
 
     const entryData = {
       userId,
@@ -224,13 +220,30 @@ export const saveDraftTimesheet = async (userId, data) => {
       isBillable: true,
     };
 
-    if (existingEntry) {
-      const allowedStatuses = ["DRAFT", "SUBMITTED", "REJECTED"];
-      if (allowedStatuses.includes(existingEntry.status)) {
-        await existingEntry.update({ ...entryData, status: "DRAFT" });
-      }
+    if (hasNoData) {
+      const existingEntry = await TimeEntry.findOne({ where: findWhere });
+      if (!existingEntry) continue;
+      await existingEntry.update({ ...entryData, status: "DRAFT" });
     } else {
-      await TimeEntry.create({ ...entryData, status: "DRAFT" });
+      const allowedStatuses = ["DRAFT", "SUBMITTED", "REJECTED"];
+      try {
+        const [existingEntry, created] = await TimeEntry.findOrCreate({
+          where: findWhere,
+          defaults: { ...entryData, status: "DRAFT" },
+        });
+        if (!created && allowedStatuses.includes(existingEntry.status)) {
+          await existingEntry.update({ ...entryData, status: "DRAFT" });
+        }
+      } catch (err) {
+        if (err instanceof UniqueConstraintError) {
+          const existingEntry = await TimeEntry.findOne({ where: findWhere });
+          if (existingEntry && allowedStatuses.includes(existingEntry.status)) {
+            await existingEntry.update({ ...entryData, status: "DRAFT" });
+          }
+        } else {
+          throw err;
+        }
+      }
     }
   }
 
@@ -412,6 +425,52 @@ export const getManagerAction = async (timesheetId) => {
     managerName: action.Actor?.name || "Unknown",
     comment: action.comment || "",
     date: action.createdAt,
+  };
+};
+
+export const cancelTimesheet = async (userId, weekStartDate) => {
+  const ws = weekStartDate;
+  const we = getWeekEnd(ws);
+
+  let timesheet = await Timesheet.findOne({
+    where: { userId, weekStartDate: ws },
+  });
+
+  if (!timesheet) {
+    return {
+      timesheet: null,
+      entries: [],
+      totalHours: 0,
+    };
+  }
+
+  if (timesheet.status === "APPROVED") {
+    throw new Error("Cannot cancel an approved timesheet");
+  }
+
+  if (timesheet.status === "SUBMITTED") {
+    throw new Error("Cannot cancel a submitted timesheet. Use Update to revert to draft first.");
+  }
+
+  await TimeEntry.destroy({
+    where: {
+      userId,
+      entryDate: { [Op.between]: [ws, we] },
+    },
+  });
+
+  await timesheet.update({ totalHours: 0, billableHours: 0 });
+
+  return {
+    timesheet: {
+      id: timesheet.id,
+      weekStartDate: timesheet.weekStartDate,
+      weekEndDate: timesheet.weekEndDate,
+      status: timesheet.status,
+      totalHours: timesheet.totalHours,
+    },
+    entries: [],
+    totalHours: 0,
   };
 };
 
