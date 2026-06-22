@@ -11,6 +11,7 @@ import {
   fetchETManagerAction,
 } from "../../services/employeeTimeIQApi";
 import { fetchClients, fetchProjects, getManagers } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import { CommentModal } from "./CommentModal";
 import {
   ChevronLeft,
@@ -66,6 +67,7 @@ const getSnackbarStyles = (type) => {
 };
 
 export const EmployeeTimeIQ = () => {
+  const { user } = useAuth();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const saved = sessionStorage.getItem("timeiq_weekStart");
     return saved || getWeekStart(new Date());
@@ -300,8 +302,8 @@ export const EmployeeTimeIQ = () => {
   }, [timesheetId]);
 
   const saveTimeoutRef = useRef(null);
-  const dataRef = useRef({ projectRows: [], isReadOnly: false, currentWeekStart: "", weekDates: [] });
-  dataRef.current = { projectRows, isReadOnly, currentWeekStart, weekDates };
+  const dataRef = useRef({ projectRows: [], isReadOnly: false, currentWeekStart: "", weekDates: [], selectedManager: "" });
+  dataRef.current = { projectRows, isReadOnly, currentWeekStart, weekDates, selectedManager };
   const unmountDataRef = useRef({ rows: [], isReadOnly: false, weekStart: "" });
   unmountDataRef.current = { rows: projectRows, isReadOnly, weekStart: currentWeekStart };
 
@@ -322,7 +324,7 @@ export const EmployeeTimeIQ = () => {
       clearTimeout(saveTimeoutRef.current);
     }
     saveTimeoutRef.current = setTimeout(() => {
-      const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd } = dataRef.current;
+      const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd, selectedManager: sm } = dataRef.current;
       if (ro || curRows.length === 0) return;
       const row = curRows.find((r) => r.rowId === rowId);
       if (!row || row.isPending) return;
@@ -334,7 +336,7 @@ export const EmployeeTimeIQ = () => {
           description: row.days[w.date]?.description || "",
           clientId: row.clientId,
           projectId: row.projectId,
-          managerId: row.managerId,
+          managerId: sm ? Number(sm) : row.managerId,
           clientName: row.clientName,
           projectName: row.projectName,
         })),
@@ -348,40 +350,31 @@ export const EmployeeTimeIQ = () => {
 
 
   const handleAddProject = useCallback(() => {
-    if (selectedClient && selectedProject) {
-      if (projectRows.some((r) => Number(r.projectId) === Number(selectedProject))) {
-        showSnackbar("This project is already added for this week", "error");
-        return;
-      }
-      const selectedProjectData = allProjects.find((p) => Number(p.id) === Number(selectedProject));
-      const selectedClientData = clients.find((c) => Number(c.id) === Number(selectedClient));
-      const rowId = `proj-${selectedProject}`;
-      const newRow = {
-        rowId,
-        clientId: Number(selectedClient),
-        clientName: selectedClientData?.name || "",
-        projectId: Number(selectedProject),
-        projectName: selectedProjectData?.name || "",
-        managerId: null,
-        days: {},
-      };
-      weekDates.forEach((wd) => {
-        newRow.days[wd.date] = { hours: "", description: "" };
-      });
-      setProjectRows((prev) => [...prev, newRow]);
-      setSelectedClient("");
-      setSelectedProject("");
+    if (!selectedClient && !selectedProject) {
+      showSnackbar("Please select a Client and Project before adding a new project.", "error");
       return;
     }
-
-    const rowId = `pending-${Date.now()}`;
+    if (!selectedClient) {
+      showSnackbar("Please select a Client first.", "error");
+      return;
+    }
+    if (!selectedProject) {
+      showSnackbar("Please select a Project first.", "error");
+      return;
+    }
+    if (projectRows.some((r) => Number(r.projectId) === Number(selectedProject))) {
+      showSnackbar("This project is already added for this week", "error");
+      return;
+    }
+    const selectedProjectData = allProjects.find((p) => Number(p.id) === Number(selectedProject));
+    const selectedClientData = clients.find((c) => Number(c.id) === Number(selectedClient));
+    const rowId = `proj-${selectedProject}`;
     const newRow = {
       rowId,
-      isPending: true,
-      clientId: null,
-      clientName: "",
-      projectId: null,
-      projectName: "",
+      clientId: Number(selectedClient),
+      clientName: selectedClientData?.name || "",
+      projectId: Number(selectedProject),
+      projectName: selectedProjectData?.name || "",
       managerId: null,
       days: {},
     };
@@ -389,6 +382,8 @@ export const EmployeeTimeIQ = () => {
       newRow.days[wd.date] = { hours: "", description: "" };
     });
     setProjectRows((prev) => [...prev, newRow]);
+    setSelectedClient("");
+    setSelectedProject("");
   }, [selectedClient, selectedProject, allProjects, clients, weekDates, projectRows, showSnackbar]);
 
   const handlePendingClientChange = useCallback((rowId, clientId) => {
@@ -679,14 +674,14 @@ export const EmployeeTimeIQ = () => {
           </select>
         </div>
         <div className="flex-1 min-w-0">
-          <label className="block text-[10px] font-semibold text-[#64748B] mb-0.5 uppercase tracking-wider">Manager</label>
+          <label className="block text-[10px] font-semibold text-[#64748B] mb-0.5 uppercase tracking-wider">{user?.role === "MANAGER" ? "Admin" : "Manager"}</label>
           <select
             value={selectedManager}
             onChange={(e) => setSelectedManager(e.target.value ? Number(e.target.value) : "")}
             disabled={isReadOnly}
             className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{allManagers.length === 0 ? "Loading..." : "Select Manager"}</option>
+            <option value="">{allManagers.length === 0 ? "Loading..." : user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
             {allManagers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}

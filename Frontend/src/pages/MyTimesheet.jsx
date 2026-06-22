@@ -348,7 +348,7 @@ const handleDelete = async (id) => {
               onChange={(e) => setSelectedManager(e.target.value)}
               className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent transition-all duration-200"
             >
-              <option value="" className="bg-white">{user?.role === "MANAGER" ? "Select Manager" : "Select Manager"}</option>
+              <option value="" className="bg-white">{user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
               {managers.map((m) => (
                 <option key={m.id} value={m.id} className="bg-white">
                   {m.name}

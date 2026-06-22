@@ -94,7 +94,6 @@ export const getManagerEntriesForAdmin = async () => {
   if (managerIds.length === 0) return [];
   return await getEntriesWithUser({
     userId: { [Op.in]: managerIds },
-    status: "SUBMITTED",
   });
 };
 

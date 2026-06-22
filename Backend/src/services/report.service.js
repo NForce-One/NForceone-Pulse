@@ -478,6 +478,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
           reportedTo: json.Manager?.name || "-",
           projects: [],
           projectNames: new Set(),
+          statuses: new Set(),
         };
       }
       const group = groupedByDate[dateStr];
@@ -488,6 +489,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
         hoursWorked: Number(json.hours || 0),
       });
       group.projectNames.add(json.Project?.name || json.project || "-");
+      group.statuses.add(json.status);
     });
 
     dailySummary = Object.values(groupedByDate)
@@ -495,6 +497,12 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
         g.projectCount = g.projectNames.size;
         delete g.projectNames;
         g.totalHours = Math.round(g.totalHours * 100) / 100;
+        const st = g.statuses;
+        delete g.statuses;
+        if (st.has("REJECTED")) g.status = "REJECTED";
+        else if (st.has("DRAFT")) g.status = "DRAFT";
+        else if (st.has("SUBMITTED")) g.status = "SUBMITTED";
+        else g.status = "APPROVED";
         return g;
       })
       .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));

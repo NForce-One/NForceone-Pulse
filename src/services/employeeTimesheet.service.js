@@ -333,7 +333,14 @@ export const submitTimesheet = async (userId, data) => {
 
   for (const entry of entries) {
     if (entry.status !== "APPROVED") {
-      await entry.update({ status: "SUBMITTED" });
+      const dailyEntry = (data.dailyEntries || []).find(
+        (de) => de.entryDate === entry.entryDate && Number(de.projectId) === Number(entry.projectId)
+      );
+      const updateFields = { status: "SUBMITTED" };
+      if (dailyEntry?.managerId) {
+        updateFields.managerId = dailyEntry.managerId;
+      }
+      await entry.update(updateFields);
     }
   }
 
