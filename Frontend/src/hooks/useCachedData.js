@@ -39,6 +39,11 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
 
   fetchFnRef.current = fetchFn;
 
+  useEffect(() => {
+    hasCachedRef.current = false;
+    setIsLoading(true);
+  }, [storageKey]);
+
   const load = useCallback(
     async (force = false, silent = false) => {
       if (!enabled) return;

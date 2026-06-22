@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { getDashboardStats, getHourDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
@@ -149,13 +149,11 @@ export const Dashboard = () => {
     if (user?.role === "MANAGER" && dashboardView === "self") p.self = true;
     return p;
   };
-  const fetchParamsRef = useRef(buildParams());
-  const { data: rawStats, isLoading, refresh, silentRefresh } = useCachedData("dashboard", () => getDashboardStats(fetchParamsRef.current));
-  const stats = rawStats ?? {};
 
-  useEffect(() => {
-    fetchParamsRef.current = buildParams();
-  });
+  const filterKey = `${filterPeriod}-${customMonth}-${customYear}-${fromDate}-${toDate}-${dashboardView}`;
+  const filterParams = useMemo(() => buildParams(), [filterKey]);
+  const { data: rawStats, isLoading, silentRefresh } = useCachedData(`dashboard_${filterKey}`, () => getDashboardStats(filterParams));
+  const stats = rawStats ?? {};
 
   const openHourDetails = async (title, type, date = "") => {
     const entries = stats?.dashboardEntries;
@@ -335,16 +333,6 @@ export const Dashboard = () => {
       setAdminModal((prev) => ({ ...prev, data: [], isLoading: false }));
     }
   }, []);
-
-  const filterKeyRef = useRef(`${filterPeriod}-${customMonth}-${customYear}-${fromDate}-${toDate}-${dashboardView}`);
-
-  useEffect(() => {
-    const newKey = `${filterPeriod}-${customMonth}-${customYear}-${fromDate}-${toDate}-${dashboardView}`;
-    if (newKey !== filterKeyRef.current) {
-      filterKeyRef.current = newKey;
-      refresh();
-    }
-  }, [filterPeriod, customMonth, customYear, fromDate, toDate, dashboardView, refresh]);
 
   useEffect(() => {
     const interval = setInterval(() => silentRefresh(), 30000);
