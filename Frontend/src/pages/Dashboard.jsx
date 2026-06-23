@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { getDashboardStats, getHourDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
@@ -249,7 +249,7 @@ export const Dashboard = () => {
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
               u.role === "ADMIN" ? "bg-purple-100 text-purple-700 border border-purple-200" :
               u.role === "MANAGER" ? "bg-blue-100 text-blue-700 border border-blue-200" :
-              "bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]"
+              "bg-[#F1F5F9] text-[#374151] border border-[#E2E8F0]"
             }`}>{u.role}</span>
           )
         },
@@ -324,7 +324,7 @@ export const Dashboard = () => {
         {
           key: "projectCount", label: "Related Projects",
           render: (c) => (
-            <span className="text-[#64748B]">{c.projectCount} project{c.projectCount !== 1 ? "s" : ""}</span>
+            <span className="text-[#374151]">{c.projectCount} project{c.projectCount !== 1 ? "s" : ""}</span>
           )
         },
       ];
@@ -389,7 +389,7 @@ export const Dashboard = () => {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1E293B]">Dashboard</h1>
-          <p className="text-sm text-[#64748B]">Welcome back, {user?.name || "User"}!</p>
+          <p className="text-sm text-[#374151]">Welcome back, {user?.name || "User"}!</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
       {user?.role === "MANAGER" && (
@@ -402,7 +402,7 @@ export const Dashboard = () => {
                 <option value="self">Self Dashboard</option>
                 <option value="team">Team Dashboard</option>
               </select>
-              <ChevronDown className="w-4 h-4 text-[#64748B] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 text-[#374151] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           )}
           <div className="relative">
@@ -415,7 +415,7 @@ export const Dashboard = () => {
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="w-4 h-4 text-[#64748B] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-[#374151] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
           <div className="relative">
             <select
@@ -427,7 +427,7 @@ export const Dashboard = () => {
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="w-4 h-4 text-[#64748B] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-[#374151] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
           {filterPeriod === "customMonth" && (
             <>
@@ -454,7 +454,7 @@ export const Dashboard = () => {
           {filterPeriod === "customRange" && (
             <>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-[#64748B]">From:</span>
+                <span className="text-xs text-[#374151]">From:</span>
                 <input
                   type="date"
                   value={fromDate}
@@ -463,7 +463,7 @@ export const Dashboard = () => {
                 />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-[#64748B]">To:</span>
+                <span className="text-xs text-[#374151]">To:</span>
                 <input
                   type="date"
                   value={toDate}
@@ -506,7 +506,7 @@ export const Dashboard = () => {
               onClick={() => openHourDetails(card.title, card.type)}
             >
               <div className="flex items-center justify-between p-6 pb-2">
-                <span className="text-sm text-[#64748B] transition-colors">
+                <span className="text-sm text-[#374151] transition-colors">
                   {card.title}
                 </span>
               </div>
@@ -533,7 +533,7 @@ export const Dashboard = () => {
               onClick={card.clickable ? card.onClick : undefined}
             >
               <CardHeader className="flex justify-between pb-2">
-                <CardTitle className="text-sm text-[#64748B] transition-colors">
+                <CardTitle className="text-sm text-[#374151] transition-colors">
                   {card.title}
                 </CardTitle>
                 <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
@@ -554,13 +554,13 @@ export const Dashboard = () => {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-white">
+              <CardTitle className="text-[#1E293B]">
                 {METRIC_OPTIONS.find(m => m.value === selectedMetric)?.label || "Dashboard"} Details
               </CardTitle>
             </CardHeader>
             <CardContent>
               {filteredDashboardData.entries.length === 0 ? (
-                <div className="flex items-center justify-center h-32 text-[#64748B]">
+                <div className="flex items-center justify-center h-32 text-[#374151]">
                   No entries found for the selected period.
                 </div>
               ) : (
@@ -568,11 +568,11 @@ export const Dashboard = () => {
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Day</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Total Hours</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Reported To</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B] whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Date</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Day</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Total Hours</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Reported To</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -586,7 +586,7 @@ export const Dashboard = () => {
                                 {day.projectCount > 1 && (
                                   <button
                                     onClick={() => toggleExpand(day.rawDate)}
-                                    className="w-4 h-4 flex items-center justify-center text-[#64748B] hover:text-[#1E293B] transition-colors"
+                                    className="w-4 h-4 flex items-center justify-center text-[#374151] hover:text-[#1E293B] transition-colors"
                                   >
                                     <ChevronDown
                                       className={`w-4 h-4 transition-transform duration-200 ${expandedDates.has(day.rawDate) ? "rotate-0" : "-rotate-90"}`}
@@ -623,9 +623,9 @@ export const Dashboard = () => {
                                   <table className="w-full text-xs">
                                     <thead>
                                       <tr className="border-b border-[#E2E8F0]">
-                                        <th className="px-4 py-2 text-left font-semibold text-[#64748B] pl-12">Project Name</th>
-                                        <th className="px-4 py-2 text-left font-semibold text-[#64748B]">Client</th>
-                                        <th className="px-4 py-2 text-left font-semibold text-[#64748B]">Hours</th>
+                                        <th className="px-4 py-2 text-left font-semibold text-[#374151] pl-12">Project Name</th>
+                                        <th className="px-4 py-2 text-left font-semibold text-[#374151]">Client</th>
+                                        <th className="px-4 py-2 text-left font-semibold text-[#374151]">Hours</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -660,7 +660,7 @@ export const Dashboard = () => {
       {user?.role === "MANAGER" && dashboardView === "team" && stats.teamData && stats.teamData.length > 0 && (
         <Card className="overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-[#1E293B] flex items-center gap-2">
               <Users className="w-5 h-5 text-[#B33A2F]" />
               Team Overview
             </CardTitle>
@@ -670,19 +670,19 @@ export const Dashboard = () => {
               <table className="w-full text-sm">
                 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Email</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Week Hours</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Entries</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Total Hours</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Entries</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.teamData.map((member) => (
                     <tr key={member.userId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
                       <td className="px-4 py-3 text-[#1E293B] font-medium">{member.name}</td>
-                      <td className="px-4 py-3 text-[#64748B]">{member.email}</td>
+                      <td className="px-4 py-3 text-[#374151]">{member.email}</td>
                       <td className="px-4 py-3 text-[#1E293B]">{member.weekHours}h</td>
-                      <td className="px-4 py-3 text-[#64748B]">{member.entriesCount}</td>
+                      <td className="px-4 py-3 text-[#374151]">{member.entriesCount}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -697,15 +697,15 @@ export const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-white">Top 5 Employees by Hours</CardTitle>
+                <CardTitle className="text-[#1E293B]">Top 5 Employees by Hours</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Hours</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -718,7 +718,7 @@ export const Dashboard = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={2} className="px-4 py-6 text-center text-[#64748B]">
+                          <td colSpan={2} className="px-4 py-6 text-center text-[#374151]">
                             No employee hours available yet.
                           </td>
                         </tr>
@@ -731,16 +731,16 @@ export const Dashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-white">Employees with Missing Time</CardTitle>
+                <CardTitle className="text-[#1E293B]">Employees with Missing Time</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours Logged</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Missing</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Hours Logged</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Missing</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -754,7 +754,7 @@ export const Dashboard = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-4 py-6 text-center text-[#64748B]">
+                          <td colSpan={3} className="px-4 py-6 text-center text-[#374151]">
                             No missing time records available yet.
                           </td>
                         </tr>
@@ -768,15 +768,15 @@ export const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-white">Top Projects by Hours</CardTitle>
+              <CardTitle className="text-[#1E293B]">Top Projects by Hours</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Project</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748B]">Hours</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Project</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Hours</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -789,7 +789,7 @@ export const Dashboard = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={2} className="px-4 py-6 text-center text-[#64748B]">
+                        <td colSpan={2} className="px-4 py-6 text-center text-[#374151]">
                           No project hours data available yet.
                         </td>
                       </tr>
@@ -800,92 +800,7 @@ export const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-white">Working vs Extra</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {((stats.billableWeekHours || 0) > 0 || (stats.nonBillableWeekHours || 0) > 0) ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={[{
-                        name: "This Week",
-                        billable: stats.billableWeekHours || 0,
-                        nonBillable: stats.nonBillableWeekHours || 0,
-                      }]}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                      <XAxis dataKey="name" stroke="#a1a1aa" />
-                      <YAxis stroke="#a1a1aa" />
-                      <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
-                      <Legend />
-                      <Bar dataKey="billable" fill="#a855f7" name="Working" />
-                      <Bar dataKey="nonBillable" fill="#6b7280" name="Extra" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-[300px] items-center justify-center text-[#64748B]">
-                    No working/extra data available yet.
-                  </div>
-                )}
-              </CardContent>
-              <CardContent>
-                {(stats.projectDistribution || []).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={stats.projectDistribution}
-                        dataKey="hours"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        fill="#8884d8"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {stats.projectDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={["#a855f7", "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e"][index % 5]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-[300px] items-center justify-center text-[#64748B]">
-                    No project distribution data available yet.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-white">Weekly Trend (Last 4 Weeks)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(stats.weeklyTrend || []).length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={stats.weeklyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                    <XAxis dataKey="week" stroke="#a1a1aa" />
-                    <YAxis stroke="#a1a1aa" />
-                    <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #2a2a2a" }} />
-                    <Legend />
-                    <Line type="monotone" dataKey="totalHours" stroke="#3b82f6" name="Total Hours" />
-                    <Line type="monotone" dataKey="billableHours" stroke="#a855f7" name="Working Hours" />
-                    <Line type="monotone" dataKey="nonBillableHours" stroke="#6b7280" name="Extra Hours" />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-[300px] items-center justify-center text-[#64748B]">
-                  No weekly trend data available yet.
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </>
       )}
 
