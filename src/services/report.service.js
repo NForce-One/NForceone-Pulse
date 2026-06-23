@@ -10,6 +10,26 @@ import { Op } from "sequelize";
 import { classifyEntry, getDayName, getDisplayName, getExtraWorkType } from "../utils/holidayConfig.js";
 import { toDateOnlyString } from "../utils/dateUtils.js";
 
+const parseIdParam = (value) => {
+  if (!value) return null;
+  if (Array.isArray(value)) {
+    const nums = value.map(Number).filter((n) => !isNaN(n));
+    return nums.length > 0 ? nums : null;
+  }
+  const str = String(value);
+  if (str.includes(",")) {
+    const nums = str.split(",").map(Number).filter((n) => !isNaN(n));
+    return nums.length > 0 ? nums : null;
+  }
+  const num = parseInt(str);
+  return isNaN(num) ? null : num;
+};
+
+const toOp = (value) => {
+  if (value === null || value === undefined) return null;
+  return Array.isArray(value) ? { [Op.in]: value } : value;
+};
+
 const deduplicateEntries = (entries) => {
   const seen = new Map();
   return entries.filter((entry) => {
@@ -76,8 +96,10 @@ export const getEmployeeHoursReport = async (filters) => {
     whereClause.userId = Array.isArray(userId) ? { [Op.in]: userId.map(Number) } : parseInt(userId);
   }
   if (managerId) whereClause.managerId = parseInt(managerId);
-  if (projectId) whereClause.projectId = parseInt(projectId);
-  if (clientId) whereClause.clientId = parseInt(clientId);
+  const parsedProjectId = parseIdParam(projectId);
+  if (parsedProjectId) whereClause.projectId = toOp(parsedProjectId);
+  const parsedClientId = parseIdParam(clientId);
+  if (parsedClientId) whereClause.clientId = toOp(parsedClientId);
 
   const userWhere = {};
   if (department) userWhere.department = department;
@@ -115,8 +137,10 @@ export const getProjectHoursReport = async (filters) => {
   if (fromDate && toDate) {
     whereClause.entryDate = { [Op.between]: [fromDate, toDate] };
   }
-  if (projectId) whereClause.projectId = parseInt(projectId);
-  if (clientId) whereClause.clientId = parseInt(clientId);
+  const parsedProjectId = parseIdParam(projectId);
+  if (parsedProjectId) whereClause.projectId = toOp(parsedProjectId);
+  const parsedClientId = parseIdParam(clientId);
+  if (parsedClientId) whereClause.clientId = toOp(parsedClientId);
 
   const userWhere = {};
   if (userId) {
@@ -209,8 +233,10 @@ export const getBillingSummary = async (filters) => {
   if (fromDate && toDate) {
     whereClause.entryDate = { [Op.between]: [fromDate, toDate] };
   }
-  if (projectId) whereClause.projectId = parseInt(projectId);
-  if (clientId) whereClause.clientId = parseInt(clientId);
+  const parsedProjectId = parseIdParam(projectId);
+  if (parsedProjectId) whereClause.projectId = toOp(parsedProjectId);
+  const parsedClientId = parseIdParam(clientId);
+  if (parsedClientId) whereClause.clientId = toOp(parsedClientId);
   if (userId) {
     whereClause.userId = Array.isArray(userId) ? { [Op.in]: userId.map(Number) } : parseInt(userId);
   }

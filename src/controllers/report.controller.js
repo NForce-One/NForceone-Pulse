@@ -1,5 +1,15 @@
 import * as reportService from "../services/report.service.js";
 
+const parseIds = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(Number).filter((n) => !isNaN(n));
+  if (typeof value === "string" && value.includes(",")) {
+    return value.split(",").map(Number).filter((n) => !isNaN(n));
+  }
+  const num = Number(value);
+  return isNaN(num) ? [] : [num];
+};
+
 const applyManagerFilter = async (req, filters) => {
   if (req.user.role !== "MANAGER") return null;
   if (filters.reportType === "self") {
@@ -7,11 +17,13 @@ const applyManagerFilter = async (req, filters) => {
     return null;
   }
   const approvedIds = await reportService.getApprovedEmployeeIds(req.user.id);
-  const requestedUserId = filters.userId ? parseInt(filters.userId) : null;
-  if (requestedUserId) {
-    if (!approvedIds.includes(requestedUserId)) {
-      return { error: "Unauthorized to view this employee's data" };
+  const requestedUserIds = parseIds(filters.userId);
+  if (requestedUserIds.length > 0) {
+    const allApproved = requestedUserIds.every((id) => approvedIds.includes(id));
+    if (!allApproved) {
+      return { error: "Unauthorized to view one or more selected employees' data" };
     }
+    filters.userId = requestedUserIds;
   } else {
     filters.userId = approvedIds.length > 0 ? approvedIds : [-1];
   }
@@ -37,10 +49,21 @@ export const getApprovedEmployees = async (req, res) => {
 
 const applyAdminFilter = async (req, filters) => {
   if (req.user.role !== "ADMIN") return;
+  let combinedIds = [];
+  const existingUserIds = parseIds(filters.userId);
+  if (existingUserIds.length > 0) {
+    combinedIds.push(...existingUserIds);
+  }
   if (filters.managedBy) {
-    const managerId = parseInt(filters.managedBy);
-    const approvedIds = await reportService.getApprovedEmployeeIds(managerId);
-    filters.userId = approvedIds.length > 0 ? approvedIds : [-1];
+    const managerIds = parseIds(filters.managedBy);
+    for (const managerId of managerIds) {
+      const approvedIds = await reportService.getApprovedEmployeeIds(managerId);
+      combinedIds.push(...approvedIds);
+    }
+    delete filters.managedBy;
+  }
+  if (combinedIds.length > 0) {
+    filters.userId = [...new Set(combinedIds)];
   }
 };
 

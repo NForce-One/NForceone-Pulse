@@ -15,6 +15,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import CustomSelect from "../components/ui/CustomSelect";
+import MultiSelect from "../components/ui/MultiSelect";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
@@ -32,16 +33,16 @@ export const Reports = () => {
   const [filters, setFilters] = useState({
     startDate: format(new Date(new Date().setDate(1)), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
-    projectId: "",
-    clientId: "",
+    projectId: [],
+    clientId: [],
     department: "",
-    userId: "",
+    userId: [],
   });
   const [message, setMessage] = useState({ text: "", type: "" });
   const [reportType, setReportType] = useState("team");
   const [allManagers, setAllManagers] = useState([]);
   const [allEmployeesForAdmin, setAllEmployeesForAdmin] = useState([]);
-  const [selectedFilterValue, setSelectedFilterValue] = useState("");
+  const [selectedFilterValue, setSelectedFilterValue] = useState([]);
 
   const { data: cachedProjects } = useCachedData("reports_projects", async () => {
     const res = await fetchProjects();
@@ -83,8 +84,7 @@ export const Reports = () => {
   const loadReport = async () => {
     setIsLoading(true);
     try {
-      const params = { ...filters, ...getAdminParams() };
-      if (user?.role === "MANAGER") params.reportType = reportType;
+      const params = buildReportParams();
       let response;
       switch (activeTab) {
         case "employee-hours":
@@ -118,19 +118,23 @@ export const Reports = () => {
   };
 
   const filteredProjects = React.useMemo(() => {
-    if (!filters.clientId) return projects;
+    if (!filters.clientId || filters.clientId.length === 0) return [];
+    const allClientsSelected = clients
+      .filter((c) => c.status === "ACTIVE")
+      .every((c) => filters.clientId.includes(String(c.id)));
+    if (allClientsSelected) return projects.filter((p) => p.status === "ACTIVE");
     return projects.filter(
-      (p) => Number(p.clientId) === Number(filters.clientId) && p.status === "ACTIVE"
+      (p) => filters.clientId.includes(String(p.clientId)) && p.status === "ACTIVE"
     );
-  }, [filters.clientId, projects]);
+  }, [filters.clientId, projects, clients]);
 
   const handleReportTypeChange = (e) => {
     const value = e.target.value;
     setReportType(value);
     if (value === "self") {
-      setFilters((prev) => ({ ...prev, userId: String(user.id) }));
+      setFilters((prev) => ({ ...prev, userId: [String(user.id)] }));
     } else {
-      setFilters((prev) => ({ ...prev, userId: "" }));
+      setFilters((prev) => ({ ...prev, userId: [] }));
     }
     setMessage({ text: "", type: "" });
   };
@@ -140,7 +144,7 @@ export const Reports = () => {
     setFilters((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "clientId" ? { projectId: "" } : {}),
+      ...(name === "clientId" ? { projectId: [] } : {}),
     }));
     setMessage({ text: "", type: "" });
   };
@@ -150,11 +154,32 @@ export const Reports = () => {
     setMessage({ text: "", type: "" });
   };
 
+  const buildReportParams = () => {
+    const params = {};
+    if (filters.startDate) params.startDate = filters.startDate;
+    if (filters.endDate) params.endDate = filters.endDate;
+    if (filters.clientId?.length > 0) params.clientId = filters.clientId.join(",");
+    if (filters.projectId?.length > 0) params.projectId = filters.projectId.join(",");
+    if (filters.department) params.department = filters.department;
+    if (user?.role === "MANAGER") {
+      if (filters.userId?.length > 0) params.userId = filters.userId.join(",");
+      params.reportType = reportType;
+    }
+    const adminParams = getAdminParams();
+    return { ...params, ...adminParams };
+  };
+
   const getAdminParams = () => {
     if (user?.role !== "ADMIN") return {};
-    if (!selectedFilterValue) return {};
-    const isManager = allManagers.some((m) => String(m.id) === selectedFilterValue);
-    return isManager ? { managedBy: selectedFilterValue } : { userId: selectedFilterValue };
+    if (!selectedFilterValue || selectedFilterValue.length === 0) return {};
+    const managerIds = selectedFilterValue
+      .filter((v) => v.startsWith("mgr_"))
+      .map((v) => v.replace("mgr_", ""));
+    const employeeIds = selectedFilterValue.filter((v) => !v.startsWith("mgr_"));
+    const params = {};
+    if (managerIds.length > 0) params.managedBy = managerIds.join(",");
+    if (employeeIds.length > 0) params.userId = employeeIds.join(",");
+    return params;
   };
 
   const exportCSV = async () => {
@@ -166,11 +191,9 @@ export const Reports = () => {
         "billing": "billing_summary",
       };
       const params = {
-        ...filters,
-        ...getAdminParams(),
+        ...buildReportParams(),
         report_type: reportTypeMap[activeTab] || "employee_hours",
       };
-      if (user?.role === "MANAGER") params.reportType = reportType;
       const response = await exportReportCSV(params);
       const url = URL.createObjectURL(response.data);
       const a = document.createElement("a");
@@ -237,56 +260,55 @@ export const Reports = () => {
           <div className="flex gap-4 mb-4 flex-wrap">
             <Input name="startDate" type="date" value={filters.startDate} onChange={handleFilterChange} />
             <Input name="endDate" type="date" value={filters.endDate} onChange={handleFilterChange} />
-            <CustomSelect
+            <MultiSelect
                 name="clientId"
                 value={filters.clientId}
                 onChange={handleFilterChange}
-                placeholder="All Clients"
+                placeholder="Select Clients"
+                allLabel="All Clients"
                 options={clients
                   .filter((c) => c.status === "ACTIVE")
-                  .map((c) => ({ value: String(c.id), label: c.name }))
-                }
-                className="min-w-[160px]"
+                  .map((c) => ({ value: String(c.id), label: c.name }))}
+                className="min-w-[180px]"
               />
-            <CustomSelect
-               name="projectId"
-               value={filters.projectId}
-               onChange={handleFilterChange}
-               disabled={!filters.clientId}
-               placeholder={
-                 !filters.clientId
-                   ? "Select a client first"
-                   : filteredProjects.length === 0
-                   ? "No projects available"
-                   : "All Projects"
-               }
-               options={filteredProjects.map((p) => ({ value: String(p.id), label: p.name }))}
-               className="min-w-[160px]"
-             />
+            <MultiSelect
+                name="projectId"
+                value={filters.projectId}
+                onChange={handleFilterChange}
+                disabled={filters.clientId.length === 0}
+                placeholder={
+                  filters.clientId.length === 0
+                    ? "Select a client first"
+                    : filteredProjects.length === 0
+                    ? "No projects available"
+                    : "Select Projects"
+                }
+                allLabel="All Projects"
+                options={filteredProjects.map((p) => ({ value: String(p.id), label: p.name }))}
+                className="min-w-[180px]"
+              />
             {user?.role === "ADMIN" && (
-              <CustomSelect
+              <MultiSelect
                 value={selectedFilterValue}
                 onChange={handleCombinedFilterChange}
-                placeholder="All Employees"
+                placeholder="Select Employees"
+                allLabel="All Employees"
                 options={[
-                  { value: "", label: "All Employees" },
-                  ...allManagers.map((m) => ({ value: String(m.id), label: m.name, name: "manager" })),
-                  ...allEmployeesForAdmin.map((e) => ({ value: String(e.id), label: e.name, name: "employee" })),
+                  ...allManagers.map((m) => ({ value: "mgr_" + String(m.id), label: m.name + " (Manager)" })),
+                  ...allEmployeesForAdmin.map((e) => ({ value: String(e.id), label: e.name })),
                 ]}
-                className="min-w-[160px]"
+                className="min-w-[180px]"
               />
             )}
             {user?.role === "MANAGER" && reportType === "team" && (
-              <CustomSelect
+              <MultiSelect
                 name="userId"
                 value={filters.userId}
                 onChange={handleFilterChange}
-                placeholder="Select Employee"
-                options={[
-                  { value: "", label: "All Employees" },
-                  ...employees.map((e) => ({ value: String(e.id), label: e.name })),
-                ]}
-                className="min-w-[160px]"
+                placeholder="Select Employees"
+                allLabel="All Employees"
+                options={employees.map((e) => ({ value: String(e.id), label: e.name }))}
+                className="min-w-[180px]"
               />
             )}
             <Button onClick={loadReport} className="hover:scale-105 active:scale-95">
