@@ -5,7 +5,7 @@ import { useCachedData } from "../hooks/useCachedData";
 import { AdminListModal } from "../components/ui/AdminListModal";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { DrillDownModal } from "../components/ui/DrillDownModal";
-import { Users, FolderOpen, Building, ChevronDown, Clock, Briefcase, CalendarDays, Gift } from "lucide-react";
+import { Users, ChevronDown, Clock, Briefcase, CalendarDays, Gift } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -378,9 +378,9 @@ export const Dashboard = () => {
 
   if (isAdmin) {
     statCards.push(
-      { title: "Total Users", value: stats.totalUsers || 0, icon: Users, color: "text-indigo-600", bgColor: "bg-indigo-500/20", borderColor: "border-indigo-500/30", shadowColor: "shadow-indigo-500/20", clickable: true, onClick: openUsersModal },
-      { title: "Active Projects", value: stats.totalProjects || 0, icon: FolderOpen, color: "text-teal-600", bgColor: "bg-teal-500/20", borderColor: "border-teal-500/30", shadowColor: "shadow-teal-500/20", clickable: true, onClick: openProjectsModal },
-      { title: "Active Clients", value: stats.totalClients || 0, icon: Building, color: "text-rose-600", bgColor: "bg-rose-500/20", borderColor: "border-rose-500/30", shadowColor: "shadow-rose-500/20", clickable: true, onClick: openClientsModal }
+      { title: "Total Users", value: stats.totalUsers || 0, clickable: true, onClick: openUsersModal },
+      { title: "Active Projects", value: stats.totalProjects || 0, clickable: true, onClick: openProjectsModal },
+      { title: "Active Clients", value: stats.totalClients || 0, clickable: true, onClick: openClientsModal }
     );
   }
 
@@ -526,25 +526,22 @@ export const Dashboard = () => {
           {statCards.map((card, index) => (
             <Card
               key={card.title}
-              className={`border ${card.borderColor} hover:shadow-[0_0_20px_rgba(179,58,47,0.08)] hover:border-[#B33A2F]/30 transition-all duration-300 hover:scale-[1.02] group ${card.clickable ? "cursor-pointer" : ""}`}
+              className="border border-[#B33A2F]/30 hover:shadow-[0_0_20px_rgba(179,58,47,0.08)] hover:border-[#B33A2F]/30 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
               style={{
                 animationDelay: `${index * 100}ms`,
               }}
-              onClick={card.clickable ? card.onClick : undefined}
+              onClick={card.onClick}
             >
-              <CardHeader className="flex justify-between pb-2">
-                <CardTitle className="text-sm text-[#374151] transition-colors">
+              <div className="flex items-center justify-between p-6 pb-2">
+                <span className="text-sm text-[#374151]">
                   {card.title}
-                </CardTitle>
-                <div className={`p-2 rounded-full ${card.bgColor} group-hover:scale-110 transition-transform duration-200`}>
-                  <card.icon className={`w-4 h-4 ${card.color}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-3xl font-bold ${card.color} font-mono`}>
+                </span>
+              </div>
+              <div className="p-6 pt-0">
+                <div className="text-2xl font-bold text-[#1F2937]">
                   {card.value}
                 </div>
-              </CardContent>
+              </div>
             </Card>
           ))}
         </div>

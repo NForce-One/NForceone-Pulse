@@ -89,10 +89,23 @@ export const Approvals = () => {
     }
   }, [fetchedEntries]);
 
-  const pendingCount = useMemo(() => entries.filter((e) => e.status === "SUBMITTED").length, [entries]);
-  const approvedCount = useMemo(() => entries.filter((e) => e.status === "APPROVED").length, [entries]);
-  const rejectedCount = useMemo(() => entries.filter((e) => e.status === "REJECTED").length, [entries]);
-  const allCount = entries.length;
+  const weeklyCounts = useMemo(() => {
+    const weekKeys = {};
+    entries.forEach((entry) => {
+      const weekStart = getWeekStart(entry.entryDate);
+      const key = `${entry.userId}_${weekStart}`;
+      if (!weekKeys[key]) {
+        weekKeys[key] = { key, status: entry.status };
+      }
+    });
+    const groups = Object.values(weekKeys);
+    return {
+      pending: groups.filter((g) => g.status === "SUBMITTED").length,
+      approved: groups.filter((g) => g.status === "APPROVED").length,
+      rejected: groups.filter((g) => g.status === "REJECTED").length,
+      all: groups.length,
+    };
+  }, [entries]);
 
   const filteredEntries = useMemo(() => {
     if (statusFilter === "pending") return entries.filter((e) => e.status === "SUBMITTED");
@@ -265,10 +278,10 @@ export const Approvals = () => {
       {/* STATUS FILTER TABS */}
       <div className="flex items-center gap-1 bg-[#F8FAFC] rounded-xl p-1 border border-[#E2E8F0] w-fit">
         {[
-          { key: "pending", label: "Pending", count: pendingCount },
-          { key: "approved", label: "Approved", count: approvedCount },
-          { key: "rejected", label: "Rejected", count: rejectedCount },
-          { key: "all", label: "All", count: allCount },
+          { key: "pending", label: "Pending", count: weeklyCounts.pending },
+          { key: "approved", label: "Approved", count: weeklyCounts.approved },
+          { key: "rejected", label: "Rejected", count: weeklyCounts.rejected },
+          { key: "all", label: "All", count: weeklyCounts.all },
         ].map((tab) => (
           <button
             key={tab.key}
