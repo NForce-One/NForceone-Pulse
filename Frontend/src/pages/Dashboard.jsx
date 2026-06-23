@@ -771,22 +771,22 @@ export const Dashboard = () => {
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Employee</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Hours Logged</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Missing Days</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Missing Hours</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Actions</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Employee</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Hours Logged</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Missing Days</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Missing Hours</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {missingTime.employees.length > 0 ? (
                         missingTime.employees.map((emp) => (
                           <tr key={emp.userId} className="border-b border-[#E2E8F0]">
-                            <td className="px-4 py-3 text-[#1E293B] font-medium">{emp.name}</td>
-                            <td className="px-4 py-3 text-[#1E293B]">{emp.totalLoggedHours}h</td>
-                            <td className="px-4 py-3 text-[#1E293B]">{emp.missingDays} Day{emp.missingDays !== 1 ? "s" : ""}</td>
-                            <td className="px-4 py-3 text-red-500">{emp.missingHours}h</td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3 text-[#1E293B] font-medium whitespace-nowrap">{emp.name}</td>
+                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{emp.totalLoggedHours}h</td>
+                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{emp.missingDays} Day{emp.missingDays !== 1 ? "s" : ""}</td>
+                            <td className="px-4 py-3 text-red-500 whitespace-nowrap">{emp.missingHours}h</td>
+                            <td className="px-4 py-3 whitespace-nowrap">
                               <button
                                 onClick={() => openMissingTimeModal(emp)}
                                 className="p-1.5 rounded-lg text-[#64748B] hover:text-[#B33A2F] hover:bg-[#F1F5F9] transition-colors"
