@@ -140,6 +140,22 @@ export const getTimesheetStatusReport = async (req, res) => {
   }
 };
 
+export const getMissingTimeDetails = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, message: "startDate and endDate are required" });
+    }
+    if (req.user.role === "MANAGER") {
+      const result = await reportService.getMissingTimeDetails(req.user.id, startDate, endDate);
+      return res.json({ success: true, data: result });
+    }
+    res.json({ success: true, data: { employees: [], totalCount: 0 } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getDashboardStats = async (req, res) => {
   try {
     const { startDate, endDate, self } = req.query;

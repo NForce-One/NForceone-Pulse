@@ -404,6 +404,11 @@ export const getDashboardStats = async (params = {}) => {
   return response.data?.data ?? response.data;
 };
 
+export const getMissingTimeDetails = async (params = {}) => {
+  const response = await api.get("/reports/dashboard/missing-time", { params });
+  return response.data?.data ?? response.data;
+};
+
 export const getHourDetails = async (params = {}) => {
   const response = await api.get("/reports/dashboard/hour-details", { params });
   const result = response.data?.data ?? response.data;

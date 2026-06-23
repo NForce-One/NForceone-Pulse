@@ -884,3 +884,114 @@ export const exportReportCSV = async (filters) => {
 
   return csv;
 };
+
+const getWorkingDaysInRange = (startDateStr, endDateStr) => {
+  const days = [];
+  const start = new Date(startDateStr + "T00:00:00");
+  const end = new Date(endDateStr + "T00:00:00");
+  const current = new Date(start);
+  while (current <= end) {
+    const dateStr = toDateOnlyString(current);
+    const type = classifyEntry(dateStr);
+    if (type === "working") {
+      days.push(dateStr);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return days;
+};
+
+export const getMissingTimeDetails = async (managerId, startDate, endDate) => {
+  const fromDate = startDate;
+  const toDate = endDate;
+
+  const teamMembers = await User.findAll({
+    where: { managerId, isActive: true },
+    attributes: ["id", "name", "email", "defaultHours"],
+  });
+
+  const memberIds = teamMembers.map((m) => m.id);
+  if (memberIds.length === 0) return { employees: [], totalCount: 0 };
+
+  const timesheets = await Timesheet.findAll({
+    where: {
+      userId: { [Op.in]: memberIds },
+      [Op.or]: [
+        { weekStartDate: { [Op.between]: [fromDate, toDate] } },
+        { weekEndDate: { [Op.between]: [fromDate, toDate] } },
+        {
+          weekStartDate: { [Op.lte]: fromDate },
+          weekEndDate: { [Op.gte]: toDate },
+        },
+      ],
+    },
+    attributes: ["userId"],
+    group: ["userId"],
+  });
+
+  const usersWithTimesheets = new Set(timesheets.map((t) => t.userId));
+  const allWorkingDays = getWorkingDaysInRange(fromDate, toDate);
+
+  const employees = await Promise.all(
+    teamMembers
+      .filter((m) => usersWithTimesheets.has(m.id))
+      .map(async (member) => {
+        const entries = await TimeEntry.findAll({
+          where: {
+            userId: member.id,
+            entryDate: { [Op.between]: [fromDate, toDate] },
+            status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED"] },
+          },
+          attributes: ["entryDate", "hours"],
+        });
+
+        const hoursByDate = {};
+        let totalLoggedHours = 0;
+        entries.forEach((e) => {
+          const dateStr = e.entryDate;
+          const hrs = Number(e.hours || 0);
+          hoursByDate[dateStr] = (hoursByDate[dateStr] || 0) + hrs;
+          totalLoggedHours += hrs;
+        });
+
+        const dailyBreakdown = [];
+        let missingDayCount = 0;
+        let missingHourCount = 0;
+        const dailyHours = Number(member.defaultHours || 8);
+
+        allWorkingDays.forEach((dateStr) => {
+          const logged = hoursByDate[dateStr] || 0;
+          const isMissing = logged === 0;
+          if (isMissing) {
+            missingDayCount++;
+            missingHourCount += dailyHours;
+          }
+          dailyBreakdown.push({
+            date: dateStr,
+            hoursLogged: logged,
+            expectedHours: dailyHours,
+            status: isMissing ? "Missing" : "Completed",
+          });
+        });
+
+        return {
+          userId: member.id,
+          name: member.name,
+          email: member.email,
+          totalLoggedHours: Math.round(totalLoggedHours * 100) / 100,
+          missingDays: missingDayCount,
+          missingHours: Math.round(missingHourCount * 100) / 100,
+          dailyBreakdown,
+        };
+      })
+  );
+
+  const withMissing = employees.filter(
+    (e) => e.missingDays > 0
+  );
+
+  return {
+    employees: withMissing,
+    totalCount: withMissing.length,
+  };
+};

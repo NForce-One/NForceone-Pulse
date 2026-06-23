@@ -9,6 +9,7 @@ import {
   getHourDetails,
   exportReport,
   getApprovedEmployees,
+  getMissingTimeDetails,
 } from "../controllers/report.controller.js";
 
 import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
@@ -16,6 +17,7 @@ import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 router.get("/dashboard", protect, getDashboardStats);
+router.get("/dashboard/missing-time", protect, getMissingTimeDetails);
 router.get("/dashboard/hour-details", protect, getHourDetails);
 router.get("/employee-hours", protect, getEmployeeHoursReport);
 router.get("/project-hours", protect, getProjectHoursReport);

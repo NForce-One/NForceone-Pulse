@@ -1,11 +1,12 @@
 ﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { getDashboardStats, getHourDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
+import { getDashboardStats, getHourDetails, getMissingTimeDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
 import { AdminListModal } from "../components/ui/AdminListModal";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { DrillDownModal } from "../components/ui/DrillDownModal";
-import { Users, ChevronDown, Clock, Briefcase, CalendarDays, Gift } from "lucide-react";
+import { MissingTimeModal } from "../components/ui/MissingTimeModal";
+import { Users, ChevronDown, Clock, Briefcase, CalendarDays, Gift, Eye } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -88,6 +89,9 @@ export const Dashboard = () => {
     data: [],
     isLoading: false,
   });
+
+  const [missingTime, setMissingTime] = useState({ employees: [], totalCount: 0 });
+  const [missingTimeModal, setMissingTimeModal] = useState({ isOpen: false, employee: null });
 
   const getFilterDateRange = useCallback(() => {
     const now = new Date();
@@ -334,6 +338,14 @@ export const Dashboard = () => {
     }
   }, []);
 
+  const openMissingTimeModal = useCallback((employee) => {
+    setMissingTimeModal({ isOpen: true, employee });
+  }, []);
+
+  const closeMissingTimeModal = useCallback(() => {
+    setMissingTimeModal((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => silentRefresh(), 30000);
     const handleFocus = () => silentRefresh();
@@ -343,6 +355,23 @@ export const Dashboard = () => {
       window.removeEventListener("focus", handleFocus);
     };
   }, [silentRefresh]);
+
+  useEffect(() => {
+    if (user?.role === "MANAGER" && dashboardView === "team") {
+      const { startDate, endDate } = getFilterDateRange();
+      if (startDate && endDate) {
+        getMissingTimeDetails({ startDate, endDate })
+          .then((res) => {
+            if (res && res.employees) {
+              setMissingTime(res);
+            }
+          })
+          .catch(() => setMissingTime({ employees: [], totalCount: 0 }));
+      }
+    } else {
+      setMissingTime({ employees: [], totalCount: 0 });
+    }
+  }, [filterKey, user, dashboardView, getFilterDateRange]);
 
   const [expandedDates, setExpandedDates] = useState(new Set());
 
@@ -728,31 +757,50 @@ export const Dashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-[#1E293B]">Employees with Missing Time</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-[#1E293B]">Employees with Missing Time</CardTitle>
+                  {missingTime.totalCount > 0 && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                      {missingTime.totalCount} Employee{missingTime.totalCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Employee</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Hours Logged</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Missing</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Missing Days</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Missing Hours</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151]">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {(stats.missingEmployees || []).length > 0 ? (
-                        stats.missingEmployees.map((emp) => (
+                      {missingTime.employees.length > 0 ? (
+                        missingTime.employees.map((emp) => (
                           <tr key={emp.userId} className="border-b border-[#E2E8F0]">
-                            <td className="px-4 py-3 text-[#1E293B]">{emp.name}</td>
-                            <td className="px-4 py-3 text-[#1E293B]">{emp.weekHours}h</td>
-                            <td className="px-4 py-3 text-red-400">{emp.missingHours}h</td>
+                            <td className="px-4 py-3 text-[#1E293B] font-medium">{emp.name}</td>
+                            <td className="px-4 py-3 text-[#1E293B]">{emp.totalLoggedHours}h</td>
+                            <td className="px-4 py-3 text-[#1E293B]">{emp.missingDays} Day{emp.missingDays !== 1 ? "s" : ""}</td>
+                            <td className="px-4 py-3 text-red-500">{emp.missingHours}h</td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => openMissingTimeModal(emp)}
+                                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#B33A2F] hover:bg-[#F1F5F9] transition-colors"
+                                title="View Details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-4 py-6 text-center text-[#374151]">
-                            No missing time records available yet.
+                          <td colSpan={5} className="px-4 py-6 text-center text-[#374151]">
+                            No Missing Time Records Found
                           </td>
                         </tr>
                       )}
@@ -821,6 +869,13 @@ export const Dashboard = () => {
         columns={adminModal.columns}
         data={adminModal.data}
         isLoading={adminModal.isLoading}
+      />
+
+      <MissingTimeModal
+        isOpen={missingTimeModal.isOpen}
+        onClose={closeMissingTimeModal}
+        employee={missingTimeModal.employee}
+        dateRange={`${getFilterDateRange().startDate} to ${getFilterDateRange().endDate}`}
       />
     </div>
   );
