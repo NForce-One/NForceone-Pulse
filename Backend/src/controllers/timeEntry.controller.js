@@ -1,5 +1,4 @@
 import * as timeEntryService from "../services/timeEntry.service.js";
-import * as notificationService from "../services/notification.service.js";
 import * as reportService from "../services/report.service.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
 import { parseDateSafe } from "../utils/dateUtils.js";
@@ -226,8 +225,6 @@ export const submitTimeEntry = async (req, res) => {
     entry.status = "SUBMITTED";
     await entry.save();
 
-    await notificationService.notifyTimesheetSubmitted(entry);
-
     const workingHours = await reportService.getUserWorkingHours(user.id);
 
     res.json({
@@ -271,8 +268,6 @@ export const approveTimeEntry = async (req, res) => {
       action: "APPROVED",
       comment: comment || null,
     });
-
-    await notificationService.notifyTimesheetApproved(entry);
 
     res.json({
       success: true,
@@ -350,8 +345,6 @@ export const rejectTimeEntry = async (req, res) => {
       action: "REJECTED",
       comment: comment || null,
     });
-
-    await notificationService.notifyTimesheetRejected(entry);
 
     res.json({
       success: true,

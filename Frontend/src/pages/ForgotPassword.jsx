@@ -1,213 +1,272 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword } from "../services/api";
+import { Mail, Loader2 } from "lucide-react";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-
-import bg from "../assets/register-bg.png";
 import logo from "../assets/logo.png";
 
 export const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setMessage("");
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const res = await forgotPassword(email);
       setMessage(res.message);
     } catch (err) {
-      setMessage("Something went wrong");
+      setError("Something went wrong");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "#F8FAFC" }}
     >
-      {/* 🔴 OVERLAY */}
-      <div className="absolute inset-0 bg-white/70"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-100/40 via-white/60 to-white/90"></div>
-
-      {/* ✨ FLOATING PARTICLES */}
-      <div className="particles"></div>
-
-      <div className="relative w-full max-w-md animate-fadeIn">
-
-        {/* 🔥 LOGO */}
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#B33A2F] flex items-center justify-center overflow-hidden">
-            <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
+      <div className="w-full flex flex-col items-center px-4"
+        style={{ maxWidth: "560px" }}
+      >
+        {/* Logo Section */}
+        <div className="flex flex-col items-center mb-0">
+          <div
+            className="flex items-center justify-center"
+            style={{
+              width: "170px",
+              height: "68px",
+              background: "#000000",
+              borderRadius: "12px",
+              padding: "6px",
+            }}
+          >
+            <img
+              src={logo}
+              alt="NForce"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight tracking-wide">
+          <h1
+            className="text-center"
+            style={{
+              fontSize: "28px",
+              fontWeight: 700,
+              color: "#111827",
+              letterSpacing: "-0.5px",
+              marginTop: "18px",
+              marginBottom: "26px",
+            }}
+          >
             NForce Pulse
           </h1>
         </div>
 
-        {/* 🔥 CARD */}
-        <Card className="glass-card relative rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center text-[#1E293B]">
-              Forgot Password
-            </CardTitle>
-            <CardDescription className="text-center text-[#64748B]">
-              Enter your email to receive a reset link
-            </CardDescription>
-          </CardHeader>
+        {/* Form Card */}
+        <div
+          className="w-full bg-white"
+          style={{
+            maxWidth: "520px",
+            borderRadius: "20px",
+            padding: "40px",
+            boxShadow: "0 10px 35px rgba(0,0,0,0.08)",
+          }}
+        >
+          {/* Heading */}
+          <h2
+            className="text-center"
+            style={{
+              fontSize: "24px",
+              fontWeight: 700,
+              color: "#111827",
+              lineHeight: "34px",
+              marginBottom: "12px",
+            }}
+          >
+            Forgot your password?
+          </h2>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Subtitle */}
+          <p
+            className="text-center"
+            style={{
+              fontSize: "15px",
+              fontWeight: 400,
+              color: "#6B7280",
+              lineHeight: "24px",
+              marginBottom: "26px",
+            }}
+          >
+            Enter your email and we'll send you a reset link
+          </p>
 
-              {/* ✅ SUCCESS MESSAGE WITH ANIMATION */}
-              {message && (
-                <div className="success-box text-center">
-                  {message}
-                </div>
-              )}
+          {/* Error Message */}
+          {error && (
+            <div
+              className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+              style={{
+                background: "#FEF2F2",
+                border: "1px solid #FECACA",
+                color: "#DC2626",
+                fontSize: "14px",
+                marginBottom: "24px",
+              }}
+            >
+              <div
+                style={{
+                  width: "4px",
+                  height: "32px",
+                  borderRadius: "999px",
+                  background: "#DC2626",
+                  flexShrink: 0,
+                }}
+              />
+              <span>{error}</span>
+            </div>
+          )}
 
-              <Input
+          {/* Success Message */}
+          {message && (
+            <div
+              className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+              style={{
+                background: "#F0FDF4",
+                border: "1px solid #BBF7D0",
+                color: "#16A34A",
+                fontSize: "14px",
+                marginBottom: "24px",
+              }}
+            >
+              <div
+                style={{
+                  width: "4px",
+                  height: "32px",
+                  borderRadius: "999px",
+                  background: "#16A34A",
+                  flexShrink: 0,
+                }}
+              />
+              <span>{message}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            {/* Email Label */}
+            <label
+              className="block"
+              style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#374151",
+              marginBottom: "8px",
+              }}
+            >
+              Email
+            </label>
+
+            {/* Email Input */}
+            <div className="relative" style={{ marginBottom: "24px" }}>
+              <Mail
+                size={18}
+                className="absolute pointer-events-none"
+                style={{
+                  color: "#9CA3AF",
+                  left: "16px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                }}
+              />
+              <input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input-modern"
+                disabled={isLoading}
+                style={{
+                  width: "100%",
+                  height: "50px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "10px",
+                  background: "#FFFFFF",
+                  paddingLeft: "44px",
+                  paddingRight: "16px",
+                  fontSize: "15px",
+                  color: "#111827",
+                  outline: "none",
+                }}
+                className="placeholder:text-[#9CA3AF] focus:border-[#EF4444] focus:ring-[3px] focus:ring-[rgba(239,68,68,0.12)] transition-all duration-200"
               />
+            </div>
 
-              <Button
-                type="submit"
-                className="btn-modern w-full"
-              >
-                Send Reset Link
-              </Button>
+            {/* Send Reset Link Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{
+                width: "100%",
+                height: "50px",
+                borderRadius: "10px",
+                border: "none",
+                background: "linear-gradient(135deg, #FF2D2D, #E30613)",
+                fontSize: "16px",
+                fontWeight: 600,
+                color: "#FFFFFF",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.7 : 1,
+                boxShadow: "0 8px 18px rgba(255,0,0,0.25)",
+              }}
+              className="transition-all duration-200 hover:brightness-105 active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Send reset link"
+              )}
+            </button>
+          </form>
+        </div>
 
-              <div className="text-center text-sm mt-2">
-                <span
-                  className="text-[#B33A2F] cursor-pointer hover:underline hover:text-[#992E25] transition"
-                  onClick={() => navigate("/login")}
-                >
-                  Back to Login
-                </span>
-              </div>
-
-            </form>
-          </CardContent>
-        </Card>
-
+        {/* Bottom Link */}
+        <div
+          className="text-center"
+          style={{
+            marginTop: "22px",
+            fontSize: "15px",
+            color: "#6B7280",
+          }}
+        >
+          Remembered it?{" "}
+          <span
+            style={{
+              color: "#DC2626",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+            className="hover:underline"
+            onClick={() => navigate("/login")}
+          >
+            Sign in
+          </span>
+        </div>
       </div>
-
-      {/* 🔥 ALL ANIMATIONS */}
-      <style>
-        {`
-        /* FADE IN */
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* GLASS CARD */
-        .glass-card {
-          background: white;
-          backdrop-filter: blur(15px);
-          border: 1px solid #E2E8F0;
-          box-shadow: 0 0 25px rgba(179,58,47,0.15);
-        }
-
-        /* 🔴 GLOW BORDER */
-        .glass-card::before {
-          content: "";
-          position: absolute;
-          inset: -1px;
-          border-radius: 16px;
-          background: linear-gradient(90deg, transparent, #B33A2F, transparent);
-          animation: borderGlow 4s linear infinite;
-          z-index: -1;
-        }
-
-        @keyframes borderGlow {
-          0% { opacity: 0.2; }
-          50% { opacity: 0.6; }
-          100% { opacity: 0.2; }
-        }
-
-
-        /* INPUT */
-        .input-modern {
-          background: white;
-          border: 1px solid #E2E8F0;
-          color: #1E293B;
-        }
-
-        .input-modern:focus {
-          border-color: #B33A2F;
-          box-shadow: 0 0 8px rgba(179,58,47,0.3);
-        }
-
-        /* BUTTON */
-        .btn-modern {
-          background: #B33A2F;
-          color: white;
-          font-weight: 600;
-          transition: all 0.3s;
-        }
-
-        .btn-modern:hover {
-          transform: scale(1.03);
-          box-shadow: 0 0 15px rgba(179,58,47,0.3);
-        }
-
-        /* SUCCESS ANIMATION */
-        .success-box {
-          background: rgba(0,255,150,0.1);
-          border: 1px solid rgba(0,255,150,0.4);
-          color: #00ff9c;
-          padding: 10px;
-          border-radius: 8px;
-          animation: successPop 0.5s ease;
-        }
-
-        @keyframes successPop {
-          0% { transform: scale(0.8); opacity: 0; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-
-        /* ✨ PARTICLES */
-        .particles::before {
-          content: "";
-          position: absolute;
-          width: 200%;
-          height: 200%;
-          background-image: radial-gradient(#B33A2F 1px, transparent 1px);
-          background-size: 40px 40px;
-          animation: moveParticles 20s linear infinite;
-          opacity: 0.2;
-        }
-
-        @keyframes moveParticles {
-          from { transform: translate(0,0); }
-          to { transform: translate(-200px, -200px); }
-        }
-        `}
-      </style>
     </div>
   );
 };

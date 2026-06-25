@@ -24,6 +24,7 @@ const DATE_FILTERS = [
   { value: "LAST_WEEK", label: "Last Week" },
   { value: "THIS_MONTH", label: "This Month" },
   { value: "LAST_MONTH", label: "Last Month" },
+  { value: "NEXT_MONTH", label: "Next Month" },
   { value: "THIS_YEAR", label: "This Year" },
   { value: "CUSTOM_MONTH", label: "Custom Month" },
   { value: "CUSTOM_RANGE", label: "Custom Range" },
@@ -85,6 +86,15 @@ const computeDateRange = (filter, customMonth, customFrom, customTo) => {
     case "LAST_MONTH": {
       const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const last = new Date(now.getFullYear(), now.getMonth(), 0);
+      return {
+        dateFrom: toLocalDateStr(first),
+        dateTo: toLocalDateStr(last),
+      };
+    }
+
+    case "NEXT_MONTH": {
+      const first = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const last = new Date(now.getFullYear(), now.getMonth() + 2, 0);
       return {
         dateFrom: toLocalDateStr(first),
         dateTo: toLocalDateStr(last),

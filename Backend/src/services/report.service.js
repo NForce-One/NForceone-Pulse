@@ -475,6 +475,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
           projectCount: 0,
           isWeekend: entryType === "weekend",
           isHoliday: entryType === "holiday",
+          userName: json.User?.name || "-",
           reportedTo: json.Manager?.name || "-",
           projects: [],
           projectNames: new Set(),

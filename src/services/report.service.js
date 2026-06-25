@@ -438,6 +438,16 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     return `${day}-${month}-${year}`;
   };
 
+  const userNameMap = new Map();
+  if (uniqueMonthEntries.length > 0) {
+    const uniqueIds = [...new Set(uniqueMonthEntries.map((e) => e.userId))];
+    const users = await User.findAll({
+      where: { id: { [Op.in]: uniqueIds } },
+      attributes: ["id", "name"],
+    });
+    users.forEach((u) => userNameMap.set(u.id, u.name));
+  }
+
   let dashboardEntries = [];
   if (uniqueMonthEntries.length > 0) {
     const entryIds = monthEntries.map((e) => e.id);
@@ -456,13 +466,14 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
       const json = entry.toJSON();
       const dateStr = json.entryDate;
       const entryType = entryClassification[json.id] || "working";
+      const userName = userNameMap.get(entry.userId) || entry.User?.name || json.User?.name || json.user?.name || "-";
       return {
         entryDate: formatDate(dateStr),
         rawDate: dateStr,
         day: getDayName(dateStr),
         displayName: getDisplayName(dateStr),
         extraWorkType: getExtraWorkType(dateStr),
-        userName: json.User?.name || "-",
+        userName,
         projectWorked: json.Project?.name || json.project || "-",
         clientWorked: json.Client?.name || json.client || "-",
         taskWorked: json.Task?.title || json.task || "-",
@@ -484,6 +495,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
       const dateStr = json.entryDate;
       if (!groupedByDate[dateStr]) {
         const entryType = entryClassification[json.id] || "working";
+        const userName = userNameMap.get(entry.userId) || entry.User?.name || json.User?.name || json.user?.name || "-";
         groupedByDate[dateStr] = {
           date: formatDate(dateStr),
           rawDate: dateStr,
@@ -495,6 +507,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
           projectCount: 0,
           isWeekend: entryType === "weekend",
           isHoliday: entryType === "holiday",
+          userName,
           reportedTo: json.Manager?.name || "-",
           projects: [],
           projectNames: new Set(),

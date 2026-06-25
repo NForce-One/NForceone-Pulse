@@ -34,6 +34,7 @@ const FILTER_OPTIONS = [
   { value: "lastWeek", label: "Last Week" },
   { value: "thisMonth", label: "This Month" },
   { value: "lastMonth", label: "Last Month" },
+  { value: "nextMonth", label: "Next Month" },
   { value: "thisYear", label: "This Year" },
   { value: "customMonth", label: "Custom Month" },
   { value: "customRange", label: "Custom Range" },
@@ -128,6 +129,11 @@ export const Dashboard = () => {
         end = new Date(now.getFullYear(), now.getMonth(), 0);
         return { startDate: toDateStr(start), endDate: toDateStr(end) };
       }
+      case "nextMonth": {
+        start = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+        return { startDate: toDateStr(start), endDate: toDateStr(end) };
+      }
       case "thisYear": {
         start = new Date(now.getFullYear(), 0, 1);
         end = new Date(now.getFullYear(), 11, 31);
@@ -154,7 +160,8 @@ export const Dashboard = () => {
     return p;
   };
 
-  const filterKey = `${filterPeriod}-${customMonth}-${customYear}-${fromDate}-${toDate}-${dashboardView}`;
+  const DASHBOARD_CACHE_VERSION = "v2";
+  const filterKey = `${DASHBOARD_CACHE_VERSION}-${filterPeriod}-${customMonth}-${customYear}-${fromDate}-${toDate}-${dashboardView}`;
   const filterParams = useMemo(() => buildParams(), [filterKey]);
   const { data: rawStats, isLoading, silentRefresh } = useCachedData(`dashboard_${filterKey}`, () => getDashboardStats(filterParams));
   const stats = rawStats ?? {};
@@ -594,6 +601,9 @@ export const Dashboard = () => {
                   <table className="w-full text-sm">
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
+                        {(user?.role === "MANAGER" && dashboardView === "team") && (
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Employee Name</th>
+                        )}
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Date</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Day</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Total Hours</th>
@@ -607,6 +617,9 @@ export const Dashboard = () => {
                           <tr
                             className={`border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150 ${day.isWeekend || day.isHoliday ? "bg-amber-50 border-l-4 border-l-amber-500" : ""}`}
                           >
+                            {(user?.role === "MANAGER" && dashboardView === "team") && (
+                              <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{day.userName || "-"}</td>
+                            )}
                             <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 {day.projectCount > 1 && (
@@ -644,7 +657,7 @@ export const Dashboard = () => {
                           </tr>
                           {expandedDates.has(day.rawDate) && (
                             <tr>
-                              <td colSpan={5} className="px-0 py-0">
+                              <td colSpan={user?.role === "MANAGER" && dashboardView === "team" ? 6 : 5} className="px-0 py-0">
                                 <div className="bg-[#FAFBFC]">
                                   <table className="w-full text-xs">
                                     <thead>

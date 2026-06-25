@@ -1,0 +1,210 @@
+# NForce Pulse — Technology Stack
+
+> **NForce Pulse** is a role-based Time Tracking System with approval workflows, dashboards, reports, and notifications — built for Admin, Manager, and Employee roles.
+
+---
+
+## 1. Frontend Stack
+
+| Technology | Version | Purpose | Usage |
+|---|---|---|---|
+| **React** | 19.2.4 | UI library | Component-based app with functional components and hooks |
+| **Vite** | 8.0.4 | Build tool & dev server | Fast HMR, ES module bundling, production builds |
+| **JavaScript (ES6+)** | — | Core language | All frontend logic, state management, event handling |
+| **HTML5** | — | Markup | Single-page app entry point |
+| **CSS3** | — | Styling | Base styles via Tailwind CSS |
+| **Tailwind CSS** | 4.2.2 | Utility-first CSS framework | All styling in JSX via utility classes; custom theme with `@theme` directive |
+| **React Router** | 7.14.0 | Client-side routing | `<BrowserRouter>`, protected routes, role-based route gating |
+| **Axios** | 1.15.0 | HTTP client | All API calls with interceptors for JWT attachment and 401 handling |
+| **Recharts** | 3.8.1 | Charting library | Dashboard charts (daily summary, team overview) |
+| **Lucide React** | 1.8.0 | Icon library | UI icons (Eye, Users, Clock, Chevron, X, etc.) |
+| **clsx** | 2.1.1 | Class name utility | Conditional class merging |
+| **tailwind-merge** | 3.5.0 | Class conflict resolution | Merging Tailwind classes via `cn()` utility |
+| **date-fns** | 4.1.0 | Date manipulation | Date formatting, range calculations, working-day logic |
+| **Context API** | (built-in) | State management | `AuthContext` for user session (token, user, login, logout) |
+| **React Hooks** | (built-in) | Component logic | `useState`, `useEffect`, `useCallback`, `useRef`, `useMemo`, custom `useCachedData` hook |
+| **Custom Hook** | — | Session caching | `useCachedData` — caches API responses in `sessionStorage` with TTL support and silent refresh |
+
+### Frontend Folder Structure
+
+```
+Frontend/src/
+├── App.jsx                    # Root with AuthProvider
+├── main.jsx                   # Entry point
+├── index.css                  # Tailwind imports + theme
+├── assets/                    # Static assets
+├── components/
+│   ├── ui/                    # Reusable: Button, Card, Input, Badge, CustomSelect, MultiSelect, Modal, etc.
+│   ├── layout/                # DashboardLayout, Header, Sidebar
+│   └── EmployeeTimeIQ/        # Employee timesheet module (EmployeeTimeIQ, CommentModal)
+├── context/
+│   └── AuthContext.jsx        # Auth state provider
+├── hooks/
+│   └── useCachedData.js       # Session cache hook
+├── pages/                     # Route pages (17 pages)
+├── routes/
+│   └── AppRoutes.jsx          # Route definitions with ProtectedRoute
+├── services/
+│   ├── api.js                 # All API functions (Auth, TimeEntries, Timesheets, etc.)
+│   └── employeeTimeIQApi.js   # EmployeeTimeIQ-specific API calls
+└── utils/
+    └── twMerge.js             # cn() utility
+```
+
+---
+
+## 2. Backend Stack
+
+| Technology | Version | Purpose | Usage |
+|---|---|---|---|
+| **Node.js** | — | Runtime | JavaScript server-side runtime |
+| **Express** | 5.2.1 | Web framework | REST API server, routing, middleware pipeline |
+| **Sequelize** | 6.37.8 | ORM | Database modeling, querying, associations, migrations |
+| **MySQL2** | 3.22.0 | Database driver | MySQL dialect for Sequelize |
+| **JWT (jsonwebtoken)** | 9.0.3 | Authentication | Token generation on login, verification in `protect` middleware |
+| **bcrypt** | 6.0.0 | Password hashing | Hash passwords on register, compare on login |
+| **dotenv** | 17.4.1 | Environment config | Load `.env` variables |
+| **cors** | 2.8.6 | CORS middleware | Allow cross-origin requests from frontend origins |
+| **node-cron** | 4.2.1 | Scheduled tasks | Daily/weekly cron for notifications (missing entries, pending approvals) |
+| **nodemailer** | 8.0.5 | Email sending | Password reset emails |
+| **crypto** | 1.0.1 | Token generation | Reset token generation |
+| **Nodemon** (dev) | 3.1.14 | Dev server | Auto-restart on file changes |
+
+### Backend Folder Structure
+
+```
+src/
+├── index.js                   # Server entry (Express setup, DB connection, cron, associations)
+├── app.js                     # Express app (used for Vercel serverless)
+├── config/
+│   ├── db.js                  # Sequelize instance with MySQL connection pooling
+│   └── holidays.js            # Static holiday definitions + helpers
+├── controllers/               # 12 controllers (auth, client, project, task, timeEntry,
+│                               timer, timesheet, user, notification, report, etc.)
+├── middleware/
+│   └── auth.middleware.js      # `protect` (JWT verify) + `authorizeRoles` (RBAC)
+├── models/                    # 13 Sequelize models (listed below)
+├── routes/                    # 11 route files (auth, user, client, project, task, etc.)
+├── services/                  # 11 service files with business logic
+└── utils/
+    ├── dateUtils.js           # Date-only string helpers
+    └── holidayConfig.js       # classifyEntry() — returns working/weekend/holiday
+```
+
+### Backend Routes
+
+| Route Prefix | Module | Middleware |
+|---|---|---|
+| `/api/auth` | Authentication & Registration | `protect` + `authorizeRoles("ADMIN")` on register |
+| `/api/users` | User management & profile | All protected |
+| `/api/clients` | Client CRUD | All protected |
+| `/api/projects` | Project CRUD | All protected |
+| `/api/tasks` | Task CRUD | All protected |
+| `/api/time-entries` | Time entry CRUD + submit/approve/reject/comment | Role-based per endpoint |
+| `/api/timers` | Live timer start/pause/resume/stop/convert | Protected |
+| `/api/timesheets` | Timesheet CRUD + generate/submit/approve/reject/withdraw | Role-based |
+| `/api/notifications` | Notification fetch, mark read, delete | Protected |
+| `/api/reports` | Dashboard stats, reports, CSV export, missing-time | Protected |
+| `/api/employee-timesheet` | EmployeeTimeIQ module | Protected |
+| `/api/seed` | Demo data seeding | ADMIN only |
+
+---
+
+## 3. Database Stack
+
+| Technology | Version | Purpose |
+|---|---|---|
+| **MySQL** | (Railway managed) | Relational database |
+| **Sequelize ORM** | 6.37.8 | Object-relational mapping |
+
+### Entity Relationship Summary
+
+| Model | Table | Primary Key | Foreign Keys | Relationships |
+|---|---|---|---|---|
+| **User** | `users` | `id` | `managerId` → User | Self-referencing (Manager ↔ Subordinates); hasMany Projects, TimeEntries, Timesheets, Notifications, AuditLogs |
+| **Client** | `clients` | `id` | — | hasMany Projects, TimeEntries |
+| **Project** | `projects` | `id` | `clientId` → Client, `managerId` → User | belongsTo Client/User; hasMany Tasks, TimeEntries; belongsToMany Users (via ProjectUser) |
+| **Task** | `tasks` | `id` | `projectId` → Project, `assignedTo` → User | belongsTo Project; hasMany TimeEntries |
+| **TimeEntry** | `time_entries` | `id` | `userId` → User, `managerId` → User, `clientId` → Client, `projectId` → Project, `taskId` → Task | Unique index on (userId, entryDate, projectId) |
+| **Timer** | `timers` | `id` | `userId` → User, `clientId` → Client, `projectId` → Project, `taskId` → Task | Live tracking with pause/resume |
+| **Timesheet** | `timesheets` | `id` | `userId` → User | Unique index on (userId, weekStartDate); status: DRAFT/SUBMITTED/APPROVED/REJECTED/PARTIALLY_APPROVED |
+| **ApprovalHistory** | `approval_history` | `id` | `actorId` → User, `timeEntryId` → TimeEntry, `timesheetId` → Timesheet | Audit trail for submit/approve/reject/withdraw/comment actions |
+| **Notification** | `notifications` | `id` | `userId` → User | Types: MISSING_ENTRY, PENDING_SUBMISSION, SUBMITTED, APPROVED, REJECTED, MANAGER_REMINDER |
+| **AuditLog** | `audit_logs` | `id` | `userId` → User | Generic audit with action, entity, entityId, details, ipAddress |
+| **BillingRate** | `billing_rates` | `id` | `userId` → User, `projectId` → Project | Billing/cost rates with effective date ranges |
+| **ProjectUser** | `project_users` | `id` | `projectId` → Project, `userId` → User | Junction table; unique index on (projectId, userId) |
+| **Holiday** | `holidays` | `id` | — | Static holiday dates auto-seeded; used by `classifyEntry()` |
+
+### Key Relationships
+
+- **One-to-Many**: User → TimeEntries, User → Timesheets, Client → Projects, Project → Tasks
+- **Many-to-Many**: User ↔ Project (through ProjectUser)
+- **Self-referencing**: User → User (managerId for Manager ↔ Subordinates)
+- **Composite Unique Indexes**: `(userId, entryDate, projectId)` on time_entries, `(userId, weekStartDate)` on timesheets, `(projectId, userId)` on project_users
+
+---
+
+## 4. Deployment Stack
+
+| Component | Platform | Details |
+|---|---|---|
+| **Frontend** | Vercel | Deployed via Vite build; env var `VITE_API_URL` |
+| **Backend** | Railway | Node.js Express with Nixpacks; `npm start` entry point |
+| **Database** | Railway MySQL | Auto-provisioned MySQL with SSL connection; connection pooling (max 2) |
+| **Source Control** | GitHub | Repository: `github.com/RSaishashank/nforce-timetracker` |
+
+### Environment Variables
+
+| Variable | Used In | Purpose |
+|---|---|---|
+| `PORT` | Backend | Server port |
+| `JWT_SECRET` | Backend | Token signing |
+| `CORS_ORIGINS` | Backend | Comma-separated allowed CORS origins |
+| `VITE_API_URL` | Frontend | Backend API base URL |
+| `MYSQL_URL` / `MYSQL_PUBLIC_URL` | Backend | Database connection string |
+| `MYSQLHOST` / `MYSQLUSER` / `MYSQLPASSWORD` / `MYSQLDATABASE` / `MYSQLPORT` | Backend | Fallback DB connection |
+| `DB_SSL` | Backend | MySQL SSL toggle |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Backend | Nodemailer email config |
+
+---
+
+## 5. Development Tools
+
+| Tool | Purpose |
+|---|---|
+| VS Code | Primary IDE |
+| Git | Version control |
+| GitHub | Remote repository & collaboration |
+| Postman | API testing |
+| MySQL Workbench | Database administration |
+| Railway Dashboard | Backend & DB monitoring |
+| Vercel Dashboard | Frontend deployment management |
+
+---
+
+## 6. Core Dependencies Summary
+
+### Frontend (`Frontend/package.json`)
+
+```
+react, react-dom, react-router-dom    — Core UI & routing
+axios                                 — HTTP client
+tailwindcss, @tailwindcss/vite        — CSS framework + Vite plugin
+vite, @vitejs/plugin-react            — Build tool
+recharts                              — Charts
+lucide-react                          — Icons
+clsx, tailwind-merge                  — Class utilities
+date-fns                              — Date helpers
+eslint, eslint-plugin-react-hooks     — Linting
+```
+
+### Backend (`package.json`)
+
+```
+express, cors                         — Server & middleware
+sequelize, mysql2                     — ORM & database driver
+jsonwebtoken, bcrypt                  — Auth & encryption
+dotenv                                — Environment config
+node-cron, nodemailer, crypto         — Scheduler, email, tokens
+nodemon (dev)                         — Dev auto-restart
+```

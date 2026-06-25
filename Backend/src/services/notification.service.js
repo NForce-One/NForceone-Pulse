@@ -92,6 +92,11 @@ const getDateLabel = (record) => {
 };
 
 const buildMessage = (record, verb) => {
+  if (record.weekStartDate && record.weekEndDate) {
+    const start = formatDateSafe(record.weekStartDate);
+    const end = formatDateSafe(record.weekEndDate);
+    return `Your timesheet for the week ${start} – ${end} has been ${verb}.`;
+  }
   const { label, prefix } = getDateLabel(record);
   const datePart = label || "unknown date";
   return `Your ${prefix} ${datePart} has been ${verb}.`;
@@ -142,13 +147,11 @@ export const notifyTimesheetApproved = async (record) => {
 };
 
 export const notifyTimesheetRejected = async (record) => {
-  const { label, prefix } = getDateLabel(record);
-  const datePart = label || "unknown date";
   await Notification.create({
     userId: record.userId,
     type: "REJECTED",
     title: "Timesheet Rejected",
-    message: `Your ${prefix} ${datePart} has been rejected. Please review and resubmit.`,
+    message: buildMessage(record, "rejected. Please review and resubmit"),
     relatedId: record.id,
     isRead: false,
   });
