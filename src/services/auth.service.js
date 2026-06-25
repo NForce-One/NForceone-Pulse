@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import User from "../models/user.model.js";
+import { sendResetEmail } from "./email.service.js";
 
 // 🔐 Generate Token
 const generateToken = (user) => {
@@ -125,29 +125,11 @@ export const forgotPassword = async (email) => {
   console.log("RESET LINK:", resetLink);
 
   try {
-    // MAILTRAP CONFIG
-    const transporter = nodemailer.createTransport({
-      host: "sandbox.smtp.mailtrap.io",
-      port: 2525,
-      auth: {
-        user: "37e4fe872234d2",
-        pass: "d67805ef218d17",
-      },
+    await sendResetEmail({
+      email: user.email,
+      resetLink,
+      userName: user.name,
     });
-
-    await transporter.sendMail({
-      from: `"NForce Pulse" <no-reply@nforce.com>`,
-      to: user.email,
-      subject: "Reset Password",
-      html: `
-        <h3>Password Reset Request</h3>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetLink}">${resetLink}</a>
-      `,
-    });
-
-    console.log("EMAIL SENT SUCCESSFULLY");
-
   } catch (err) {
     console.log("EMAIL ERROR:", err.message);
   }

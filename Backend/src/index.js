@@ -50,6 +50,7 @@ import employeeTimesheetRoutes from "./routes/employeeTimesheet.routes.js";
 
 // Middleware
 import { protect, authorizeRoles } from "./middleware/auth.middleware.js";
+import { sendEmail } from "./services/email.service.js";
 
 dotenv.config();
 
@@ -227,7 +228,7 @@ app.get(
 );
 
 /* ======================
-   404 HANDLER
+    404 HANDLER
 ====================== */
 app.use((req, res) => {
   res.status(404).json({
