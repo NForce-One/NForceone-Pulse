@@ -9,6 +9,9 @@ import ApprovalHistory from "../models/approvalHistory.model.js";
 import * as notificationService from "../services/notification.service.js";
 import { toDateOnlyString } from "../utils/dateUtils.js";
 import { classifyEntry, getDayName, getDisplayName, getExtraWorkType } from "../utils/holidayConfig.js";
+import { approvedTimesheetTemplate } from "../templates/approvedTimesheet.template.js";
+import { rejectedTimesheetTemplate } from "../templates/rejectedTimesheet.template.js";
+import { sendEmail } from "./email.service.js";
 
 // ================= GET ALL TIMESHEETS =================
 export const getAllTimesheets = async (whereClause = {}) => {
@@ -44,8 +47,8 @@ export const getTimesheetById = async (id) => {
     where: {
       userId: timesheet.userId,
       entryDate: {
-        gte: timesheet.weekStartDate,
-        lte: timesheet.weekEndDate,
+        [Op.gte]: timesheet.weekStartDate,
+        [Op.lte]: timesheet.weekEndDate,
       },
     },
     order: [["entryDate", "ASC"]],
@@ -83,8 +86,8 @@ export const generateTimesheet = async (userId, weekStartDate) => {
     where: {
       userId,
       entryDate: {
-        gte: weekStartDate,
-        lte: endDateStr,
+        [Op.gte]: weekStartDate,
+        [Op.lte]: endDateStr,
       },
     },
   });
@@ -133,8 +136,8 @@ export const submitTimesheet = async (timesheetId, userId, comment) => {
       where: {
         userId: timesheet.userId,
         entryDate: {
-          gte: timesheet.weekStartDate,
-          lte: timesheet.weekEndDate,
+          [Op.gte]: timesheet.weekStartDate,
+          [Op.lte]: timesheet.weekEndDate,
         },
       },
     }
@@ -163,20 +166,28 @@ export const submitTimesheet = async (timesheetId, userId, comment) => {
 
 // ================= APPROVE TIMESHEET =================
 export const approveTimesheet = async (timesheetId, managerId, comment) => {
+  console.log("[APPROVE] Step 1: Fetching timesheet", timesheetId);
   const timesheet = await Timesheet.findByPk(timesheetId, {
     include: [{ model: User, attributes: ["id", "name", "email"] }],
   });
 
   if (!timesheet) {
+    console.error("[APPROVE] Timesheet not found:", timesheetId);
     throw new Error("Timesheet not found");
   }
+  console.log("[APPROVE] Step 2: Timesheet fetched. Status:", timesheet.status, "userId:", timesheet.userId);
 
   if (timesheet.status !== "SUBMITTED") {
+    console.error("[APPROVE] Wrong status:", timesheet.status);
     throw new Error("Only submitted timesheets can be approved");
   }
 
+  console.log("[APPROVE] Step 3: User record from include:", JSON.stringify({ id: timesheet.User?.id, name: timesheet.User?.name, email: timesheet.User?.email }));
+  console.log("[APPROVE] Step 4: timesheet fields:", JSON.stringify({ weekStartDate: timesheet.weekStartDate, weekEndDate: timesheet.weekEndDate, totalHours: timesheet.totalHours }));
+
   timesheet.status = "APPROVED";
   await timesheet.save();
+  console.log("[APPROVE] Step 5: Timesheet status updated to APPROVED");
 
   // Update all entries in the timesheet
   await TimeEntry.update(
@@ -185,24 +196,26 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
       where: {
         userId: timesheet.userId,
         entryDate: {
-          gte: timesheet.weekStartDate,
-          lte: timesheet.weekEndDate,
+          [Op.gte]: timesheet.weekStartDate,
+          [Op.lte]: timesheet.weekEndDate,
         },
       },
     }
   );
+  console.log("[APPROVE] Step 6: Time entries updated to APPROVED");
 
-  // Fetch entries to create per-entry approval history
+  // Fetch entries for approval history and email template
   const entries = await TimeEntry.findAll({
     where: {
       userId: timesheet.userId,
       entryDate: {
-        gte: timesheet.weekStartDate,
-        lte: timesheet.weekEndDate,
+        [Op.gte]: timesheet.weekStartDate,
+        [Op.lte]: timesheet.weekEndDate,
       },
     },
-    attributes: ["id"],
+    attributes: ["id", "project", "entryDate", "hours"],
   });
+  console.log("[APPROVE] Step 7: Entries fetched, count:", entries.length);
 
   const approvalHistories = entries.map((entry) => ({
     timeEntryId: entry.id,
@@ -213,6 +226,7 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
 
   if (approvalHistories.length > 0) {
     await ApprovalHistory.bulkCreate(approvalHistories);
+    console.log("[APPROVE] Step 8: Approval histories created for", approvalHistories.length, "entries");
   }
 
   // Log timesheet-level approval history
@@ -222,32 +236,93 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
     action: "APPROVED",
     comment: comment || null,
   });
+  console.log("[APPROVE] Step 9: Timesheet-level approval history created");
 
   // 🔔 NOTIFICATION: Notify employee about approval
+  console.log("[APPROVE] Step 10: Creating notification...");
   await notificationService.notifyTimesheetApproved({
     ...timesheet.toJSON(),
     User: timesheet.User,
   });
+  console.log("[APPROVE] Step 11: Notification created successfully");
 
+  // 📧 EMAIL: Send approval notification to employee
+  console.log("[APPROVE] Step 12: Entering email block...");
+  try {
+    console.log("[APPROVE] Step 13: Fetching manager info...");
+    const manager = await User.findByPk(managerId, {
+      attributes: ["name"],
+    });
+    console.log("[APPROVE] Step 14: Manager fetched:", JSON.stringify({ id: managerId, name: manager?.name }));
+
+    console.log("[APPROVE] Step 15: Mapping entries...");
+    const approvedEntries = entries.map((e) => {
+      const plain = typeof e.toJSON === 'function' ? e.toJSON() : e;
+      const mapped = {
+        project: plain.project,
+        entryDate: plain.entryDate instanceof Date ? plain.entryDate.toISOString().split('T')[0] : String(plain.entryDate || ''),
+        hours: plain.hours,
+      };
+      return mapped;
+    });
+    console.log("[APPROVE] Step 16: Entries mapped, count:", approvedEntries.length);
+    if (approvedEntries.length > 0) {
+      console.log("[APPROVE] First entry sample:", JSON.stringify(approvedEntries[0]));
+    }
+
+    console.log("[APPROVE] Step 17: Generating email template...");
+    const html = approvedTimesheetTemplate({
+      employeeName: timesheet.User?.name || "Employee",
+      weekStart: timesheet.weekStartDate,
+      weekEnd: timesheet.weekEndDate,
+      totalHours: timesheet.totalHours,
+      managerName: manager?.name || "Manager",
+      comment: comment || null,
+      approvalDate: new Date().toISOString().split("T")[0],
+      entries: approvedEntries,
+    });
+    console.log("[APPROVE] Step 18: Template generated, HTML length:", html.length);
+
+    console.log("[APPROVE] Step 19: Calling sendEmail with to:", timesheet.User?.email);
+    await sendEmail({
+      to: timesheet.User?.email,
+      subject: "Timesheet Approved - NForce Pulse",
+      html,
+    });
+    console.log("[APPROVE] Step 20: Email sent successfully!");
+  } catch (emailError) {
+    console.error("[APPROVE] FAILED at step:", "sendEmail block");
+    console.error("[APPROVE] Error name:", emailError.name);
+    console.error("[APPROVE] Error message:", emailError.message);
+    console.error("[APPROVE] Error stack:", emailError.stack);
+  }
+
+  console.log("[APPROVE] Step 21: Returning timesheet");
   return timesheet;
 };
 
 // ================= REJECT TIMESHEET =================
 export const rejectTimesheet = async (timesheetId, managerId, comment) => {
+  console.log("[REJECT] Step 1: Fetching timesheet", timesheetId);
   const timesheet = await Timesheet.findByPk(timesheetId, {
     include: [{ model: User, attributes: ["id", "name", "email"] }],
   });
 
   if (!timesheet) {
+    console.error("[REJECT] Timesheet not found:", timesheetId);
     throw new Error("Timesheet not found");
   }
+  console.log("[REJECT] Step 2: Timesheet fetched. Status:", timesheet.status, "userId:", timesheet.userId);
+  console.log("[REJECT] Step 3: User record from include:", JSON.stringify({ id: timesheet.User?.id, name: timesheet.User?.name, email: timesheet.User?.email }));
 
-   if (timesheet.status !== "SUBMITTED") {
+  if (timesheet.status !== "SUBMITTED") {
+    console.error("[REJECT] Wrong status:", timesheet.status);
     throw new Error("Only submitted timesheets can be rejected");
   }
 
   timesheet.status = "REJECTED";
   await timesheet.save();
+  console.log("[REJECT] Step 4: Timesheet status updated to REJECTED");
 
   // Update all entries in the timesheet
   await TimeEntry.update(
@@ -256,24 +331,26 @@ export const rejectTimesheet = async (timesheetId, managerId, comment) => {
       where: {
         userId: timesheet.userId,
         entryDate: {
-          gte: timesheet.weekStartDate,
-          lte: timesheet.weekEndDate,
+          [Op.gte]: timesheet.weekStartDate,
+          [Op.lte]: timesheet.weekEndDate,
         },
       },
     }
   );
+  console.log("[REJECT] Step 5: Time entries updated to REJECTED");
 
-  // Fetch entries to create per-entry approval history
+  // Fetch entries for approval history and email template
   const entries = await TimeEntry.findAll({
     where: {
       userId: timesheet.userId,
       entryDate: {
-        gte: timesheet.weekStartDate,
-        lte: timesheet.weekEndDate,
+        [Op.gte]: timesheet.weekStartDate,
+        [Op.lte]: timesheet.weekEndDate,
       },
     },
-    attributes: ["id"],
+    attributes: ["id", "project", "entryDate", "hours"],
   });
+  console.log("[REJECT] Step 6: Entries fetched, count:", entries.length);
 
   const approvalHistories = entries.map((entry) => ({
     timeEntryId: entry.id,
@@ -284,6 +361,7 @@ export const rejectTimesheet = async (timesheetId, managerId, comment) => {
 
   if (approvalHistories.length > 0) {
     await ApprovalHistory.bulkCreate(approvalHistories);
+    console.log("[REJECT] Step 7: Approval histories created for", approvalHistories.length, "entries");
   }
 
   // Log timesheet-level approval history
@@ -293,13 +371,68 @@ export const rejectTimesheet = async (timesheetId, managerId, comment) => {
     action: "REJECTED",
     comment: comment || null,
   });
+  console.log("[REJECT] Step 8: Timesheet-level approval history created");
 
   // 🔔 NOTIFICATION: Notify employee about rejection
+  console.log("[REJECT] Step 9: Creating notification...");
   await notificationService.notifyTimesheetRejected({
     ...timesheet.toJSON(),
     User: timesheet.User,
   });
+  console.log("[REJECT] Step 10: Notification created successfully");
 
+  // 📧 EMAIL: Send rejection notification to employee
+  console.log("[REJECT] Step 11: Entering email block...");
+  try {
+    console.log("[REJECT] Step 12: Fetching manager info...");
+    const manager = await User.findByPk(managerId, {
+      attributes: ["name"],
+    });
+    console.log("[REJECT] Step 13: Manager fetched:", JSON.stringify({ id: managerId, name: manager?.name }));
+
+    console.log("[REJECT] Step 14: Mapping entries...");
+    const rejectedEntries = entries.map((e) => {
+      const plain = typeof e.toJSON === 'function' ? e.toJSON() : e;
+      const mapped = {
+        project: plain.project,
+        entryDate: plain.entryDate instanceof Date ? plain.entryDate.toISOString().split('T')[0] : String(plain.entryDate || ''),
+        hours: plain.hours,
+      };
+      return mapped;
+    });
+    console.log("[REJECT] Step 15: Entries mapped, count:", rejectedEntries.length);
+    if (rejectedEntries.length > 0) {
+      console.log("[REJECT] First entry sample:", JSON.stringify(rejectedEntries[0]));
+    }
+
+    console.log("[REJECT] Step 16: Generating email template...");
+    const html = rejectedTimesheetTemplate({
+      employeeName: timesheet.User?.name || "Employee",
+      weekStart: timesheet.weekStartDate,
+      weekEnd: timesheet.weekEndDate,
+      totalHours: timesheet.totalHours,
+      managerName: manager?.name || "Manager",
+      comment: comment || null,
+      rejectionDate: new Date().toISOString().split("T")[0],
+      entries: rejectedEntries,
+    });
+    console.log("[REJECT] Step 17: Template generated, HTML length:", html.length);
+
+    console.log("[REJECT] Step 18: Calling sendEmail with to:", timesheet.User?.email);
+    await sendEmail({
+      to: timesheet.User?.email,
+      subject: "Timesheet Requires Changes - NForce Pulse",
+      html,
+    });
+    console.log("[REJECT] Step 19: Email sent successfully!");
+  } catch (emailError) {
+    console.error("[REJECT] FAILED at step:", "sendEmail block");
+    console.error("[REJECT] Error name:", emailError.name);
+    console.error("[REJECT] Error message:", emailError.message);
+    console.error("[REJECT] Error stack:", emailError.stack);
+  }
+
+  console.log("[REJECT] Step 20: Returning timesheet");
   return timesheet;
 };
 
@@ -322,8 +455,8 @@ export const commentTimesheet = async (timesheetId, managerId, comment) => {
     where: {
       userId: timesheet.userId,
       entryDate: {
-        gte: timesheet.weekStartDate,
-        lte: timesheet.weekEndDate,
+        [Op.gte]: timesheet.weekStartDate,
+        [Op.lte]: timesheet.weekEndDate,
       },
     },
     attributes: ["id"],

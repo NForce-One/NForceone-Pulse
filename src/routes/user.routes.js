@@ -9,6 +9,7 @@ import {
   getMe,
   updateProfile,
   changePassword,
+  getNextEmployeeId,
   getTeamMembers,
 } from "../controllers/user.controller.js";
 
@@ -29,6 +30,7 @@ router.get(
   getTeamMembers
 );
 
+router.get("/next-employee-id", protect, authorizeRoles("ADMIN"), getNextEmployeeId);
 router.get("/", protect, authorizeRoles("ADMIN"), getAllUsers);
 router.get("/:id", protect, authorizeRoles("ADMIN"), getUser);
 router.post("/", protect, authorizeRoles("ADMIN"), createUser);

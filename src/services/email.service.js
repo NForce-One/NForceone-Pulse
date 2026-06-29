@@ -1,8 +1,14 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend = null;
+const getResend = () => {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+};
 
-const FROM_EMAIL = process.env.FROM_EMAIL || "NForce Pulse <onboarding@resend.dev>";
+const getFromEmail = () => process.env.FROM_EMAIL || "NForce Pulse <onboarding@resend.dev>";
 
 export const sendEmail = async ({ to, subject, html }) => {
   if (!process.env.RESEND_API_KEY) {
@@ -15,8 +21,8 @@ export const sendEmail = async ({ to, subject, html }) => {
   }
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+    const { data, error } = await getResend().emails.send({
+      from: getFromEmail(),
       to,
       subject,
       html,
@@ -73,8 +79,8 @@ export const sendResetEmail = async ({ email, resetLink, userName }) => {
               <!-- Reset Button -->
               <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px auto;">
                 <tr>
-                  <td align="center" style="background:linear-gradient(135deg,#FF2D2D,#E30613);border-radius:12px;box-shadow:0 6px 18px rgba(255,0,0,0.25);">
-                    <a href="${resetLink}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;">
+                  <td align="center" style="background-color:#E30613;background:linear-gradient(135deg,#FF2D2D,#E30613);border-radius:12px;box-shadow:0 6px 18px rgba(255,0,0,0.25);">
+                    <a href="${resetLink}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;background-color:#E30613;">
                       Reset Password
                     </a>
                   </td>

@@ -309,6 +309,42 @@ const deduplicateTimeEntries = async () => {
     await sequelize.sync({ alter: false });
     console.log("Database synced successfully");
 
+    // Auto-migrate: add employeeId column if missing
+    try {
+      const [columns] = await sequelize.query("SHOW COLUMNS FROM users LIKE 'employeeId'");
+      if (columns.length === 0) {
+        await sequelize.query(
+          "ALTER TABLE users ADD COLUMN employeeId INT NULL UNIQUE AFTER `role`"
+        );
+        console.log("Added employeeId column to users table");
+      }
+    } catch (err) {
+      console.error("Auto-migration for employeeId failed:", err.message);
+    }
+
+    // Assign employeeIds to existing users that don't have one
+    try {
+      const [nullEmpIdUsers] = await sequelize.query(
+        "SELECT id FROM users WHERE employeeId IS NULL ORDER BY id ASC"
+      );
+      if (nullEmpIdUsers.length > 0) {
+        const [maxResult] = await sequelize.query(
+          "SELECT COALESCE(MAX(employeeId), 0) as maxId FROM users"
+        );
+        let nextId = maxResult[0].maxId;
+        for (const row of nullEmpIdUsers) {
+          nextId++;
+          await sequelize.query(
+            "UPDATE users SET employeeId = ? WHERE id = ?",
+            { replacements: [nextId, row.id] }
+          );
+        }
+        console.log(`Assigned employeeIds to ${nullEmpIdUsers.length} existing users`);
+      }
+    } catch (err) {
+      console.error("Failed to assign employeeIds:", err.message);
+    }
+
     const { initHolidays, seedDefaultHolidays } = await import("./utils/holidayConfig.js");
     await seedDefaultHolidays();
     await initHolidays();

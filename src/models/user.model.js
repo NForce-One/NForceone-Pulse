@@ -29,6 +29,11 @@ const User = sequelize.define(
       type: DataTypes.ENUM("EMPLOYEE", "MANAGER", "ADMIN"),
       defaultValue: "EMPLOYEE",
     },
+    employeeId: {
+      type: DataTypes.INTEGER,
+      unique: true,
+      allowNull: true,
+    },
     // 🔥 NEW FIELDS (from spec)
     department: {
       type: DataTypes.STRING,

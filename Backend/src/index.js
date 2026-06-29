@@ -196,6 +196,29 @@ app.get("/api/test", protect, (req, res) => {
 });
 
 /* ======================
+   EMAIL DEBUG ROUTE
+====================== */
+app.post("/api/debug-email", async (req, res) => {
+  try {
+    console.log("[DEBUG-EMAIL] Endpoint hit, body:", JSON.stringify(req.body));
+    const { to, subject } = req.body;
+    if (!to) {
+      return res.status(400).json({ success: false, message: "Missing 'to' field" });
+    }
+    const result = await sendEmail({
+      to,
+      subject: subject || "Debug Test Email - NForce Pulse",
+      html: `<h1>Debug Test</h1><p>This is a debug test email from NForce Pulse.</p>`,
+    });
+    console.log("[DEBUG-EMAIL] Success:", JSON.stringify(result));
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("[DEBUG-EMAIL] Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/* ======================
    ROLE-BASED TEST ROUTES
 ====================== */
 

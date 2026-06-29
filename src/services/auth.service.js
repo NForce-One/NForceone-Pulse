@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import User from "../models/user.model.js";
+import sequelize from "../config/db.js";
 import { sendResetEmail } from "./email.service.js";
 
 // 🔐 Generate Token
@@ -11,6 +12,13 @@ const generateToken = (user) => {
     process.env.JWT_SECRET || "secretkey",
     { expiresIn: "1d" }
   );
+};
+
+const generateEmployeeId = async () => {
+  const maxUser = await User.findOne({
+    attributes: [[sequelize.fn("MAX", sequelize.col("employeeId")), "maxEmployeeId"]],
+  });
+  return (maxUser?.dataValues?.maxEmployeeId || 0) + 1;
 };
 
 // ================= REGISTER =================
@@ -38,12 +46,14 @@ export const registerUser = async (data) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
+  const employeeId = await generateEmployeeId();
 
   const user = await User.create({
     name,
     email,
     password: hashedPassword,
     role: role || "EMPLOYEE",
+    employeeId,
   });
 
   return {

@@ -121,7 +121,7 @@ export const Approvals = () => {
       const weekStart = getWeekStart(entry.entryDate);
       const key = `${entry.userId}_${weekStart}`;
       if (!map[key]) {
-        map[key] = { userId: entry.userId, name: entry.User?.name || entry.user?.name || "Unknown", weekStart, entries: [] };
+        map[key] = { userId: entry.userId, employeeId: entry.User?.employeeId || null, name: entry.User?.name || entry.user?.name || "Unknown", weekStart, entries: [] };
       }
       map[key].entries.push(entry);
     });
@@ -343,7 +343,7 @@ export const Approvals = () => {
                       {/* Employee */}
                       <td className="px-4 py-3">
                         <div className="text-sm font-semibold text-[#1E293B]">{group.name}</div>
-                        <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.userId}</div>
+                        <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.employeeId || group.userId}</div>
                       </td>
 
                       {/* Week */}
@@ -494,7 +494,6 @@ export const Approvals = () => {
                   <div>
                     <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Employee</div>
                     <div className="text-sm font-semibold text-[#1E293B] mt-0.5">{group.name}</div>
-                    <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.userId}</div>
                   </div>
                   <div>
                     <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Week</div>

@@ -113,6 +113,16 @@ export const changePassword = async (req, res) => {
   }
 };
 
+// ================= GET NEXT EMPLOYEE ID =================
+export const getNextEmployeeId = async (req, res) => {
+  try {
+    const employeeId = await userService.getNextEmployeeId();
+    res.json({ success: true, employeeId });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ================= GET TEAM MEMBERS (MANAGER) =================
 export const getTeamMembers = async (req, res) => {
   try {

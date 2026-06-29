@@ -1,39 +1,58 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend = null;
+const getResend = () => {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+};
 
-const FROM_EMAIL = process.env.FROM_EMAIL || "NForce Pulse <onboarding@resend.dev>";
+const getFromEmail = () => process.env.FROM_EMAIL || "NForce Pulse <onboarding@resend.dev>";
 
 export const sendEmail = async ({ to, subject, html }) => {
+  console.log("[EMAIL-SERVICE] ===== sendEmail called =====");
+  console.log("[EMAIL-SERVICE] to:", to);
+  console.log("[EMAIL-SERVICE] subject:", subject);
+  console.log("[EMAIL-SERVICE] html.length:", html?.length);
+  console.log("[EMAIL-SERVICE] RESEND_API_KEY configured:", !!process.env.RESEND_API_KEY);
+  console.log("[EMAIL-SERVICE] FROM_EMAIL:", process.env.FROM_EMAIL);
+
   if (!process.env.RESEND_API_KEY) {
-    console.error("RESEND_API_KEY is not configured");
+    console.error("[EMAIL-SERVICE] RESEND_API_KEY is not configured");
     throw new Error("Email service is not configured. Set RESEND_API_KEY in environment variables.");
   }
 
   if (!to || !subject || !html) {
+    console.error("[EMAIL-SERVICE] Missing required fields:", { to: !!to, subject: !!subject, html: !!html });
     throw new Error("Missing required fields: to, subject, html");
   }
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+    console.log("[EMAIL-SERVICE] Calling Resend API...");
+    const { data, error } = await getResend().emails.send({
+      from: getFromEmail(),
       to,
       subject,
       html,
     });
 
     if (error) {
-      console.error("Resend send error:", error);
+      console.error("[EMAIL-SERVICE] Resend send error:", error);
       throw new Error(`Failed to send email: ${error.message}`);
     }
 
-    console.log("Email sent successfully via Resend. ID:", data?.id);
+    console.log("[EMAIL-SERVICE] Email sent successfully via Resend. ID:", data?.id);
     return { success: true, messageId: data?.id };
   } catch (err) {
+    console.error("[EMAIL-SERVICE] ===== EMAIL SEND CAUGHT ERROR =====");
+    console.error("[EMAIL-SERVICE] Error name:", err.name);
+    console.error("[EMAIL-SERVICE] Error message:", err.message);
+    console.error("[EMAIL-SERVICE] Error stack:", err.stack);
     if (err.message.startsWith("Failed to send email") || err.message.startsWith("Email service is not configured") || err.message.startsWith("Missing required fields")) {
       throw err;
     }
-    console.error("Unexpected email error:", err);
+    console.error("[EMAIL-SERVICE] Unexpected email error re-throwing");
     throw new Error("Failed to send email. Please try again later.");
   }
 };
@@ -73,8 +92,8 @@ export const sendResetEmail = async ({ email, resetLink, userName }) => {
               <!-- Reset Button -->
               <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px auto;">
                 <tr>
-                  <td align="center" style="background:linear-gradient(135deg,#FF2D2D,#E30613);border-radius:12px;box-shadow:0 6px 18px rgba(255,0,0,0.25);">
-                    <a href="${resetLink}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;">
+                  <td align="center" style="background-color:#E30613;background:linear-gradient(135deg,#FF2D2D,#E30613);border-radius:12px;box-shadow:0 6px 18px rgba(255,0,0,0.25);">
+                    <a href="${resetLink}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:12px;background-color:#E30613;">
                       Reset Password
                     </a>
                   </td>

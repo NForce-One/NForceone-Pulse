@@ -155,10 +155,18 @@ export const Users = () => {
                  <option value="MANAGER" className="bg-white">Manager</option>
                  <option value="ADMIN" className="bg-white">Admin</option>
                </select>
-               <div className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#64748B] flex items-center gap-1">
-                  <span className="text-xs text-[#64748B]">Employee ID:</span>
-                  {formData.employeeId || (editingId ? "Assigned" : "Generating...")}
-                </div>
+               <div className="relative group">
+                   <input
+                     name="employeeId"
+                     value={editingId ? `Employee ID: ${formData.employeeId}` : formData.employeeId ? `Employee ID: ${formData.employeeId}` : "Generating..."}
+                     readOnly
+                     title="Employee ID is generated automatically."
+                     className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-gray-50 px-3 py-2 text-sm text-[#1E293B] cursor-not-allowed"
+                   />
+                   <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                     Employee ID is generated automatically.
+                   </div>
+                 </div>
               <div className="flex gap-2">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
                 <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setNextEmployeeId(null); setShowPassword(false); }}>Cancel</Button>

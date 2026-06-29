@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import sequelize from "../config/db.js";
 import bcrypt from "bcrypt";
 
 export const getAllUsers = async (whereClause = {}) => {
@@ -35,6 +36,17 @@ export const getUserById = async (id) => {
   return user;
 };
 
+const generateEmployeeId = async () => {
+  const maxUser = await User.findOne({
+    attributes: [[sequelize.fn("MAX", sequelize.col("employeeId")), "maxEmployeeId"]],
+  });
+  return (maxUser?.dataValues?.maxEmployeeId || 0) + 1;
+};
+
+export const getNextEmployeeId = async () => {
+  return await generateEmployeeId();
+};
+
 export const createUser = async (data) => {
   const { name, email, password, role, department, managerId, defaultHours } = data;
 
@@ -51,6 +63,7 @@ export const createUser = async (data) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
+  const employeeId = await generateEmployeeId();
 
   return await User.create({
     name,
@@ -59,6 +72,7 @@ export const createUser = async (data) => {
     role: role || "EMPLOYEE",
     department,
     managerId,
+    employeeId,
     defaultHours: defaultHours || 8.0,
     isActive: true,
   });
@@ -70,6 +84,9 @@ export const updateUser = async (id, data) => {
   if (!user) {
     throw new Error("User not found");
   }
+
+  // Employee ID must remain unchanged on edit
+  delete data.employeeId;
 
   if (data.password) {
     const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*]).{6,}$/;

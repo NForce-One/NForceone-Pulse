@@ -68,10 +68,7 @@ const getSnackbarStyles = (type) => {
 
 export const EmployeeTimeIQ = () => {
   const { user } = useAuth();
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const saved = sessionStorage.getItem("timeiq_weekStart");
-    return saved || getWeekStart(new Date());
-  });
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
   const weekEnd = getWeekEnd(currentWeekStart);
   const weekDates = useMemo(() => generateWeekDates(currentWeekStart), [currentWeekStart]);
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
