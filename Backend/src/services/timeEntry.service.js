@@ -19,9 +19,9 @@ const getEntriesWithUser = async (whereClause = {}) => {
         attributes: ["id", "name", "email"],
         required: false,
       },
-    ],
-    order: [["createdAt", "DESC"]],
-  });
+      ],
+      order: [["entryDate", "DESC"]],
+    });
 
   // Fetch latest approval comment for each entry
   if (entries.length > 0) {
@@ -35,7 +35,7 @@ const getEntriesWithUser = async (whereClause = {}) => {
         {
           model: User,
           as: "Actor",
-          attributes: ["id", "name"],
+        attributes: ["id", "name"],
         },
       ],
       order: [["createdAt", "DESC"]],

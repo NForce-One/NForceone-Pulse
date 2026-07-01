@@ -5,6 +5,7 @@ import { DataTypes } from "sequelize";
 import sequelize from "./config/db.js";
 import cron from "node-cron";
 import * as notificationService from "./services/notification.service.js";
+import { runMissingTimesheetReminder } from "./jobs/missingTimesheetReminder.job.js";
 
 // ✅ Load models (IMPORTANT for Sequelize - ORDER MATTERS!)
 import "./models/user.model.js";
@@ -20,6 +21,7 @@ import "./models/auditLog.model.js";
 import "./models/billingRate.model.js";
 import "./models/projectUser.model.js";
 import "./models/holiday.model.js";
+import "./models/leave.model.js";
 
 // Import models for associations
 import User from "./models/user.model.js";
@@ -349,6 +351,13 @@ const startServer = async () => {
     // Check weekly pending submissions on Friday at 5:00 PM
     cron.schedule("0 17 * * 5", async () => {
       await notificationService.checkWeeklyPendingSubmissions();
+    });
+
+    // Send missing timesheet reminder emails every Friday at 6:30 PM (Asia/Kolkata)
+    cron.schedule("30 18 * * 5", async () => {
+      await runMissingTimesheetReminder();
+    }, {
+      timezone: "Asia/Kolkata",
     });
 
     // Check pending approvals for managers every Monday at 10:00 AM

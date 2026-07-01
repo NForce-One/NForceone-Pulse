@@ -6,6 +6,7 @@ import Task from "../models/task.model.js";
 import Timesheet from "../models/timesheet.model.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
 import BillingRate from "../models/billingRate.model.js";
+import Leave from "../models/leave.model.js";
 import { Op } from "sequelize";
 import { classifyEntry, getDayName, getDisplayName, getExtraWorkType } from "../utils/holidayConfig.js";
 import { toDateOnlyString } from "../utils/dateUtils.js";
@@ -338,6 +339,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     } else {
       whereClause.userId = { [Op.in]: [-1] };
     }
+    whereClause.managerId = userId;
   }
 
   const statusFilter = isTeamView ? { status: "APPROVED" } : { status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] } };
@@ -568,6 +570,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
           const memberEntries = await TimeEntry.findAll({
             where: {
               userId: member.id,
+              managerId: userId,
               status: "APPROVED",
               entryDate: { [Op.between]: [startOfWeekStr, endOfWeekStr] },
             },
@@ -631,6 +634,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
           const weekData = await TimeEntry.findAll({
             where: {
               userId: { [Op.in]: teamMemberIds },
+              managerId: userId,
               status: "APPROVED",
               entryDate: { [Op.between]: [weekStartStr, weekEndStr] },
             },
@@ -902,13 +906,34 @@ const getWorkingDaysInRange = (startDateStr, endDateStr) => {
   return days;
 };
 
+const formatDateForDisplay = (dateStr) => {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return `${d} ${months[m - 1]} ${y}`;
+};
+
 export const getMissingTimeDetails = async (managerId, startDate, endDate) => {
   const fromDate = startDate;
   const toDate = endDate;
 
-  const teamMembers = await User.findAll({
+  const reportingUsers = await User.findAll({
     where: { managerId, isActive: true },
-    attributes: ["id", "name", "email", "defaultHours"],
+    attributes: ["id", "name"],
+  });
+
+  const entryUsers = await TimeEntry.findAll({
+    where: { managerId },
+    attributes: ["userId"],
+  });
+
+  const allMemberIds = [...new Set([
+    ...reportingUsers.map((u) => u.id),
+    ...entryUsers.map((e) => e.userId),
+  ])];
+
+  const teamMembers = await User.findAll({
+    where: { id: { [Op.in]: allMemberIds }, isActive: true },
+    attributes: ["id", "name"],
   });
 
   const memberIds = teamMembers.map((m) => m.id);
@@ -917,82 +942,111 @@ export const getMissingTimeDetails = async (managerId, startDate, endDate) => {
   const timesheets = await Timesheet.findAll({
     where: {
       userId: { [Op.in]: memberIds },
-      [Op.or]: [
-        { weekStartDate: { [Op.between]: [fromDate, toDate] } },
-        { weekEndDate: { [Op.between]: [fromDate, toDate] } },
-        {
-          weekStartDate: { [Op.lte]: fromDate },
-          weekEndDate: { [Op.gte]: toDate },
-        },
-      ],
+      status: { [Op.in]: ["SUBMITTED", "APPROVED"] },
+      weekStartDate: { [Op.between]: [fromDate, toDate] },
     },
-    attributes: ["userId"],
-    group: ["userId"],
+    attributes: ["id", "userId", "weekStartDate", "weekEndDate"],
   });
 
-  const usersWithTimesheets = new Set(timesheets.map((t) => t.userId));
-  const allWorkingDays = getWorkingDaysInRange(fromDate, toDate);
+  if (timesheets.length === 0) return { employees: [], totalCount: 0 };
 
-  const employees = await Promise.all(
-    teamMembers
-      .filter((m) => usersWithTimesheets.has(m.id))
-      .map(async (member) => {
-        const entries = await TimeEntry.findAll({
-          where: {
-            userId: member.id,
-            entryDate: { [Op.between]: [fromDate, toDate] },
-            status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED"] },
-          },
-          attributes: ["entryDate", "hours"],
-        });
+  const timesheetWeeks = timesheets.map((ts) => {
+    const weekStart = ts.weekStartDate;
+    const weekEnd = ts.weekEndDate;
+    const workingDays = getWorkingDaysInRange(weekStart, weekEnd);
+    return {
+      timesheetId: ts.id,
+      userId: ts.userId,
+      weekStart,
+      weekEnd,
+      workingDays,
+    };
+  });
 
-        const hoursByDate = {};
-        let totalLoggedHours = 0;
-        entries.forEach((e) => {
-          const dateStr = e.entryDate;
-          const hrs = Number(e.hours || 0);
-          hoursByDate[dateStr] = (hoursByDate[dateStr] || 0) + hrs;
-          totalLoggedHours += hrs;
-        });
+  const minDate = timesheetWeeks.reduce(
+    (min, w) => (w.weekStart < min ? w.weekStart : min),
+    timesheetWeeks[0].weekStart
+  );
+  const maxDate = timesheetWeeks.reduce(
+    (max, w) => (w.weekEnd > max ? w.weekEnd : max),
+    timesheetWeeks[0].weekEnd
+  );
 
-        const dailyBreakdown = [];
-        let missingDayCount = 0;
-        let missingHourCount = 0;
-        const dailyHours = Number(member.defaultHours || 8);
+  const allEntries = await TimeEntry.findAll({
+    where: {
+      userId: { [Op.in]: memberIds },
+      entryDate: { [Op.between]: [minDate, maxDate] },
+    },
+    attributes: ["userId", "entryDate", "hours"],
+  });
 
-        allWorkingDays.forEach((dateStr) => {
-          const logged = hoursByDate[dateStr] || 0;
-          const isMissing = logged === 0;
-          if (isMissing) {
-            missingDayCount++;
-            missingHourCount += dailyHours;
-          }
-          dailyBreakdown.push({
-            date: dateStr,
-            hoursLogged: logged,
-            expectedHours: dailyHours,
-            status: isMissing ? "Missing" : "Completed",
+  const approvedLeaves = await Leave.findAll({
+    where: {
+      userId: { [Op.in]: memberIds },
+      status: "APPROVED",
+      date: { [Op.between]: [minDate, maxDate] },
+    },
+    attributes: ["userId", "date"],
+  });
+
+  const leaveSet = new Set();
+  approvedLeaves.forEach((l) => leaveSet.add(`${l.userId}-${l.date}`));
+
+  const hoursByUserAndDate = {};
+  allEntries.forEach((e) => {
+    const uid = e.userId;
+    const dateStr = e.entryDate;
+    if (!hoursByUserAndDate[uid]) hoursByUserAndDate[uid] = {};
+    hoursByUserAndDate[uid][dateStr] = (hoursByUserAndDate[uid][dateStr] || 0) + Number(e.hours || 0);
+  });
+
+  const weeksByUser = {};
+  timesheetWeeks.forEach((tw) => {
+    if (!weeksByUser[tw.userId]) weeksByUser[tw.userId] = [];
+    weeksByUser[tw.userId].push(tw);
+  });
+
+  const employeesWithMissing = new Set();
+  const employees = [];
+
+  teamMembers.forEach((member) => {
+    const userWeeks = weeksByUser[member.id] || [];
+    if (userWeeks.length === 0) return;
+
+    const userHours = hoursByUserAndDate[member.id] || {};
+
+    userWeeks.forEach((tw) => {
+      if (tw.workingDays.length === 0) return;
+
+      const missingDates = [];
+
+      tw.workingDays.forEach((dateStr) => {
+        if (leaveSet.has(`${member.id}-${dateStr}`)) return;
+
+        const logged = userHours[dateStr] || 0;
+        if (logged === 0) {
+          missingDates.push({
+            date: formatDateForDisplay(dateStr),
+            day: getDayName(dateStr),
           });
-        });
+        }
+      });
 
-        return {
+      if (missingDates.length > 0) {
+        employeesWithMissing.add(member.id);
+        employees.push({
           userId: member.id,
           name: member.name,
-          email: member.email,
-          totalLoggedHours: Math.round(totalLoggedHours * 100) / 100,
-          missingDays: missingDayCount,
-          missingHours: Math.round(missingHourCount * 100) / 100,
-          dailyBreakdown,
-        };
-      })
-  );
-
-  const withMissing = employees.filter(
-    (e) => e.missingDays > 0
-  );
+          week: `${formatDateForDisplay(tw.weekStart)} - ${formatDateForDisplay(tw.weekEnd)}`,
+          missingDays: missingDates.length,
+          days: missingDates,
+        });
+      }
+    });
+  });
 
   return {
-    employees: withMissing,
-    totalCount: withMissing.length,
+    totalCount: employeesWithMissing.size,
+    employees,
   };
 };

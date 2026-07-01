@@ -1,17 +1,8 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { resetPassword } from "../services/api";
+import { Lock, Eye, EyeOff } from "lucide-react";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
-
-import bg from "../assets/register-bg.png";
 import logo from "../assets/logo.png";
 
 const ResetPassword = () => {
@@ -23,6 +14,8 @@ const ResetPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,190 +49,130 @@ const ResetPassword = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* 🔥 OVERLAY */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/60 to-purple-100/60"></div>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Subtle background patterns */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 15% 25%, rgba(179,58,47,0.035) 0%, transparent 50%),
+            radial-gradient(circle at 85% 75%, rgba(179,58,47,0.025) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, #E2E8F0 0.5px, transparent 0.5px)
+          `,
+          backgroundSize: "100% 100%, 100% 100%, 24px 24px",
+        }}
+      />
 
-      {/* ✨ LIGHT EFFECT */}
-      <div className="light-beam"></div>
+      {/* Subtle diagonal pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.012]"
+        style={{
+          backgroundImage: `repeating-linear-gradient(45deg, #1E293B 0px, #1E293B 1px, transparent 1px, transparent 32px)`,
+        }}
+      />
 
-      <div className="relative w-full max-w-md z-10 animate-fadeIn">
-
-        {/* 🔥 LOGO */}
-        <div className="flex justify-center mb-6">
-          <div className="flex items-center gap-3 text-[#1E293B]">
-
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#B33A2F]">
-              <img src={logo} alt="logo" className="w-full h-full object-cover" />
+      <div className="relative w-full max-w-[680px] z-10">
+        {/* Logo */}
+        <div className="flex justify-center mb-10">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-full overflow-hidden">
+              <img src={logo} alt="NForce Pulse" className="w-full h-full object-cover" />
             </div>
-
-            <span className="text-3xl font-bold">NForce Pulse</span>
+            <span className="text-[26px] font-bold text-[#1E293B] tracking-tight">NForce Pulse</span>
           </div>
         </div>
 
-        {/* CARD */}
-        <div className="card-modern p-8">
-
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-[#1E293B] animate-slideDown">
-              Reset Password
-            </h2>
-          </div>
+        {/* Card */}
+        <div className="bg-white rounded-[24px] shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] p-10 md:p-12">
+          {/* Title */}
+          <h2 className="text-[28px] md:text-[30px] font-bold text-[#1E293B] text-center mb-9">
+            Reset Password
+          </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Error */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
+                {error}
+              </div>
+            )}
 
-            {error && <div className="error-anim">{error}</div>}
-            {message && <div className="success-anim">{message}</div>}
+            {/* Success */}
+            {message && (
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm font-medium">
+                {message}
+              </div>
+            )}
 
-            <div className="field-anim">
-              <Input
-                type="password"
-                placeholder="New Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="input-modern"
-              />
+            {/* New Password */}
+            <div>
+              <label className="block text-sm font-medium text-[#475569] mb-1.5">New Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
+                  <Lock size={18} />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter new password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full h-12 pl-10 pr-10 rounded-xl border border-[#E2E8F0] bg-white text-[#1E293B] placeholder:text-[#94A3B8] text-sm focus:outline-none focus:ring-2 focus:ring-[#B33A2F]/20 focus:border-[#B33A2F] transition-all duration-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#94A3B8] hover:text-[#64748B] transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
-            <div className="field-anim delay-1">
-              <Input
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="input-modern"
-              />
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-[#475569] mb-1.5">Confirm Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
+                  <Lock size={18} />
+                </div>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="w-full h-12 pl-10 pr-10 rounded-xl border border-[#E2E8F0] bg-white text-[#1E293B] placeholder:text-[#94A3B8] text-sm focus:outline-none focus:ring-2 focus:ring-[#B33A2F]/20 focus:border-[#B33A2F] transition-all duration-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#94A3B8] hover:text-[#64748B] transition-colors"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
-            <Button
+            {/* Button */}
+            <button
               type="submit"
               disabled={loading}
-              className="btn-modern w-full"
+              className="w-full h-14 rounded-xl bg-gradient-to-r from-[#B33A2F] to-[#D45A4F] text-white font-bold text-[15px] tracking-wide shadow-md hover:shadow-lg hover:shadow-[#B33A2F]/25 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
             >
               {loading ? "Updating..." : "Reset Password"}
-            </Button>
-
+            </button>
           </form>
         </div>
+
+        {/* Bottom text */}
+        <p className="text-center mt-8 text-base">
+          <span className="text-[#1E293B] font-medium">Let's Do </span>
+          <span className="text-[#B33A2F] font-bold">IT!</span>
+        </p>
       </div>
-
-      {/* 🔥 ANIMATIONS */}
-      <style>
-        {`
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-slideDown {
-          animation: slideDown 0.6s ease;
-        }
-
-        @keyframes slideDown {
-          from { transform: translateY(-20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-
-        .field-anim {
-          animation: fadeUp 0.6s ease forwards;
-        }
-
-        .delay-1 { animation-delay: 0.2s; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .card-modern {
-          background: white;
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          border: 1px solid #E2E8F0;
-          box-shadow: 0 0 30px rgba(179,58,47,0.3);
-          transition: transform 0.3s;
-        }
-
-        .card-modern:hover {
-          transform: scale(1.02);
-        }
-
-        .input-modern {
-          background: white;
-          border: 1px solid #E2E8F0;
-          color: #1E293B;
-        }
-
-        .input-modern:focus {
-          border-color: #B33A2F;
-          box-shadow: 0 0 10px rgba(179,58,47,0.3);
-        }
-
-        .btn-modern {
-          background: #B33A2F;
-          color: white;
-          font-weight: 600;
-          transition: all 0.3s;
-        }
-
-        .btn-modern:hover {
-          transform: scale(1.03);
-          box-shadow: 0 0 20px rgba(179,58,47,0.3);
-        }
-
-        .error-anim {
-          background: rgba(179,58,47,0.1);
-          border: 1px solid #B33A2F;
-          color: #ff6b6b;
-          padding: 10px;
-          border-radius: 8px;
-          animation: shake 0.3s;
-        }
-
-        .success-anim {
-          background: rgba(179,58,47,0.1);
-          border: 1px solid #B33A2F;
-          color: #B33A2F;
-          padding: 10px;
-          border-radius: 8px;
-          animation: fadeIn 0.5s;
-        }
-
-        @keyframes shake {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          50% { transform: translateX(5px); }
-          75% { transform: translateX(-5px); }
-          100% { transform: translateX(0); }
-        }
-
-        .light-beam {
-          position: absolute;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(120deg, transparent, rgba(179,58,47,0.15), transparent);
-          animation: beamMove 6s linear infinite;
-        }
-
-        @keyframes beamMove {
-          from { transform: translateX(-50%) translateY(-50%); }
-          to { transform: translateX(50%) translateY(50%); }
-        }
-        `}
-      </style>
     </div>
   );
 };

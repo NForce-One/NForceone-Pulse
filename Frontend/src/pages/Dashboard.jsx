@@ -785,10 +785,9 @@ export const Dashboard = () => {
                     <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Employee</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Hours Logged</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Week</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Missing Days</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Missing Hours</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Actions</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">View Details</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -796,9 +795,8 @@ export const Dashboard = () => {
                         missingTime.employees.map((emp) => (
                           <tr key={emp.userId} className="border-b border-[#E2E8F0]">
                             <td className="px-4 py-3 text-[#1E293B] font-medium whitespace-nowrap">{emp.name}</td>
-                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{emp.totalLoggedHours}h</td>
+                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{emp.week}</td>
                             <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{emp.missingDays} Day{emp.missingDays !== 1 ? "s" : ""}</td>
-                            <td className="px-4 py-3 text-red-500 whitespace-nowrap">{emp.missingHours}h</td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <button
                                 onClick={() => openMissingTimeModal(emp)}
@@ -812,8 +810,8 @@ export const Dashboard = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-[#374151]">
-                            No Missing Time Records Found
+                          <td colSpan={4} className="px-4 py-6 text-center text-[#374151]">
+                            No missing time entries found.
                           </td>
                         </tr>
                       )}
