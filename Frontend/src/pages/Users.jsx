@@ -180,49 +180,51 @@ export const Users = () => {
         <div className="overflow-x-auto p-6">
           <table className="w-full text-sm">
 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-               <tr>
-                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Name</th>
-                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Email</th>
-                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Role</th>
-                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Status</th>
-                  <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Actions</th>
-               </tr>
-             </thead>
-             <tbody>
-               {isLoading ? (
-                  <tr><td colSpan="5" className="text-center py-8 text-[#64748B]">Loading...</td></tr>
-                ) : users.length === 0 ? (
-                  <tr><td colSpan="5" className="text-center py-8 text-[#64748B]">No users found</td></tr>
-               ) : (
-                 users.map((user) => (
-                   <tr key={user.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
-                      <td className="px-4 py-3.5 text-[#1E293B] font-medium align-middle">{user.name}</td>
-                      <td className="px-4 py-3.5 text-[#64748B] align-middle">{user.email}</td>
-                     <td className="px-4 py-3.5 align-middle">
-                       <Badge variant={user.role === "ADMIN" ? "danger" : user.role === "MANAGER" ? "warning" : "default"}>
-                         {user.role}
-                       </Badge>
+                <tr>
+                   <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle whitespace-nowrap">Employee ID</th>
+                   <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Name</th>
+                   <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Email</th>
+                   <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Role</th>
+                   <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle">Status</th>
+                   <th className="px-4 py-3.5 text-left text-[#64748B] font-medium align-middle w-40">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                   <tr><td colSpan="6" className="text-center py-8 text-[#64748B]">Loading...</td></tr>
+                 ) : users.length === 0 ? (
+                   <tr><td colSpan="6" className="text-center py-8 text-[#64748B]">No users found</td></tr>
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+                       <td className="px-4 py-3.5 text-[#1E293B] font-medium align-middle whitespace-nowrap">{user.employeeId ?? ""}</td>
+                       <td className="px-4 py-3.5 text-[#1E293B] font-medium align-middle">{user.name}</td>
+                       <td className="px-4 py-3.5 text-[#64748B] align-middle">{user.email}</td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <Badge variant={user.role === "ADMIN" ? "danger" : user.role === "MANAGER" ? "warning" : "default"}>
+                          {user.role}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <Badge variant={user.isActive ? "success" : "danger"}>
+                          {user.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle space-x-2">
+                       <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
+                         <Pencil className="w-4 h-4" />
+                       </Button>
+                       <Button size="sm" variant="outline" onClick={() => handleToggleStatus(user.id)}>
+                         <Power className="w-4 h-4" />
+                       </Button>
+                       <Button size="sm" variant="danger" onClick={() => handleDelete(user.id)}>
+                         <Trash2 className="w-4 h-4" />
+                       </Button>
                      </td>
-                     <td className="px-4 py-3.5 align-middle">
-                       <Badge variant={user.isActive ? "success" : "danger"}>
-                         {user.isActive ? "Active" : "Inactive"}
-                       </Badge>
-                     </td>
-                     <td className="px-4 py-3.5 align-middle space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleToggleStatus(user.id)}>
-                        <Power className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(user.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+                   </tr>
+                 ))
+               )}
+             </tbody>
           </table>
         </div>
       </Card>

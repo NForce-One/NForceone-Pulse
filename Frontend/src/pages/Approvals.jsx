@@ -149,6 +149,7 @@ export const Approvals = () => {
         return {
           key: `${group.userId}_${group.weekStart}`,
           userId: group.userId,
+          employeeId: group.employeeId,
           name: group.name,
           entries: group.entries,
           totalHours: totalHours.toFixed(2),
@@ -343,7 +344,7 @@ export const Approvals = () => {
                       {/* Employee */}
                       <td className="px-4 py-3">
                         <div className="text-sm font-semibold text-[#1E293B]">{group.name}</div>
-                        <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.employeeId || group.userId}</div>
+                        {group.employeeId != null && <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.employeeId}</div>}
                       </td>
 
                       {/* Week */}
@@ -596,31 +597,7 @@ export const Approvals = () => {
                   </div>
                 )}
 
-                {/* Drawer Actions */}
-                {group.status === "SUBMITTED" && (
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
-                    <Button
-                      className="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
-                      onClick={(e) => {
-                        const entryIds = group.entries.map((entry) => entry.id);
-                        openModal(entryIds, "approve", { stopPropagation: () => {} });
-                      }}
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Approve Timesheet
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={(e) => {
-                        const entryIds = group.entries.map((entry) => entry.id);
-                        openModal(entryIds, "reject", { stopPropagation: () => {} });
-                      }}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Reject Timesheet
-                    </Button>
-                  </div>
-                )}
+
               </div>
             </div>
           </>

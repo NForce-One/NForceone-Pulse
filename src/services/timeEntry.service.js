@@ -10,7 +10,7 @@ const getEntriesWithUser = async (whereClause = {}) => {
     include: [
       {
         model: User,
-        attributes: ["id", "name", "email"],
+        attributes: ["id", "name", "email", "employeeId"],
         required: false,
       },
       {
