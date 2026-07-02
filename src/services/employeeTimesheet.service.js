@@ -1,4 +1,5 @@
 import { Op, UniqueConstraintError } from "sequelize";
+import sequelize from "../config/db.js";
 import Client from "../models/client.model.js";
 import Project from "../models/project.model.js";
 import User from "../models/user.model.js";
@@ -329,19 +330,36 @@ export const submitTimesheet = async (userId, data) => {
     throw new Error("Please assign a client and project before submitting.");
   }
 
-  await timesheet.update({ totalHours, status: "SUBMITTED" });
+  const t = await sequelize.transaction();
 
-  for (const entry of entries) {
-    if (entry.status !== "APPROVED") {
-      const dailyEntry = (data.dailyEntries || []).find(
-        (de) => de.entryDate === entry.entryDate && Number(de.projectId) === Number(entry.projectId)
-      );
-      const updateFields = { status: "SUBMITTED" };
-      if (dailyEntry?.managerId) {
-        updateFields.managerId = dailyEntry.managerId;
+  try {
+    await timesheet.update({ totalHours, status: "SUBMITTED" }, { transaction: t });
+
+    const updatePromises = [];
+
+    for (const entry of entries) {
+      if (entry.status !== "APPROVED") {
+        const dailyEntry = (data.dailyEntries || []).find(
+          (de) => de.entryDate === entry.entryDate && Number(de.projectId) === Number(entry.projectId)
+        );
+        const updateFields = { status: "SUBMITTED" };
+        if (dailyEntry?.managerId) {
+          updateFields.managerId = dailyEntry.managerId;
+        }
+        updatePromises.push(
+          TimeEntry.update(updateFields, { where: { id: entry.id }, transaction: t })
+        );
       }
-      await entry.update(updateFields);
     }
+
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+    }
+
+    await t.commit();
+  } catch (error) {
+    await t.rollback();
+    throw error;
   }
 
   try {
