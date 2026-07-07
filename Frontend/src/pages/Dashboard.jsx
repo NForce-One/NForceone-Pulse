@@ -637,23 +637,31 @@ export const Dashboard = () => {
                               </div>
                             </td>
                             <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.day || "-"}</td>
-                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{Number(day.totalHours || 0).toFixed(2)}h</td>
-                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.reportedTo || "-"}</td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                day.status === "APPROVED" ? "bg-green-100 text-green-700 border border-green-200" :
-                                day.status === "SUBMITTED" ? "bg-blue-100 text-blue-700 border border-blue-200" :
-                                day.status === "REJECTED" ? "bg-red-100 text-red-700 border border-red-200" :
-                                day.status === "PENDING" ? "bg-orange-100 text-orange-700 border border-orange-200" :
-                                "bg-gray-100 text-gray-600 border border-gray-200"
-                              }`}>
-                                {day.status === "APPROVED" ? "Approved" :
-                                 day.status === "SUBMITTED" ? "Submitted" :
-                                 day.status === "REJECTED" ? "Rejected" :
-                                 day.status === "PENDING" ? "Pending" :
-                                 "Draft"}
-                              </span>
-                            </td>
+                            {day.isMissing ? (
+                              <td colSpan={3} className="px-4 py-3 text-center text-[#64748B]">
+                                No Entries Logged
+                              </td>
+                            ) : (
+                              <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{`${Number(day.totalHours || 0).toFixed(2)}h`}</td>
+                            )}
+                            {!day.isMissing && <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.reportedTo || "-"}</td>}
+                            {!day.isMissing && (
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                  day.status === "APPROVED" ? "bg-green-100 text-green-700 border border-green-200" :
+                                  day.status === "SUBMITTED" ? "bg-blue-100 text-blue-700 border border-blue-200" :
+                                  day.status === "REJECTED" ? "bg-red-100 text-red-700 border border-red-200" :
+                                  day.status === "PENDING" ? "bg-orange-100 text-orange-700 border border-orange-200" :
+                                  "bg-gray-100 text-gray-600 border border-gray-200"
+                                }`}>
+                                  {day.status === "APPROVED" ? "Approved" :
+                                   day.status === "SUBMITTED" ? "Submitted" :
+                                   day.status === "REJECTED" ? "Rejected" :
+                                   day.status === "PENDING" ? "Pending" :
+                                   "Draft"}
+                                </span>
+                              </td>
+                            )}
                           </tr>
                           {expandedDates.has(day.rawDate) && (
                             <tr>

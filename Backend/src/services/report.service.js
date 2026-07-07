@@ -511,6 +511,33 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
       .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
   }
 
+  const existingDates = new Set(dailySummary.map(d => d.rawDate));
+  const ptr = new Date(startOfMonthStr + "T00:00:00");
+  const end = new Date(endOfMonthStr + "T00:00:00");
+  for (let d = new Date(ptr); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = toDateOnlyString(d);
+    if (existingDates.has(dateStr)) continue;
+    if (classifyEntry(dateStr) !== "working") continue;
+    dailySummary.push({
+      date: formatDate(dateStr),
+      rawDate: dateStr,
+      day: getDayName(dateStr),
+      displayName: getDisplayName(dateStr),
+      extraWorkType: getExtraWorkType(dateStr),
+      type: "working",
+      totalHours: 0,
+      projectCount: 0,
+      isWeekend: false,
+      isHoliday: false,
+      userName: "-",
+      reportedTo: "-",
+      projects: [],
+      status: "No Entries Logged",
+      isMissing: true,
+    });
+  }
+  dailySummary.sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+
   console.log(`[DEBUG Dashboard] monthEntries count: ${monthEntries.length}, dashboardEntries built: ${dashboardEntries.length}, dailySummary: ${dailySummary.length}`);
   console.log(`[DEBUG Dashboard] normalHours: ${normalHours}, weekendHours: ${weekendHours}, holidayHours: ${holidayHours}`);
 

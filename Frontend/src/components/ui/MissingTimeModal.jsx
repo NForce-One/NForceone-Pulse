@@ -30,6 +30,7 @@ export const MissingTimeModal = ({ isOpen, onClose, employee }) => {
                 <tr>
                   <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Date</th>
                   <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap">Day</th>
+                  <th className="px-4 py-3 text-left text-[#64748B] font-medium whitespace-nowrap"></th>
                 </tr>
               </thead>
               <tbody>
@@ -41,11 +42,12 @@ export const MissingTimeModal = ({ isOpen, onClose, employee }) => {
                     >
                       <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{item.date}</td>
                       <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{item.day}</td>
+                      <td className="px-4 py-3 text-[#64748B] italic whitespace-nowrap">No Entries Logged</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-[#64748B]">
+                    <td colSpan={3} className="px-4 py-6 text-center text-[#64748B]">
                       No daily data available.
                     </td>
                   </tr>
