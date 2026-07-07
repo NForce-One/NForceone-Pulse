@@ -12,8 +12,14 @@ const getInitialTheme = () => {
   }
 };
 
+const isLoginPage = () => window.location.pathname === "/login";
+
 const applyThemeClass = (mode) => {
   const root = document.documentElement;
+  if (isLoginPage()) {
+    root.classList.remove("dark-theme");
+    return;
+  }
   if (mode === "dark") {
     root.classList.add("dark-theme");
   } else if (mode === "light") {

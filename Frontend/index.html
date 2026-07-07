@@ -11,6 +11,7 @@
     <script>
       (function() {
         try {
+          if (window.location.pathname === '/login') return;
           var mode = localStorage.getItem('displayMode');
           if (mode === 'dark') {
             document.documentElement.classList.add('dark-theme');

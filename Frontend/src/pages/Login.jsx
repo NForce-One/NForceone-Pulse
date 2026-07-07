@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Clock, Mail, Lock, Eye, EyeOff, LogIn, BarChart3, FileText } from "lucide-react";
 
@@ -13,6 +13,20 @@ export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.remove("dark-theme");
+    return () => {
+      const mode = localStorage.getItem("displayMode") || "auto";
+      if (mode === "dark") {
+        document.documentElement.classList.add("dark-theme");
+      } else if (!mode || mode === "auto") {
+        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.classList.add("dark-theme");
+        }
+      }
+    };
+  }, []);
 
   const { login } = useAuth();
   const navigate = useNavigate();
