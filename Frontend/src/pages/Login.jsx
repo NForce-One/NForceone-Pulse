@@ -11,7 +11,6 @@ export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -186,17 +185,8 @@ export const Login = () => {
                 </div>
               </div>
 
-              {/* Remember Me + Forgot Password */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-red-600 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-600">Remember Me</span>
-                </label>
+              {/* Forgot Password */}
+              <div className="flex items-center justify-end">
                 <span
                   className="text-sm text-red-600 cursor-pointer font-medium"
                   onClick={() => navigate("/forgot-password")}
