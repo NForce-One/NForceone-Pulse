@@ -22,7 +22,9 @@
 
 @layer base {
   body {
-    @apply bg-[#F8FAFC] text-[#1E293B] font-sans antialiased;
+    @apply font-sans antialiased;
+    background-color: var(--bg-body);
+    color: var(--text-primary);
   }
 
   ::-webkit-scrollbar {
@@ -30,10 +32,10 @@
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #E2E8F0;
+    background: var(--scrollbar-track);
   }
   ::-webkit-scrollbar-thumb {
-    background: #94A3B8;
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
@@ -44,13 +46,13 @@
     height: 10px;
   }
   .overflow-x-auto::-webkit-scrollbar-track {
-    background: #F1F5F9;
+    background: var(--scrollbar-track);
     border-radius: 4px;
   }
   .overflow-x-auto::-webkit-scrollbar-thumb {
-    background: #94A3B8;
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
-    border: 2px solid #F1F5F9;
+    border: 2px solid var(--scrollbar-track);
   }
   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
     background: #B33A2F;

@@ -50,8 +50,8 @@ export const Sidebar = () => {
   const mainItems = visibleItems.filter((item) => !item.path.startsWith("/admin"));
 
   return (
-    <div className="flex flex-col w-64 bg-[#0D0D0D] border-r border-[#1F2937] h-full shadow-[2px_0_10px_rgba(0,0,0,0.4)]">
-      <div className="h-16 flex items-center px-6 border-b border-[#1F2937] bg-[#0D0D0D]">
+    <div className="sidebar-container flex flex-col w-64 bg-[#0D0D0D] border-r border-[#1F2937] h-full shadow-[2px_0_10px_rgba(0,0,0,0.4)]">
+      <div className="sidebar-logo-area h-16 flex items-center px-6 border-b border-[#1F2937] bg-[#0D0D0D]">
         <span className="text-xl font-bold text-white flex items-center gap-3 hover:text-[#DC2626] transition-colors">
           {logoError ? (
             <Clock className="w-6 h-6 text-[#DC2626] drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]" />
