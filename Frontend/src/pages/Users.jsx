@@ -210,7 +210,7 @@ export const Users = () => {
                           {user.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3.5 align-middle space-x-2">
+                      <td className="px-4 py-3.5 align-middle flex items-center gap-2 whitespace-nowrap">
                        <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
                          <Pencil className="w-4 h-4" />
                        </Button>
