@@ -307,16 +307,36 @@ export const EmployeeTimeIQ = () => {
   const handleCellChange = useCallback((rowId, date, value) => {
     if (value !== "" && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) return;
     if (parseFloat(value) > 24) return;
-    setProjectRows((prev) =>
-      prev.map((row) =>
+    setProjectRows((prev) => {
+      const newHours = parseFloat(value) || 0;
+      const otherTotal = prev.reduce((sum, r) => {
+        if (r.rowId === rowId) return sum;
+        return sum + (parseFloat(r.days[date]?.hours) || 0);
+      }, 0);
+      if (otherTotal + newHours > 24) {
+        const maxAllowed = Math.max(0, 24 - otherTotal);
+        if (maxAllowed <= 0) return prev;
+        return prev.map((r) =>
+          r.rowId !== rowId
+            ? r
+            : {
+                ...r,
+                days: {
+                  ...r.days,
+                  [date]: { ...(r.days[date] || { hours: "", description: "" }), hours: String(maxAllowed) },
+                },
+              }
+        );
+      }
+      return prev.map((row) =>
         row.rowId !== rowId
           ? row
           : {
               ...row,
               days: { ...row.days, [date]: { ...(row.days[date] || { hours: "", description: "" }), hours: value } },
             }
-      )
-    );
+      );
+    });
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
