@@ -52,12 +52,36 @@ const generateWeekDates = (weekStartStr) => {
   });
 };
 
+const parseHHMM = (value) => {
+  if (!value && value !== 0) return 0;
+  const str = String(value);
+  const dotIdx = str.indexOf(".");
+  if (dotIdx === -1) {
+    const h = parseInt(str, 10);
+    return isNaN(h) ? 0 : Math.max(0, h);
+  }
+  const hours = parseInt(str.substring(0, dotIdx), 10) || 0;
+  const minsStr = str.substring(dotIdx + 1);
+  const minutes = minsStr.length === 1
+    ? parseInt(minsStr, 10)
+    : parseInt(minsStr.substring(0, 2), 10);
+  return Math.max(0, hours + (isNaN(minutes) ? 0 : minutes) / 60);
+};
+
+const decimalToHHMMString = (value) => {
+  if (!value && value !== 0) return "";
+  const totalMinutes = Math.round(value * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h}.${m.toString().padStart(2, "0")}`;
+};
+
 const formatHoursToHHMM = (hours) => {
-  if (!hours && hours !== 0) return "0:00";
+  if (!hours && hours !== 0) return "0h 00m";
   const totalMinutes = Math.round(hours * 60);
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
-  return `${h}:${m.toString().padStart(2, "0")}`;
+  return `${h}h ${m.toString().padStart(2, "0")}m`;
 };
 
 const getSnackbarStyles = (type) => {
@@ -111,7 +135,7 @@ export const EmployeeTimeIQ = () => {
 
   const totalHours = useMemo(() => {
     return projectRows.reduce((sum, row) => {
-      return sum + Object.values(row.days).reduce((daySum, d) => daySum + (Math.max(0, parseFloat(d.hours) || 0)), 0);
+      return sum + Object.values(row.days).reduce((daySum, d) => daySum + (Math.max(0, parseHHMM(d.hours))), 0);
     }, 0);
   }, [projectRows]);
 
@@ -251,7 +275,7 @@ export const EmployeeTimeIQ = () => {
             rowMap[key].comment = entry.comment;
           }
           rowMap[key].days[entry.entryDate] = {
-            hours: entry.hours ?? "",
+            hours: decimalToHHMMString(entry.hours),
             description: entry.description || "",
           };
         });
@@ -307,36 +331,43 @@ export const EmployeeTimeIQ = () => {
   const handleCellChange = useCallback((rowId, date, value) => {
     if (value !== "" && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) return;
     if (parseFloat(value) > 24) return;
-    setProjectRows((prev) => {
-      const newHours = parseFloat(value) || 0;
-      const otherTotal = prev.reduce((sum, r) => {
-        if (r.rowId === rowId) return sum;
-        return sum + (parseFloat(r.days[date]?.hours) || 0);
-      }, 0);
-      if (otherTotal + newHours > 24) {
-        const maxAllowed = Math.max(0, 24 - otherTotal);
-        if (maxAllowed <= 0) return prev;
-        return prev.map((r) =>
+    const newHours = parseHHMM(value);
+    const otherTotal = projectRows.reduce((sum, r) => {
+      if (r.rowId === rowId) return sum;
+      return sum + parseHHMM(r.days[date]?.hours);
+    }, 0);
+    if (otherTotal + newHours > 24) {
+      const maxAllowed = Math.max(0, 24 - otherTotal);
+      if (maxAllowed <= 0) {
+        showSnackbar("Maximum 24 hours can be logged per day across all projects.", "error");
+        return;
+      }
+      showSnackbar("Maximum 24 hours can be logged per day across all projects.", "error");
+      setProjectRows((prev) =>
+        prev.map((r) =>
           r.rowId !== rowId
             ? r
             : {
                 ...r,
                 days: {
                   ...r.days,
-                  [date]: { ...(r.days[date] || { hours: "", description: "" }), hours: String(maxAllowed) },
+                  [date]: { ...(r.days[date] || { hours: "", description: "" }), hours: decimalToHHMMString(maxAllowed) },
                 },
               }
-        );
-      }
-      return prev.map((row) =>
-        row.rowId !== rowId
-          ? row
-          : {
-              ...row,
-              days: { ...row.days, [date]: { ...(row.days[date] || { hours: "", description: "" }), hours: value } },
-            }
+        )
       );
-    });
+    } else {
+      setProjectRows((prev) =>
+        prev.map((row) =>
+          row.rowId !== rowId
+            ? row
+            : {
+                ...row,
+                days: { ...row.days, [date]: { ...(row.days[date] || { hours: "", description: "" }), hours: value } },
+              }
+        )
+      );
+    }
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -349,7 +380,7 @@ export const EmployeeTimeIQ = () => {
         weekStartDate: ws,
         dailyEntries: wd.map((w) => ({
           entryDate: w.date,
-          hours: parseFloat(row.days[w.date]?.hours) || 0,
+          hours: parseHHMM(row.days[w.date]?.hours),
           description: row.days[w.date]?.description || "",
           clientId: row.clientId,
           projectId: row.projectId,
@@ -360,7 +391,7 @@ export const EmployeeTimeIQ = () => {
       };
       saveETDraft(data).catch(() => {});
     }, 800);
-  }, []);
+  }, [projectRows, showSnackbar]);
 
 
 
@@ -444,7 +475,7 @@ export const EmployeeTimeIQ = () => {
   const handleRemoveProject = useCallback(async (rowId) => {
     const row = projectRows.find((r) => r.rowId === rowId);
     if (!row) return;
-    const hasHours = Object.values(row.days).some((d) => parseFloat(d.hours) > 0);
+    const hasHours = Object.values(row.days).some((d) => parseHHMM(d.hours) > 0);
     if (hasHours && !window.confirm(`Remove "${row.projectName}" and its hours?`)) return;
     try {
       const pId = row.projectId || "null";
@@ -484,7 +515,7 @@ export const EmployeeTimeIQ = () => {
         const dayData = row.days[wd.date] || { hours: "", description: "" };
         return {
           entryDate: wd.date,
-          hours: parseFloat(dayData.hours) || 0,
+          hours: parseHHMM(dayData.hours),
           description: dayData.description || "",
           comment: idx === 0 ? (row.comment || "") : undefined,
           clientId: row.clientId,
@@ -502,6 +533,16 @@ export const EmployeeTimeIQ = () => {
       showSnackbar("Please add at least one project", "error");
       return;
     }
+    const exceededDay = weekDates.find((wd) => {
+      const dayTotal = projectRows.reduce((sum, row) => {
+        return sum + parseHHMM(row.days[wd.date]?.hours);
+      }, 0);
+      return dayTotal > 24;
+    });
+    if (exceededDay) {
+      showSnackbar("Maximum 24 hours can be logged per day across all projects.", "error");
+      return;
+    }
     try {
       setSaving(true);
       const data = prepareSaveData();
@@ -517,7 +558,7 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSaving(false);
     }
-  }, [projectRows, prepareSaveData, showSnackbar]);
+  }, [projectRows, weekDates, prepareSaveData, showSnackbar]);
 
   const handleSubmit = useCallback(async () => {
     if (projectRows.length === 0) {
@@ -530,6 +571,16 @@ export const EmployeeTimeIQ = () => {
     }
     if (totalHours <= 0) {
       showSnackbar("Cannot submit empty timesheet. Add hours first.", "error");
+      return;
+    }
+    const exceededDay = weekDates.find((wd) => {
+      const dayTotal = projectRows.reduce((sum, row) => {
+        return sum + parseHHMM(row.days[wd.date]?.hours);
+      }, 0);
+      return dayTotal > 24;
+    });
+    if (exceededDay) {
+      showSnackbar("Maximum 24 hours can be logged per day across all projects.", "error");
       return;
     }
     if (!window.confirm("Submit this timesheet for approval?")) return;
@@ -555,7 +606,7 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [projectRows, totalHours, selectedManager, prepareSaveData, showSnackbar]);
+  }, [projectRows, totalHours, selectedManager, weekDates, prepareSaveData, showSnackbar]);
 
   const handleUpdate = useCallback(async () => {
     if (!window.confirm("Revert to draft for editing?")) return;
@@ -655,7 +706,7 @@ export const EmployeeTimeIQ = () => {
           <Clock className="w-4 h-4 text-[#B33A2F]" />
           <div>
             <p className="text-[10px] text-[#64748B] font-semibold uppercase tracking-wider leading-tight">Total</p>
-            <p className="text-lg font-bold text-[#1E293B] leading-tight">{totalHours.toFixed(2)}</p>
+            <p className="text-lg font-bold text-[#1E293B] leading-tight">{formatHoursToHHMM(totalHours)}</p>
           </div>
         </div>
       </div>
@@ -752,7 +803,7 @@ export const EmployeeTimeIQ = () => {
             ) : (
               projectRows.map((row) => {
                 const rowTotal = Object.values(row.days).reduce(
-                  (s, d) => s + (Math.max(0, parseFloat(d.hours) || 0)), 0
+                  (s, d) => s + (Math.max(0, parseHHMM(d.hours))), 0
                 );
                 return (
                   <tr key={row.rowId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50 transition-colors">
@@ -879,11 +930,15 @@ export const EmployeeTimeIQ = () => {
                 </td>
                 {weekDates.map((wd) => {
                   const dayTotal = projectRows.reduce(
-                    (s, row) => s + (Math.max(0, parseFloat(row.days[wd.date]?.hours) || 0)), 0
+                    (s, row) => s + (Math.max(0, parseHHMM(row.days[wd.date]?.hours))), 0
                   );
+                  const isOverLimit = dayTotal > 24;
                   return (
                     <td key={wd.date} className="px-2 py-2 text-center border-l border-[#E2E8F0]">
-                      <span className="text-xs font-bold text-[#1E293B]">{formatHoursToHHMM(dayTotal)}</span>
+                      <span className={`text-xs font-bold ${isOverLimit ? "text-red-600" : "text-[#1E293B]"}`}>{formatHoursToHHMM(dayTotal)}</span>
+                      {isOverLimit && (
+                        <div className="text-[9px] text-red-500 font-semibold mt-0.5">Over 24h!</div>
+                      )}
                     </td>
                   );
                 })}
