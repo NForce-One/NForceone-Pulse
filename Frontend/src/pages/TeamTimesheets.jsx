@@ -8,6 +8,7 @@ import {
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { clearPageCache } from "../hooks/useCachedData";
+import { formatHoursToHHMM } from "../utils/timeFormat";
 
 import {
   Card,
@@ -526,16 +527,16 @@ export const TeamTimesheets = () => {
                       <td className="px-4 py-3 text-[#64748B] whitespace-nowrap">{ts.week_start_date}</td>
                       <td className="px-4 py-3 text-[#64748B] whitespace-nowrap">{ts.week_end_date}</td>
                       <td className="px-4 py-3 text-[#1E293B] font-medium whitespace-nowrap">
-                        {(ts.total_minutes / 60).toFixed(2)}h
+                        {formatHoursToHHMM(ts.total_minutes / 60)}
                       </td>
                       <td className="px-4 py-3 text-emerald-600 whitespace-nowrap">
-                        {(ts.total_billable_minutes / 60).toFixed(2)}h
+                        {formatHoursToHHMM(ts.total_billable_minutes / 60)}
                       </td>
                       <td className="px-4 py-3 text-amber-600 whitespace-nowrap">
-                        {(ts.total_non_billable_minutes / 60).toFixed(2)}h
+                        {formatHoursToHHMM(ts.total_non_billable_minutes / 60)}
                       </td>
                       <td className="px-4 py-3 text-red-600 whitespace-nowrap">
-                        {ts.missing_hours > 0 ? `${ts.missing_hours}h` : "-"}
+                        {ts.missing_hours > 0 ? formatHoursToHHMM(ts.missing_hours) : "-"}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={getStatusBadge(ts.submission_status)}>
@@ -621,11 +622,11 @@ export const TeamTimesheets = () => {
                     </div>
                     <div>
                       <label className="text-xs text-[#64748B] uppercase tracking-wider">Total Hours</label>
-                      <p className="text-[#1E293B] font-mono">{(details.totalHours || selectedTimesheet.total_minutes / 60 || 0).toFixed(2)}h</p>
+                      <p className="text-[#1E293B] font-mono">{formatHoursToHHMM(details.totalHours || selectedTimesheet.total_minutes / 60 || 0)}</p>
                     </div>
                     <div>
                       <label className="text-xs text-[#64748B] uppercase tracking-wider">Billable Hours</label>
-                      <p className="text-emerald-600 font-mono">{(details.billableHours || selectedTimesheet.total_billable_minutes / 60 || 0).toFixed(2)}h</p>
+                      <p className="text-emerald-600 font-mono">{formatHoursToHHMM(details.billableHours || selectedTimesheet.total_billable_minutes / 60 || 0)}</p>
                     </div>
                   </div>
 
@@ -649,7 +650,7 @@ export const TeamTimesheets = () => {
                                 <td className="px-3 py-2 text-[#1E293B]">{entry.entryDate}</td>
                                 <td className="px-3 py-2 text-[#64748B]">{entry.project || "-"}</td>
                                 <td className="px-3 py-2 text-[#64748B]">{entry.task || "-"}</td>
-                                <td className="px-3 py-2 text-[#1E293B] font-mono">{entry.hours || 0}h</td>
+                                <td className="px-3 py-2 text-[#1E293B] font-mono">{formatHoursToHHMM(entry.hours || 0)}</td>
                                 <td className="px-3 py-2"><span className={getStatusBadge(entry.status)}>{entry.status}</span></td>
                               </tr>
                             ))}

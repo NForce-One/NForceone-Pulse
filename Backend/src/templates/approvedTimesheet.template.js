@@ -1,3 +1,5 @@
+import { formatHoursToHHMM } from "../utils/timeFormat.js";
+
 const formatDate = (dateStr) => {
   if (!dateStr) return "\u2014";
   const d = new Date(dateStr + "T00:00:00");
@@ -89,10 +91,10 @@ const summaryTable = (entries = [], weekStart, weekEnd) => {
             </td>
             ${weekDates.map((d) => `
             <td style="padding:10px 4px;border-bottom:1px solid #F1F5F9;background-color:${bgColor};text-align:center;">
-              <span style="font-size:13px;color:#334155;">${(projects[proj][d] || 0).toFixed(1)}</span>
+              <span style="font-size:13px;color:#334155;">${formatHoursToHHMM(projects[proj][d] || 0)}</span>
             </td>`).join("")}
             <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;background-color:${bgColor};text-align:right;">
-              <span style="font-size:13px;font-weight:700;color:#0F172A;">${rowTotal.toFixed(1)}</span>
+              <span style="font-size:13px;font-weight:700;color:#0F172A;">${formatHoursToHHMM(rowTotal)}</span>
             </td>
           </tr>`;
           }).join("")}
@@ -102,10 +104,10 @@ const summaryTable = (entries = [], weekStart, weekEnd) => {
             </td>
             ${weekDates.map((d) => `
             <td style="padding:12px 4px;background-color:#F8FAFC;border-bottom:1px solid #E2E8F0;text-align:center;">
-              <span style="font-size:13px;font-weight:700;color:#0F172A;">${(dayTotals[d] || 0).toFixed(1)}</span>
+              <span style="font-size:13px;font-weight:700;color:#0F172A;">${formatHoursToHHMM(dayTotals[d] || 0)}</span>
             </td>`).join("")}
             <td style="padding:12px 12px;background-color:#F8FAFC;border-bottom:1px solid #E2E8F0;text-align:right;">
-              <span style="font-size:14px;font-weight:800;color:#0F172A;">${grandTotal.toFixed(1)}</span>
+              <span style="font-size:14px;font-weight:800;color:#0F172A;">${formatHoursToHHMM(grandTotal)}</span>
             </td>
           </tr>
         </table>
@@ -228,7 +230,7 @@ export const approvedTimesheetTemplate = ({
                         </td>
                         <td width="25%" style="padding:20px 12px;text-align:center;vertical-align:top;">
                           <span style="font-size:11px;color:#64748B;display:block;line-height:1.4;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Total Hours</span>
-                          <span style="font-size:13px;font-weight:700;color:#0F172A;display:block;line-height:1.4;margin-top:8px;">${totalHours} hrs</span>
+                          <span style="font-size:13px;font-weight:700;color:#0F172A;display:block;line-height:1.4;margin-top:8px;">${formatHoursToHHMM(totalHours)}</span>
                         </td>
                       </tr>
                     </table>

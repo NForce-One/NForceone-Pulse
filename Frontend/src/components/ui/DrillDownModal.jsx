@@ -1,5 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
+import { formatHoursToHHMM } from "../../utils/timeFormat";
 
 const BASE_COLUMNS = [
   { key: "entryDate", label: "Date" },
@@ -50,7 +51,7 @@ const EMPTY_MESSAGES = {
 const getCellValue = (entry, column) => {
   if (!entry) return "-";
   if (column.key === "hoursWorked") {
-    return `${Number(entry[column.key] || 0).toFixed(2)}h`;
+    return formatHoursToHHMM(entry[column.key]);
   }
   if (column.key === "type") {
     return getTypeBadge(entry[column.key]);
@@ -94,7 +95,7 @@ export const DrillDownModal = ({ isOpen, onClose, title, type, data, totals, isL
           <div>
             <h2 className="text-lg font-semibold text-[#1E293B]">{title}</h2>
             <p className="text-sm text-[#64748B]">
-              {data.length} entr{data.length !== 1 ? "ies" : "y"} &middot; Total: {totalHours.toFixed(2)}h
+              {data.length} entr{data.length !== 1 ? "ies" : "y"} &middot; Total: {formatHoursToHHMM(totalHours)}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -136,35 +137,35 @@ export const DrillDownModal = ({ isOpen, onClose, title, type, data, totals, isL
                 {type === "working" ? (
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-[#64748B]">Working Hours:</span>
-                    <span className="text-[#B33A2F] font-semibold">{Number(normalHours).toFixed(2)}h</span>
+                    <span className="text-[#B33A2F] font-semibold">{formatHoursToHHMM(normalHours)}</span>
                   </div>
                 ) : type === "weekend" ? (
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-[#64748B]">Weekend Working Hours:</span>
-                    <span className="text-amber-600 font-semibold">{Number(weekendHours).toFixed(2)}h</span>
+                    <span className="text-amber-600 font-semibold">{formatHoursToHHMM(weekendHours)}</span>
                   </div>
                 ) : type === "holiday" ? (
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-[#64748B]">Holiday Working Hours:</span>
-                    <span className="text-emerald-600 font-semibold">{Number(holidayHours).toFixed(2)}h</span>
+                    <span className="text-emerald-600 font-semibold">{formatHoursToHHMM(holidayHours)}</span>
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-[#64748B]">Weekday Working Hours:</span>
-                      <span className="text-[#B33A2F] font-semibold">{Number(normalHours).toFixed(2)}h</span>
+                      <span className="text-[#B33A2F] font-semibold">{formatHoursToHHMM(normalHours)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-[#64748B]">Weekend Working Hours:</span>
-                      <span className="text-amber-600 font-semibold">{Number(weekendHours).toFixed(2)}h</span>
+                      <span className="text-amber-600 font-semibold">{formatHoursToHHMM(weekendHours)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-[#64748B]">Holiday Working Hours:</span>
-                      <span className="text-emerald-600 font-semibold">{Number(holidayHours).toFixed(2)}h</span>
+                      <span className="text-emerald-600 font-semibold">{formatHoursToHHMM(holidayHours)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-[#64748B]">Total Working Hours:</span>
-                      <span className="text-purple-600 font-semibold">{Number(computedTotalHours).toFixed(2)}h</span>
+                      <span className="text-purple-600 font-semibold">{formatHoursToHHMM(computedTotalHours)}</span>
                     </div>
                   </>
                 )}

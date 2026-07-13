@@ -342,7 +342,7 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     whereClause.managerId = userId;
   }
 
-  const statusFilter = isTeamView ? { status: "APPROVED" } : { status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] } };
+  const statusFilter = { status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] } };
 
   const weekEntries = await TimeEntry.findAll({
     where: {

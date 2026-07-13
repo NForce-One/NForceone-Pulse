@@ -54,8 +54,18 @@ export const getTimesheetById = async (id) => {
     order: [["entryDate", "ASC"]],
   });
 
+  // Live-sum from the entries instead of trusting the denormalized
+  // Timesheet.totalHours/billableHours columns, which can go stale
+  // when an entry is edited/deleted after the timesheet was saved.
+  const totalHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+  const billableHours = entries
+    .filter((e) => e.isBillable)
+    .reduce((sum, e) => sum + Number(e.hours || 0), 0);
+
   return {
     ...timesheet.toJSON(),
+    totalHours,
+    billableHours,
     TimeEntries: entries,
   };
 };
@@ -217,6 +227,7 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
     attributes: ["id", "project", "entryDate", "hours"],
   });
   console.log("[APPROVE-EMAIL] Entries fetched, count:", entries.length);
+  const liveTotalHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
   const approvalHistories = entries.map((entry) => ({
     timeEntryId: entry.id,
@@ -275,7 +286,7 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
       employeeName: timesheet.User?.name || "Employee",
       weekStart: timesheet.weekStartDate,
       weekEnd: timesheet.weekEndDate,
-      totalHours: timesheet.totalHours,
+      totalHours: liveTotalHours,
       managerName: manager?.name || "Manager",
       comment: comment || null,
       approvalDate: new Date().toISOString().split("T")[0],
@@ -357,6 +368,7 @@ export const rejectTimesheet = async (timesheetId, managerId, comment) => {
     attributes: ["id", "project", "entryDate", "hours"],
   });
   console.log("[REJECT-EMAIL] Entries fetched, count:", entries.length);
+  const liveTotalHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
   const approvalHistories = entries.map((entry) => ({
     timeEntryId: entry.id,
@@ -415,7 +427,7 @@ export const rejectTimesheet = async (timesheetId, managerId, comment) => {
       employeeName: timesheet.User?.name || "Employee",
       weekStart: timesheet.weekStartDate,
       weekEnd: timesheet.weekEndDate,
-      totalHours: timesheet.totalHours,
+      totalHours: liveTotalHours,
       managerName: manager?.name || "Manager",
       comment: comment || null,
       rejectionDate: new Date().toISOString().split("T")[0],
@@ -578,38 +590,54 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
     order: [["weekStartDate", "DESC"]],
   });
 
-  return timesheets.map((ts) => {
-    const totalMinutes = Math.round((ts.totalHours || 0) * 60);
-    const billableMinutes = Math.round((ts.billableHours || 0) * 60);
-    const nonBillableMinutes = totalMinutes - billableMinutes;
-    const loggedHours = ts.totalHours || 0;
+  return Promise.all(
+    timesheets.map(async (ts) => {
+      // Live-sum from TimeEntry instead of trusting the denormalized
+      // Timesheet.totalHours/billableHours columns, which can go stale
+      // when an entry is edited/deleted after the timesheet was saved.
+      const entries = await TimeEntry.findAll({
+        where: {
+          userId: ts.userId,
+          entryDate: { [Op.gte]: ts.weekStartDate, [Op.lte]: ts.weekEndDate },
+        },
+        attributes: ["hours", "isBillable"],
+      });
+      const loggedHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+      const billableHours = entries
+        .filter((e) => e.isBillable)
+        .reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
-    // Calculate expected hours based on user's required hours per day
-    // defaultHours is per day, 5 working days per week
-    const userDefaultHours = ts.User?.defaultHours || 8.0;
-    const expectedHours = 5 * userDefaultHours;
-    const missingHours = Math.max(0, expectedHours - loggedHours);
+      const totalMinutes = Math.round(loggedHours * 60);
+      const billableMinutes = Math.round(billableHours * 60);
+      const nonBillableMinutes = totalMinutes - billableMinutes;
 
-    // Split name into first and last name
-    const nameParts = (ts.User?.name || "").split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
+      // Calculate expected hours based on user's required hours per day
+      // defaultHours is per day, 5 working days per week
+      const userDefaultHours = ts.User?.defaultHours || 8.0;
+      const expectedHours = 5 * userDefaultHours;
+      const missingHours = Math.max(0, expectedHours - loggedHours);
 
-    return {
-      id: ts.id,
-      user_id: ts.userId,
-      first_name: firstName,
-      last_name: lastName,
-      week_start_date: ts.weekStartDate,
-      week_end_date: ts.weekEndDate,
-      total_minutes: totalMinutes,
-      total_billable_minutes: billableMinutes,
-      total_non_billable_minutes: nonBillableMinutes,
-      submission_status: ts.status,
-      missing_hours: parseFloat(missingHours.toFixed(2)),
-      User: ts.User,
-    };
-  });
+      // Split name into first and last name
+      const nameParts = (ts.User?.name || "").split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      return {
+        id: ts.id,
+        user_id: ts.userId,
+        first_name: firstName,
+        last_name: lastName,
+        week_start_date: ts.weekStartDate,
+        week_end_date: ts.weekEndDate,
+        total_minutes: totalMinutes,
+        total_billable_minutes: billableMinutes,
+        total_non_billable_minutes: nonBillableMinutes,
+        submission_status: ts.status,
+        missing_hours: parseFloat(missingHours.toFixed(2)),
+        User: ts.User,
+      };
+    })
+  );
 };
 
 // ================= GET FILTERED TIME ENTRIES (ADMIN) =================

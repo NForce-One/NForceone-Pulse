@@ -14,6 +14,7 @@ import {
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { clearPageCache, useCachedData } from "../hooks/useCachedData";
+import { formatHoursToHHMM } from "../utils/timeFormat";
 
 import {
   Card,
@@ -421,7 +422,7 @@ const handleDelete = async (id) => {
                       )}
                     </td>
 
-                    <td className="px-3 py-3 text-[#1E293B] font-medium align-middle whitespace-nowrap w-[70px] text-right">{entry.hours}h</td>
+                    <td className="px-3 py-3 text-[#1E293B] font-medium align-middle whitespace-nowrap w-[70px] text-right">{formatHoursToHHMM(entry.hours)}</td>
 
                     <td className="px-3 py-3 align-middle whitespace-nowrap">
                       <Badge variant={getStatusBadgeVariant(getEmployeeStatus(entry.status))}>

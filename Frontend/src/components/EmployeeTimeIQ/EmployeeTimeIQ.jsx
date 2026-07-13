@@ -12,6 +12,7 @@ import {
 } from "../../services/employeeTimeIQApi";
 import { fetchClients, fetchProjects, getManagers } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { formatHoursToHHMM } from "../../utils/timeFormat";
 import { CommentModal } from "./CommentModal";
 import {
   ChevronLeft,
@@ -76,14 +77,6 @@ const decimalToHHMMString = (value) => {
   return `${h}.${m.toString().padStart(2, "0")}`;
 };
 
-const formatHoursToHHMM = (hours) => {
-  if (!hours && hours !== 0) return "0h 00m";
-  const totalMinutes = Math.round(hours * 60);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${h}h ${m.toString().padStart(2, "0")}m`;
-};
-
 const getSnackbarStyles = (type) => {
   if (type === "success") return "bg-green-600 text-white";
   if (type === "error") return "bg-red-600 text-white";
@@ -121,6 +114,7 @@ export const EmployeeTimeIQ = () => {
     return saved ? Number(saved) : "";
   });
   const [allManagers, setAllManagers] = useState([]);
+  const [managersLoaded, setManagersLoaded] = useState(false);
 
   const [projectRows, setProjectRows] = useState([]);
   const [timesheetStatus, setTimesheetStatus] = useState(null);
@@ -179,24 +173,29 @@ export const EmployeeTimeIQ = () => {
 
     (async () => {
       try {
-        const [clientsRes, projectsRes, managersRes] = await Promise.all([
+        const [clientsRes, projectsRes] = await Promise.all([
           fetchClients(),
           fetchProjects(),
-          getManagers(),
         ]);
         const clients = clientsRes?.data || [];
         const projects = projectsRes?.data || [];
-        const mgrData = managersRes?.data || managersRes || [];
-        const managers = Array.isArray(mgrData) ? mgrData : [];
         setClients(clients);
         setAllProjects(projects);
-        setAllManagers(managers);
-        sessionStorage.setItem("c_timeiq_dropdowns", JSON.stringify({
-          data: { clients, projects, managers },
-          timestamp: Date.now(),
-        }));
       } catch (err) {
-        console.error("Failed to load dropdown data", err);
+        console.error("Failed to load clients/projects", err);
+      }
+    })();
+
+    (async () => {
+      try {
+        const managersRes = await getManagers();
+        const mgrData = managersRes?.data || managersRes || [];
+        const managers = Array.isArray(mgrData) ? mgrData : [];
+        setAllManagers(managers);
+        setManagersLoaded(true);
+      } catch (err) {
+        console.error("Failed to load managers", err);
+        setManagersLoaded(true);
       }
     })();
   }, []);
@@ -749,7 +748,7 @@ export const EmployeeTimeIQ = () => {
             disabled={isReadOnly}
             className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{allManagers.length === 0 ? "Loading..." : user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
+            <option value="">{!managersLoaded ? "Loading..." : allManagers.length === 0 ? "No Managers Available" : user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
             {allManagers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}

@@ -35,19 +35,9 @@ export const login = async (req, res) => {
 // ================= GET MANAGERS (🔥 NEW FEATURE) =================
 export const getManagers = async (req, res) => {
   try {
-    const role = req.user?.role;
-
-    // Managers report to Admins, Employees report to Managers
-    let targetRole;
-    if (role === "MANAGER") {
-      targetRole = "ADMIN";
-    } else {
-      targetRole = "MANAGER";
-    }
-
     const managers = await User.findAll({
-      where: { role: targetRole, isActive: true },
-      attributes: ["id", "name", "email"],
+      where: { role: "MANAGER", isActive: true },
+      attributes: ["id", "name", "email", "role"],
     });
 
     res.status(200).json({

@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { fetchTimeEntries, approveTimeEntry, rejectTimeEntry } from "../services/api";
 
 import { useCachedData, clearPageCache } from "../hooks/useCachedData";
+import { formatHoursToHHMM } from "../utils/timeFormat";
 
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -152,7 +153,7 @@ export const Approvals = () => {
           employeeId: group.employeeId,
           name: group.name,
           entries: group.entries,
-          totalHours: totalHours.toFixed(2),
+          totalHours,
           weekLabel,
           weekStart: group.weekStart,
           projectCount: projectList.length,
@@ -380,7 +381,7 @@ export const Approvals = () => {
 
                       {/* Hours */}
                       <td className="px-4 py-3 text-right text-sm font-semibold text-[#1E293B] whitespace-nowrap">
-                        {group.totalHours}h
+                        {formatHoursToHHMM(group.totalHours)}
                       </td>
 
                       {/* Submitted */}
@@ -506,7 +507,7 @@ export const Approvals = () => {
                   </div>
                   <div>
                     <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Total Hours</div>
-                    <div className="text-lg font-bold text-[#B33A2F] mt-0.5">{group.totalHours}h</div>
+                    <div className="text-lg font-bold text-[#B33A2F] mt-0.5">{formatHoursToHHMM(group.totalHours)}</div>
                   </div>
                 </div>
 
@@ -570,11 +571,11 @@ export const Approvals = () => {
                               </td>
                               {weekTable.weekDates.map((wd) => (
                                 <td key={wd.date} className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-sm font-medium text-[#1E293B]">
-                              {row.days[wd.date] != null ? Number(row.days[wd.date]).toFixed(1) : "0.0"}
+                              {row.days[wd.date] != null ? formatHoursToHHMM(row.days[wd.date]) : formatHoursToHHMM(0)}
                                 </td>
                               ))}
                               <td className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-sm font-bold text-[#1E293B]">
-                                {row.total.toFixed(1)}
+                                {formatHoursToHHMM(row.total)}
                               </td>
                             </tr>
                           ))}
@@ -584,11 +585,11 @@ export const Approvals = () => {
                             </td>
                             {weekTable.weekDates.map((wd) => (
                               <td key={wd.date} className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#1E293B]">
-                                {(weekTable.dailyTotals[wd.date] || 0).toFixed(1)}
+                                {formatHoursToHHMM(weekTable.dailyTotals[wd.date] || 0)}
                               </td>
                             ))}
                             <td className="px-2 py-2.5 text-center border-l border-[#E2E8F0] text-xs font-bold text-[#B33A2F]">
-                              {weekTable.weekTotal.toFixed(1)}
+                              {formatHoursToHHMM(weekTable.weekTotal)}
                             </td>
                           </tr>
                         </tbody>

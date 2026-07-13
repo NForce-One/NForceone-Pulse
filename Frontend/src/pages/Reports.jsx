@@ -21,6 +21,7 @@ import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 import { BarChart3, Download } from "lucide-react";
 import { format } from "date-fns";
+import { formatHoursToHHMM } from "../utils/timeFormat";
 
 export const Reports = () => {
   const { user } = useAuth();
@@ -376,7 +377,7 @@ export const Reports = () => {
                        <td className="px-4 py-3 text-[#1E293B]">{entry.projectName || entry.Project?.name || "-"}</td>
                        <td className="px-4 py-3 text-[#1E293B]">{entry.taskTitle || entry.Task?.title || "-"}</td>
                        <td className="px-4 py-3 text-[#64748B]">{entry.entryDate}</td>
-                        <td className="px-4 py-3 text-[#1E293B] font-medium">{entry.hours}h</td>
+                        <td className="px-4 py-3 text-[#1E293B] font-medium">{formatHoursToHHMM(entry.hours)}</td>
                         <td className="px-4 py-3">
                          <Badge variant={entry.status === "APPROVED" ? "success" : entry.status === "SUBMITTED" ? "warning" : "default"}>
                            {entry.status}
@@ -390,16 +391,16 @@ export const Reports = () => {
                        <td className="px-4 py-3 text-[#1E293B]">{entry.clientName || entry.Client?.name || "-"}</td>
                        <td className="px-4 py-3 text-[#1E293B]">{entry.User?.name || "-"}</td>
                        <td className="px-4 py-3 text-[#64748B]">{entry.entryDate}</td>
-                       <td className="px-4 py-3 text-[#1E293B] font-medium">{entry.hours}h</td>
+                       <td className="px-4 py-3 text-[#1E293B] font-medium">{formatHoursToHHMM(entry.hours)}</td>
                      </tr>
                    ))}
                    {activeTab === "utilization" && data.map((u, i) => (
                      <tr key={i} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
                        <td className="px-4 py-3 text-[#1E293B]">{u.name || "-"}</td>
                        <td className="px-4 py-3 text-[#64748B]">{u.department || "-"}</td>
-                       <td className="px-4 py-3 text-[#1E293B]">{(u.totalHours ?? 0)}h</td>
-                       <td className="px-4 py-3 text-[#1E293B]">{(u.billableHours ?? 0)}h</td>
-                       <td className="px-4 py-3 text-[#1E293B]">{(u.nonBillableHours ?? 0)}h</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{formatHoursToHHMM(u.totalHours)}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{formatHoursToHHMM(u.billableHours)}</td>
+                       <td className="px-4 py-3 text-[#1E293B]">{formatHoursToHHMM(u.nonBillableHours)}</td>
                        <td className="px-4 py-3">
                          <Badge variant={u.utilizationPercent >= 70 ? "success" : u.utilizationPercent >= 50 ? "warning" : "danger"}>
                            {(u.utilizationPercent ?? 0)}%
@@ -411,7 +412,7 @@ export const Reports = () => {
                      <tr key={i} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
                        <td className="px-4 py-3 text-[#1E293B]">{b.clientName}</td>
                        <td className="px-4 py-3 text-[#1E293B]">{b.projectName}</td>
-                       <td className="px-4 py-3 text-[#1E293B] font-medium">{b.totalHours}h</td>
+                       <td className="px-4 py-3 text-[#1E293B] font-medium">{formatHoursToHHMM(b.totalHours)}</td>
                      </tr>
                    ))}
                  </tbody>

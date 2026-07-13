@@ -2,6 +2,7 @@
 import { getDashboardStats, getHourDetails, getMissingTimeDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
+import { formatHoursToHHMM } from "../utils/timeFormat";
 import { AdminListModal } from "../components/ui/AdminListModal";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { DrillDownModal } from "../components/ui/DrillDownModal";
@@ -40,7 +41,7 @@ const FILTER_OPTIONS = [
   { value: "customRange", label: "Custom Range" },
 ];
 const METRIC_OPTIONS = [
-  { value: "total", label: "Total Hours Logged" },
+  { value: "total", label: "Total Hours" },
   { value: "working", label: "Working Hours" },
   { value: "weekend", label: "Weekend Working Hours" },
   { value: "holiday", label: "Holiday Working Hours" },
@@ -51,12 +52,6 @@ const toDateStr = (date) => {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-};
-
-const formatHours = (hours) => {
-  const num = Number(hours || 0);
-  if (num === 0) return "0h";
-  return num % 1 === 0 ? `${num}h` : `${parseFloat(num.toFixed(2))}h`;
 };
 
 export const Dashboard = () => {
@@ -530,7 +525,7 @@ export const Dashboard = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { title: "Total Hours Logged", type: "total", value: stats.totalWeekHours || 0 },
+            { title: "Total Hours", type: "total", value: stats.totalWeekHours || 0 },
             { title: "Working Hours", type: "working", value: stats.normalHours || 0 },
             { title: "Weekend Working Hours", type: "weekend", value: stats.weekendHours || 0 },
             { title: "Holiday Working Hours", type: "holiday", value: stats.holidayHours || 0 },
@@ -548,7 +543,7 @@ export const Dashboard = () => {
               </div>
               <div className="p-6 pt-0">
                 <div className="text-2xl font-bold text-[#1F2937]">
-                  {formatHours(card.value)}
+                  {formatHoursToHHMM(card.value)}
                 </div>
               </div>
             </Card>
@@ -638,11 +633,13 @@ export const Dashboard = () => {
                             </td>
                             <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.day || "-"}</td>
                             {day.isMissing ? (
-                              <td colSpan={3} className="px-4 py-3 text-center text-[#64748B]">
-                                No Entries Logged
-                              </td>
+                              <>
+                                <td className="px-4 py-3 text-[#64748B]">No Entries Logged</td>
+                                <td className="px-4 py-3"></td>
+                                <td className="px-4 py-3"></td>
+                              </>
                             ) : (
-                              <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{`${Number(day.totalHours || 0).toFixed(2)}h`}</td>
+                              <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{formatHoursToHHMM(day.totalHours)}</td>
                             )}
                             {!day.isMissing && <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.reportedTo || "-"}</td>}
                             {!day.isMissing && (
@@ -680,12 +677,12 @@ export const Dashboard = () => {
                                         <tr key={pIdx} className="border-b border-[#E2E8F0]">
                                           <td className="px-4 py-2 text-[#1E293B] pl-12">{proj.projectWorked}</td>
                                           <td className="px-4 py-2 text-[#1E293B]">{proj.clientWorked}</td>
-                                          <td className="px-4 py-2 text-[#1E293B] font-medium">{Number(proj.hoursWorked || 0).toFixed(2)}h</td>
+                                          <td className="px-4 py-2 text-[#1E293B] font-medium">{formatHoursToHHMM(proj.hoursWorked)}</td>
                                         </tr>
                                       ))}
                                       <tr className="bg-[#F1F5F9]">
                                         <td colSpan={2} className="px-4 py-2 text-[#1E293B] font-semibold pl-12">Total</td>
-                                        <td className="px-4 py-2 text-[#1E293B] font-semibold">{Number(day.totalHours || 0).toFixed(2)}h</td>
+                                        <td className="px-4 py-2 text-[#1E293B] font-semibold">{formatHoursToHHMM(day.totalHours)}</td>
                                       </tr>
                                     </tbody>
                                   </table>
@@ -728,7 +725,7 @@ export const Dashboard = () => {
                     <tr key={member.userId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
                       <td className="px-4 py-3 text-[#1E293B] font-medium">{member.name}</td>
                       <td className="px-4 py-3 text-[#374151]">{member.email}</td>
-                      <td className="px-4 py-3 text-[#1E293B]">{member.weekHours}h</td>
+                      <td className="px-4 py-3 text-[#1E293B]">{formatHoursToHHMM(member.weekHours)}</td>
                       <td className="px-4 py-3 text-[#374151]">{member.entriesCount}</td>
                     </tr>
                   ))}
@@ -760,7 +757,7 @@ export const Dashboard = () => {
                         stats.topEmployees.map((emp) => (
                           <tr key={emp.userId} className="border-b border-[#E2E8F0]">
                             <td className="px-4 py-3 text-[#1E293B]">{emp.name}</td>
-                            <td className="px-4 py-3 text-[#1E293B]">{emp.weekHours}h</td>
+                            <td className="px-4 py-3 text-[#1E293B]">{formatHoursToHHMM(emp.weekHours)}</td>
                           </tr>
                         ))
                       ) : (
@@ -848,7 +845,7 @@ export const Dashboard = () => {
                       stats.topProjects.map((proj, idx) => (
                         <tr key={idx} className="border-b border-[#E2E8F0]">
                           <td className="px-4 py-3 text-[#1E293B]">{proj.name}</td>
-                          <td className="px-4 py-3 text-[#1E293B]">{proj.hours}h</td>
+                          <td className="px-4 py-3 text-[#1E293B]">{formatHoursToHHMM(proj.hours)}</td>
                         </tr>
                       ))
                     ) : (
