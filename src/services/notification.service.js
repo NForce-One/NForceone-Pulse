@@ -105,8 +105,9 @@ const buildMessage = (record, verb) => {
 // ================= EVENT-TRIGGERED NOTIFICATIONS =================
 
 export const notifyTimesheetSubmitted = async (record) => {
-  const { label, prefix } = getDateLabel(record);
-  const datePart = label || "unknown date";
+  const start = formatDateSafe(record.weekStartDate);
+  const end = formatDateSafe(record.weekEndDate);
+  const employeeName = record.User?.name || "An employee";
 
   // Notify manager about new submission
   if (record.managerId || record.User?.managerId) {
@@ -117,19 +118,30 @@ export const notifyTimesheetSubmitted = async (record) => {
         userId: managerId,
         type: "SUBMITTED",
         title: "New Timesheet Submission",
-        message: `${record.User?.name || "An employee"} submitted a ${prefix} ${datePart}.`,
+        message: `${employeeName} has submitted the Weekly Timesheet for ${start} - ${end} for your approval.`,
         relatedId: record.id,
         isRead: false,
       });
+
+      // Notify employee
+      await Notification.create({
+        userId: record.userId,
+        type: "SUBMITTED",
+        title: "Timesheet Submitted",
+        message: `Weekly Timesheet for ${start} - ${end} has been successfully submitted to ${manager.name}.`,
+        relatedId: record.id,
+        isRead: false,
+      });
+      return;
     }
   }
 
-  // Notify employee
+  // Notify employee (no manager found)
   await Notification.create({
     userId: record.userId,
     type: "SUBMITTED",
     title: "Timesheet Submitted",
-    message: buildMessage(record, "submitted for approval"),
+    message: `Weekly Timesheet for ${start} - ${end} has been successfully submitted.`,
     relatedId: record.id,
     isRead: false,
   });

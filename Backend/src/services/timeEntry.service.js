@@ -97,6 +97,40 @@ export const getManagerEntriesForAdmin = async () => {
   });
 };
 
+// ================= PENDING APPROVAL COUNT =================
+export const getPendingApprovalCount = async (userId, role) => {
+  let whereClause = { status: "SUBMITTED" };
+
+  if (role === "MANAGER") {
+    whereClause.managerId = userId;
+  } else if (role === "ADMIN") {
+    const managers = await User.findAll({
+      where: { role: "MANAGER", isActive: true },
+      attributes: ["id"],
+    });
+    const managerIds = managers.map((m) => m.id);
+    if (managerIds.length === 0) return 0;
+    whereClause.userId = { [Op.in]: managerIds };
+  } else {
+    return 0;
+  }
+
+  const entries = await TimeEntry.findAll({
+    where: whereClause,
+    attributes: ["userId", "entryDate"],
+  });
+
+  const weekKeys = new Set();
+  entries.forEach((entry) => {
+    const d = new Date(entry.entryDate);
+    d.setDate(d.getDate() - d.getDay());
+    const weekStart = d.toISOString().slice(0, 10);
+    weekKeys.add(`${entry.userId}_${weekStart}`);
+  });
+
+  return weekKeys.size;
+};
+
 // ================= GET BY ID =================
 export const getTimeEntryById = async (id) => {
   return await TimeEntry.findByPk(id, {

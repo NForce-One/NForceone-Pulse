@@ -8,7 +8,7 @@ import { Input } from "../components/ui/Input";
 import { User, Key, Save, Loader2 } from "lucide-react";
 
 export const Profile = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, updateUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,9 +45,14 @@ export const Profile = () => {
   const validateProfile = () => {
     const errors = {};
     if (!profileForm.name.trim()) errors.name = "Name is required";
+    else if (/[^A-Za-z ]/.test(profileForm.name)) errors.name = "Name must contain only letters and spaces.";
     if (!profileForm.department.trim()) errors.department = "Department is required";
-    if (!profileForm.defaultHours || profileForm.defaultHours <= 0) {
+    if (!profileForm.defaultHours && profileForm.defaultHours !== 0) {
       errors.defaultHours = "Hours must be greater than 0";
+    } else if (profileForm.defaultHours < 0) {
+      errors.defaultHours = "Hours must be greater than 0";
+    } else if (Number(profileForm.defaultHours) > 24) {
+      errors.defaultHours = "Default Hours must be between 0 and 24.";
     }
     setProfileErrors(errors);
     return Object.keys(errors).length === 0;
@@ -86,6 +91,7 @@ export const Profile = () => {
       setMessage("Profile updated successfully");
       clearPageCache("profile");
       await refreshProfile();
+      updateUser({ name: profileForm.name });
     } catch (err) {
       setError(err.response?.data?.message || "Update failed");
     } finally {
@@ -155,8 +161,17 @@ export const Profile = () => {
                   name="name"
                   value={profileForm.name}
                   onChange={(e) => {
-                    setProfileForm({ ...profileForm, name: e.target.value });
-                    if (profileErrors.name) setProfileErrors({ ...profileErrors, name: "" });
+                    const raw = e.target.value;
+                    const hasInvalid = /[^A-Za-z ]/.test(raw);
+                    const filtered = raw.replace(/[^A-Za-z ]/g, "");
+                    setProfileForm({ ...profileForm, name: filtered });
+                    if (hasInvalid) {
+                      setProfileErrors({ ...profileErrors, name: "Name must contain only letters and spaces." });
+                    } else if (profileErrors.name && profileErrors.name !== "Name must contain only letters and spaces.") {
+                      setProfileErrors({ ...profileErrors, name: "" });
+                    } else {
+                      setProfileErrors({ ...profileErrors, name: "" });
+                    }
                   }}
                   required
                 />
@@ -193,10 +208,36 @@ export const Profile = () => {
                   name="defaultHours"
                   value={profileForm.defaultHours}
                   onChange={(e) => {
-                    setProfileForm({ ...profileForm, defaultHours: e.target.value });
-                    if (profileErrors.defaultHours) setProfileErrors({ ...profileErrors, defaultHours: "" });
+                    const val = e.target.value;
+                    const digitCount = (val.replace(/[^0-9]/g, "") || "").length;
+                    if (digitCount > 3) return;
+                    const num = Number(val);
+                    if (val !== "" && num > 24) {
+                      setProfileForm({ ...profileForm, defaultHours: 24 });
+                      setProfileErrors({ ...profileErrors, defaultHours: "Default Hours must be between 0 and 24." });
+                    } else {
+                      setProfileForm({ ...profileForm, defaultHours: val });
+                      if (profileErrors.defaultHours) {
+                        setProfileErrors({ ...profileErrors, defaultHours: "" });
+                      }
+                    }
                   }}
-                  min="1"
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pasted = (e.clipboardData || window.clipboardData).getData("text");
+                    const num = Number(pasted);
+                    if (!isNaN(num) && pasted.trim() !== "") {
+                      const clamped = Math.min(Math.max(num, 0), 24);
+                      setProfileForm({ ...profileForm, defaultHours: clamped });
+                      if (clamped > 24 || clamped < 0) {
+                        setProfileErrors({ ...profileErrors, defaultHours: "Default Hours must be between 0 and 24." });
+                      } else if (profileErrors.defaultHours) {
+                        setProfileErrors({ ...profileErrors, defaultHours: "" });
+                      }
+                    }
+                  }}
+                  min="0"
+                  max="24"
                   step="0.5"
                 />
                 {profileErrors.defaultHours && (

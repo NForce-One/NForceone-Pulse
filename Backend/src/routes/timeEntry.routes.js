@@ -8,6 +8,7 @@ import {
   approveTimeEntry,
   rejectTimeEntry,
   commentTimeEntry,
+  getPendingApprovalCount,
 } from "../controllers/timeEntry.controller.js";
 
 import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
@@ -20,6 +21,14 @@ router.post(
   protect,
   authorizeRoles("ADMIN", "MANAGER", "EMPLOYEE"),
   createTimeEntry
+);
+
+// ================= PENDING APPROVAL COUNT =================
+router.get(
+  "/pending-approval-count",
+  protect,
+  authorizeRoles("ADMIN", "MANAGER"),
+  getPendingApprovalCount
 );
 
 // ================= GET ALL =================

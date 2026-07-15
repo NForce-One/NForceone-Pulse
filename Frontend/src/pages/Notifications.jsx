@@ -263,7 +263,7 @@ export const Notifications = () => {
                          {timeAgo(n.createdAt)}
                        </span>
                      </div>
-                     <p className={`text-sm mt-1 ${n.isRead ? "text-[#64748B]" : "text-[#1E293B]"}`}>{n.message}</p>
+                      <p className={`text-sm mt-1 whitespace-pre-line ${n.isRead ? "text-[#64748B]" : "text-[#1E293B]"}`}>{n.message}</p>
                    </div>
                   <div className="flex gap-1 shrink-0">
                     {!n.isRead && (

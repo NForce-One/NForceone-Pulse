@@ -253,7 +253,7 @@ export const EmployeeTimeIQ = () => {
         (entries || []).forEach((entry) => {
           const hoursNum = parseFloat(entry.hours);
           const hasHours = !isNaN(hoursNum) && hoursNum > 0;
-          if (!hasHours && !entry.description) return;
+          if (!hasHours && !entry.description && !entry.comment) return;
 
           const key = entry.projectId
             ? `proj-${entry.projectId}`
@@ -377,10 +377,11 @@ export const EmployeeTimeIQ = () => {
       if (!row || row.isPending) return;
       const data = {
         weekStartDate: ws,
-        dailyEntries: wd.map((w) => ({
+        dailyEntries: wd.map((w, idx) => ({
           entryDate: w.date,
           hours: parseHHMM(row.days[w.date]?.hours),
           description: row.days[w.date]?.description || "",
+          comment: idx === 0 ? (row.comment || "") : undefined,
           clientId: row.clientId,
           projectId: row.projectId,
           managerId: sm ? Number(sm) : row.managerId,
@@ -486,26 +487,64 @@ export const EmployeeTimeIQ = () => {
   }, [projectRows, currentWeekStart]);
 
   const handleCommentSave = useCallback((rowId, date, text) => {
-    setProjectRows((prev) =>
-      prev.map((row) =>
-        row.rowId === rowId ? { ...row, comment: text } : row
-      )
+    const updatedRows = projectRows.map((row) =>
+      row.rowId === rowId ? { ...row, comment: text } : row
     );
+    setProjectRows(updatedRows);
     setCommentModalRowId(null);
     setCommentValue("");
     showSnackbar("Comment saved", "success");
-  }, [showSnackbar]);
+
+    const dailyEntries = updatedRows.filter((r) => !r.isPending).flatMap((row) =>
+      weekDates.map((wd, idx) => ({
+        entryDate: wd.date,
+        hours: parseHHMM(row.days[wd.date]?.hours),
+        description: row.days[wd.date]?.description || "",
+        comment: idx === 0 ? (row.comment || "") : undefined,
+        clientId: row.clientId,
+        projectId: row.projectId,
+        managerId: selectedManager ? Number(selectedManager) : row.managerId,
+        clientName: row.clientName,
+        projectName: row.projectName,
+      }))
+    );
+    if (dailyEntries.length > 0) {
+      saveETDraft({ weekStartDate: currentWeekStart, dailyEntries }).catch((err) => {
+        console.error("Failed to save comment:", err);
+        showSnackbar("Failed to save comment to server", "error");
+      });
+    }
+  }, [projectRows, weekDates, currentWeekStart, selectedManager, showSnackbar]);
 
   const handleCommentDelete = useCallback((rowId, date) => {
-    setProjectRows((prev) =>
-      prev.map((row) =>
-        row.rowId === rowId ? { ...row, comment: "" } : row
-      )
+    const updatedRows = projectRows.map((row) =>
+      row.rowId === rowId ? { ...row, comment: "" } : row
     );
+    setProjectRows(updatedRows);
     setCommentModalRowId(null);
     setCommentValue("");
     showSnackbar("Comment deleted", "info");
-  }, [showSnackbar]);
+
+    const dailyEntries = updatedRows.filter((r) => !r.isPending).flatMap((row) =>
+      weekDates.map((wd, idx) => ({
+        entryDate: wd.date,
+        hours: parseHHMM(row.days[wd.date]?.hours),
+        description: row.days[wd.date]?.description || "",
+        comment: idx === 0 ? (row.comment || "") : undefined,
+        clientId: row.clientId,
+        projectId: row.projectId,
+        managerId: selectedManager ? Number(selectedManager) : row.managerId,
+        clientName: row.clientName,
+        projectName: row.projectName,
+      }))
+    );
+    if (dailyEntries.length > 0) {
+      saveETDraft({ weekStartDate: currentWeekStart, dailyEntries }).catch((err) => {
+        console.error("Failed to delete comment:", err);
+        showSnackbar("Failed to delete comment on server", "error");
+      });
+    }
+  }, [projectRows, weekDates, currentWeekStart, selectedManager, showSnackbar]);
 
   const prepareSaveData = useCallback(() => ({
     weekStartDate: currentWeekStart,
@@ -597,6 +636,7 @@ export const EmployeeTimeIQ = () => {
       if (res?.success) {
         setTimesheetStatus("SUBMITTED");
         showSnackbar("Timesheet submitted successfully!", "success");
+        window.dispatchEvent(new Event("approval-status-changed"));
       } else {
         showSnackbar(res?.message || "Failed to submit", "error");
       }

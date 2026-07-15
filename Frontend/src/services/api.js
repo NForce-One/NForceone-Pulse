@@ -382,6 +382,11 @@ export const fetchUnreadCount = async () => {
   return response.data;
 };
 
+export const fetchPendingApprovalCount = async () => {
+  const response = await api.get("/time-entries/pending-approval-count");
+  return response.data;
+};
+
 export const markNotificationRead = async (id) => {
   const response = await api.patch(`/notifications/${id}/read`);
   return response.data;

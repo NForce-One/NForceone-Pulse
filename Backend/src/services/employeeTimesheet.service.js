@@ -6,6 +6,7 @@ import User from "../models/user.model.js";
 import Timesheet from "../models/timesheet.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
+import * as notificationService from "./notification.service.js";
 
 const toLocalDate = (date) => {
   if (typeof date === "string") {
@@ -373,6 +374,23 @@ export const submitTimesheet = async (userId, data) => {
     });
   } catch (e) {
     console.error("Failed to create approval history (non-blocking):", e.message);
+  }
+
+  try {
+    const managerEntry = entries.find((e) => e.managerId);
+    const managerId = managerEntry?.managerId || null;
+    const employeeUser = await User.findByPk(userId, { attributes: ["id", "name", "managerId"] });
+    const record = {
+      id: timesheet.id,
+      userId,
+      managerId: managerId || employeeUser?.managerId,
+      weekStartDate: ws,
+      weekEndDate: we,
+      User: employeeUser ? { name: employeeUser.name, managerId: employeeUser.managerId } : null,
+    };
+    await notificationService.notifyTimesheetSubmitted(record);
+  } catch (e) {
+    console.error("Failed to send submission notifications (non-blocking):", e.message);
   }
 
   return { timesheet: { id: timesheet.id, status: timesheet.status, totalHours }, totalHours };

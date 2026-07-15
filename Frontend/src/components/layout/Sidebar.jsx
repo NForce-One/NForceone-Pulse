@@ -3,13 +3,15 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { LayoutDashboard, Clock, CheckSquare, Users, Building, FolderOpen, BarChart3, Bell, User, Timer, FileText, Calendar } from "lucide-react";
 import { cn } from "../../utils/twMerge";
-import { fetchUnreadCount } from "../../services/api";
+import { fetchUnreadCount, fetchPendingApprovalCount } from "../../services/api";
 import logo from "../../assets/logo.png";
 
 export const Sidebar = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const role = user?.role?.toUpperCase() || "EMPLOYEE";
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,25 @@ export const Sidebar = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const role = user?.role?.toUpperCase() || "EMPLOYEE";
+  useEffect(() => {
+    if (role !== "MANAGER" && role !== "ADMIN") return;
+    const fetchPending = async () => {
+      try {
+        const res = await fetchPendingApprovalCount();
+        setPendingApprovalCount(res?.data?.count || 0);
+      } catch (err) {
+        console.error("Failed to fetch pending approval count", err);
+      }
+    };
+
+    fetchPending();
+    const interval = setInterval(fetchPending, 30000);
+    window.addEventListener("approval-status-changed", fetchPending);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("approval-status-changed", fetchPending);
+    };
+  }, [role]);
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
@@ -82,11 +102,11 @@ export const Sidebar = () => {
                 <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-[#64748B]")} />
                 {item.name}
               </div>
-              {item.path === "/notifications" && unreadCount > 0 && (
+              {(item.path === "/notifications" && unreadCount > 0) || (item.path === "/approvals" && pendingApprovalCount > 0) ? (
                 <span className="bg-[#DC2626] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-[0_0_10px_rgba(220,38,38,0.5)]">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  {item.path === "/notifications" ? (unreadCount > 99 ? "99+" : unreadCount) : (pendingApprovalCount > 99 ? "99+" : pendingApprovalCount)}
                 </span>
-              )}
+              ) : null}
             </Link>
           );
         })}

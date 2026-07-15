@@ -105,34 +105,72 @@ const buildMessage = (record, verb) => {
 // ================= EVENT-TRIGGERED NOTIFICATIONS =================
 
 export const notifyTimesheetSubmitted = async (record) => {
-  const { label, prefix } = getDateLabel(record);
-  const datePart = label || "unknown date";
+  try {
+    const weekStart = record.weekStartDate || record.weekStartDate;
+    const weekEnd = record.weekEndDate || record.weekEndDate;
 
-  // Notify manager about new submission
-  if (record.managerId || record.User?.managerId) {
+    const formatShort = (dateVal) => {
+      if (!dateVal) return "unknown";
+      let d;
+      if (typeof dateVal === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [y, m, day] = dateVal.split("-").map(Number);
+        d = new Date(y, m - 1, day);
+      } else {
+        d = new Date(dateVal);
+      }
+      if (isNaN(d.getTime())) return "unknown";
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    };
+
+    const formatFull = (dateVal) => {
+      if (!dateVal) return "unknown";
+      let d;
+      if (typeof dateVal === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [y, m, day] = dateVal.split("-").map(Number);
+        d = new Date(y, m - 1, day);
+      } else {
+        d = new Date(dateVal);
+      }
+      if (isNaN(d.getTime())) return "unknown";
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    };
+
+    const weekRange = `${formatShort(weekStart)} – ${formatFull(weekEnd)}`;
+
+    const employeeName = record.User?.name || "Employee";
     const managerId = record.managerId || record.User?.managerId;
-    const manager = await User.findByPk(managerId);
-    if (manager) {
-      await Notification.create({
-        userId: managerId,
-        type: "SUBMITTED",
-        title: "New Timesheet Submission",
-        message: `${record.User?.name || "An employee"} submitted a ${prefix} ${datePart}.`,
-        relatedId: record.id,
-        isRead: false,
-      });
-    }
-  }
 
-  // Notify employee
-  await Notification.create({
-    userId: record.userId,
-    type: "SUBMITTED",
-    title: "Timesheet Submitted",
-    message: buildMessage(record, "submitted for approval"),
-    relatedId: record.id,
-    isRead: false,
-  });
+    if (managerId) {
+      const manager = await User.findByPk(managerId, { attributes: ["id", "name"] });
+      if (manager) {
+        await Notification.create({
+          userId: managerId,
+          type: "SUBMITTED",
+          title: "New Weekly Timesheet Received",
+          message: `Employee:\n${employeeName}\n\nWeek:\n${weekRange}`,
+          relatedId: record.id,
+          isRead: false,
+        });
+      }
+    }
+
+    let managerName = "your manager";
+    if (managerId) {
+      const mgr = await User.findByPk(managerId, { attributes: ["id", "name"] });
+      if (mgr) managerName = mgr.name;
+    }
+
+    await Notification.create({
+      userId: record.userId,
+      type: "SUBMITTED",
+      title: "Weekly Timesheet Submitted",
+      message: `Your weekly timesheet has been submitted successfully.\n\nWeek:\n${weekRange}\n\nSubmitted To:\n${managerName}`,
+      relatedId: record.id,
+      isRead: false,
+    });
+  } catch (err) {
+    console.error("Failed to create submission notifications:", err.message);
+  }
 };
 
 export const notifyTimesheetApproved = async (record) => {
