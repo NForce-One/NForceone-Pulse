@@ -205,7 +205,7 @@ export const saveDraftTimesheet = async (userId, data) => {
       findWhere.projectId = { [Op.is]: null };
     }
 
-    const hasNoData = h === 0 && !description;
+    const hasNoData = h === 0 && !description && !comment;
 
     const entryData = {
       userId,
@@ -346,6 +346,9 @@ export const submitTimesheet = async (userId, data) => {
         const updateFields = { status: "SUBMITTED" };
         if (dailyEntry?.managerId) {
           updateFields.managerId = dailyEntry.managerId;
+        }
+        if (dailyEntry && dailyEntry.comment !== undefined) {
+          updateFields.comment = dailyEntry.comment || null;
         }
         updatePromises.push(
           TimeEntry.update(updateFields, { where: { id: entry.id }, transaction: t })

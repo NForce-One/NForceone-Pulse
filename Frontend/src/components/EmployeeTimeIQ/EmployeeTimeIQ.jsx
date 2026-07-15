@@ -77,6 +77,29 @@ const decimalToHHMMString = (value) => {
   return `${h}.${m.toString().padStart(2, "0")}`;
 };
 
+const parseHHMMToParts = (value) => {
+  if (!value && value !== 0) return { h: "", m: "" };
+  const str = String(value);
+  const dotIdx = str.indexOf(".");
+  if (dotIdx === -1) {
+    return { h: str, m: "" };
+  }
+  const h = str.substring(0, dotIdx);
+  const rawM = str.substring(dotIdx + 1);
+  const m = rawM.length === 1 ? rawM + "0" : rawM.substring(0, 2);
+  return { h, m };
+};
+
+const hhmmPartsToString = (h, m) => {
+  const hours = parseInt(h, 10);
+  const mins = parseInt(m, 10);
+  const hVal = isNaN(hours) ? 0 : Math.max(0, hours);
+  const mVal = isNaN(mins) ? 0 : Math.min(59, Math.max(0, mins));
+  if ((h === "" || h === undefined) && (m === "" || m === undefined)) return "";
+  if (hVal === 0 && mVal === 0 && (h === "" || h === "0") && (m === "" || m === "0")) return "";
+  return `${hVal}.${mVal.toString().padStart(2, "0")}`;
+};
+
 const getSnackbarStyles = (type) => {
   if (type === "success") return "bg-green-600 text-white";
   if (type === "error") return "bg-red-600 text-white";
@@ -254,6 +277,7 @@ export const EmployeeTimeIQ = () => {
           const hoursNum = parseFloat(entry.hours);
           const hasHours = !isNaN(hoursNum) && hoursNum > 0;
           if (!hasHours && !entry.description && !entry.comment) return;
+          console.log("[loadWeekData] entry comment:", entry.comment, "projectId:", entry.projectId, "date:", entry.entryDate);
 
           const key = entry.projectId
             ? `proj-${entry.projectId}`
@@ -327,6 +351,15 @@ export const EmployeeTimeIQ = () => {
   const unmountDataRef = useRef({ rows: [], isReadOnly: false, weekStart: "" });
   unmountDataRef.current = { rows: projectRows, isReadOnly, weekStart: currentWeekStart };
 
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const handleCellChange = useCallback((rowId, date, value) => {
     if (value !== "" && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) return;
     if (parseFloat(value) > 24) return;
@@ -375,6 +408,7 @@ export const EmployeeTimeIQ = () => {
       if (ro || curRows.length === 0) return;
       const row = curRows.find((r) => r.rowId === rowId);
       if (!row || row.isPending) return;
+      console.log("[autoSave] timer fired for rowId:", rowId, "comment:", row.comment, "date:", new Date().toISOString());
       const data = {
         weekStartDate: ws,
         dailyEntries: wd.map((w, idx) => ({
@@ -486,14 +520,16 @@ export const EmployeeTimeIQ = () => {
     setProjectRows((prev) => prev.filter((r) => r.rowId !== rowId));
   }, [projectRows, currentWeekStart]);
 
-  const handleCommentSave = useCallback((rowId, date, text) => {
+  const handleCommentSave = useCallback(async (rowId, date, text) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
     const updatedRows = projectRows.map((row) =>
       row.rowId === rowId ? { ...row, comment: text } : row
     );
     setProjectRows(updatedRows);
-    setCommentModalRowId(null);
-    setCommentValue("");
-    showSnackbar("Comment saved", "success");
 
     const dailyEntries = updatedRows.filter((r) => !r.isPending).flatMap((row) =>
       weekDates.map((wd, idx) => ({
@@ -509,21 +545,29 @@ export const EmployeeTimeIQ = () => {
       }))
     );
     if (dailyEntries.length > 0) {
-      saveETDraft({ weekStartDate: currentWeekStart, dailyEntries }).catch((err) => {
+      console.log("[handleCommentSave] saving comment:", text, "rowId:", rowId, "entries:", dailyEntries.map((e) => ({ date: e.entryDate, comment: e.comment, pid: e.projectId })));
+      try {
+        await saveETDraft({ weekStartDate: currentWeekStart, dailyEntries });
+        showSnackbar("Comment saved", "success");
+      } catch (err) {
         console.error("Failed to save comment:", err);
         showSnackbar("Failed to save comment to server", "error");
-      });
+      }
     }
+    setCommentModalRowId(null);
+    setCommentValue("");
   }, [projectRows, weekDates, currentWeekStart, selectedManager, showSnackbar]);
 
-  const handleCommentDelete = useCallback((rowId, date) => {
+  const handleCommentDelete = useCallback(async (rowId, date) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
     const updatedRows = projectRows.map((row) =>
       row.rowId === rowId ? { ...row, comment: "" } : row
     );
     setProjectRows(updatedRows);
-    setCommentModalRowId(null);
-    setCommentValue("");
-    showSnackbar("Comment deleted", "info");
 
     const dailyEntries = updatedRows.filter((r) => !r.isPending).flatMap((row) =>
       weekDates.map((wd, idx) => ({
@@ -539,11 +583,16 @@ export const EmployeeTimeIQ = () => {
       }))
     );
     if (dailyEntries.length > 0) {
-      saveETDraft({ weekStartDate: currentWeekStart, dailyEntries }).catch((err) => {
+      try {
+        await saveETDraft({ weekStartDate: currentWeekStart, dailyEntries });
+        showSnackbar("Comment deleted", "info");
+      } catch (err) {
         console.error("Failed to delete comment:", err);
         showSnackbar("Failed to delete comment on server", "error");
-      });
+      }
     }
+    setCommentModalRowId(null);
+    setCommentValue("");
   }, [projectRows, weekDates, currentWeekStart, selectedManager, showSnackbar]);
 
   const prepareSaveData = useCallback(() => ({
@@ -881,19 +930,47 @@ export const EmployeeTimeIQ = () => {
                     </td>
                     {weekDates.map((wd) => {
                       const dayData = row.days[wd.date] || { hours: "", description: "" };
+                      const parts = parseHHMMToParts(dayData.hours);
+                      const cellDisabled = isReadOnly || row.isPending;
+                      const cellInputClass = "h-6 rounded border border-[#E2E8F0] bg-white text-[10px] text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]";
                       return (
-                        <td key={wd.date} className={`px-1.5 py-1.5 border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
-                          <input
-                            type="number"
-                            min="0"
-                            max="24"
-                            step="0.5"
-                            value={dayData.hours}
-                            onChange={(e) => handleCellChange(row.rowId, wd.date, e.target.value)}
-                            disabled={isReadOnly || row.isPending}
-                            className="w-full h-7 rounded-md border border-[#E2E8F0] bg-white text-xs text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                            placeholder="0"
-                          />
+                        <td key={wd.date} className={`px-1 py-1.5 border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
+                          <div className="flex items-center justify-center gap-0.5">
+                            <input
+                              type="number"
+                              min="0"
+                              max="23"
+                              step="1"
+                              value={parts.h}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v !== "" && (isNaN(parseInt(v, 10)) || parseInt(v, 10) < 0)) return;
+                                if (parseInt(v, 10) > 23) return;
+                                handleCellChange(row.rowId, wd.date, hhmmPartsToString(v, parts.m));
+                              }}
+                              disabled={cellDisabled}
+                              className={`${cellInputClass} w-[28px]`}
+                              placeholder="0"
+                            />
+                            <span className="text-[9px] text-[#94A3B8] font-medium select-none">hrs</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="59"
+                              step="1"
+                              value={parts.m}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v !== "" && (isNaN(parseInt(v, 10)) || parseInt(v, 10) < 0)) return;
+                                if (parseInt(v, 10) > 59) return;
+                                handleCellChange(row.rowId, wd.date, hhmmPartsToString(parts.h, v));
+                              }}
+                              disabled={cellDisabled}
+                              className={`${cellInputClass} w-[28px]`}
+                              placeholder="00"
+                            />
+                            <span className="text-[9px] text-[#94A3B8] font-medium select-none">min</span>
+                          </div>
                         </td>
                       );
                     })}
