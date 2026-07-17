@@ -13,7 +13,7 @@ export const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [profileForm, setProfileForm] = useState({ name: "", department: "", defaultHours: 8 });
+  const [profileForm, setProfileForm] = useState({ department: "", defaultHours: 8 });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -30,7 +30,6 @@ export const Profile = () => {
     if (cachedProfile) {
       setProfile(cachedProfile);
       setProfileForm({
-        name: cachedProfile.name || "",
         department: cachedProfile.department || "",
         defaultHours: cachedProfile.defaultHours || 8,
       });
@@ -44,7 +43,6 @@ export const Profile = () => {
 
   const validateProfile = () => {
     const errors = {};
-    if (!profileForm.name.trim()) errors.name = "Name is required";
     if (!profileForm.department.trim()) errors.department = "Department is required";
     if (!profileForm.defaultHours || profileForm.defaultHours <= 0) {
       errors.defaultHours = "Hours must be greater than 0";
@@ -79,7 +77,6 @@ export const Profile = () => {
     setIsSaving(true);
     try {
       await updateProfile({
-        name: profileForm.name,
         department: profileForm.department,
         defaultHours: Number(profileForm.defaultHours),
       });
@@ -150,19 +147,13 @@ export const Profile = () => {
            <CardContent>
              <form onSubmit={handleProfileSubmit} className="space-y-4">
                <div>
-                 <label className="text-sm text-[#64748B]">Name *</label>
-                <Input
-                  name="name"
-                  value={profileForm.name}
-                  onChange={(e) => {
-                    setProfileForm({ ...profileForm, name: e.target.value });
-                    if (profileErrors.name) setProfileErrors({ ...profileErrors, name: "" });
-                  }}
-                  required
-                />
-                {profileErrors.name && (
-                  <p className="text-red-400 text-xs mt-1">{profileErrors.name}</p>
-                )}
+                 <label className="text-sm text-[#64748B]">Name</label>
+                 <Input
+                   value={profile?.name || ""}
+                   disabled
+                   title="Name cannot be changed after user creation."
+                   className="bg-[#F8FAFC] cursor-not-allowed"
+                 />
               </div>
 <div>
                  <label className="text-sm text-[#64748B]">Email</label>

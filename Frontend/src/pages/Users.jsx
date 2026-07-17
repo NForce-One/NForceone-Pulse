@@ -53,7 +53,8 @@ export const Users = () => {
     try {
       const payload = { ...formData };
       if (editingId) {
-        const { employeeId, ...updatePayload } = payload;
+        // name is immutable after creation; the backend rejects changes to it
+        const { employeeId, name, ...updatePayload } = payload;
         await updateUser(editingId, updatePayload);
       } else {
         await createUser(payload);
@@ -137,8 +138,19 @@ export const Users = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-<Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
+<div className="relative group">
+                 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required
+                   readOnly={!!editingId}
+                   title={editingId ? "Name cannot be changed after user creation." : undefined}
+                   className={editingId
+                     ? "bg-gray-50 border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] cursor-not-allowed"
+                     : "bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"} />
+                 {editingId && (
+                   <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                     Name cannot be changed after user creation.
+                   </div>
+                 )}
+               </div>
                <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
                  className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <div className="relative">

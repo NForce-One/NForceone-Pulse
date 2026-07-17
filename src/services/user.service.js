@@ -88,6 +88,13 @@ export const updateUser = async (id, data) => {
   // Employee ID must remain unchanged on edit
   delete data.employeeId;
 
+  // Name is set once at creation and is immutable afterwards.
+  // Resending the current name is tolerated as a no-op so older clients keep working.
+  if (data.name !== undefined && data.name !== user.name) {
+    throw new Error("Name cannot be updated after user creation");
+  }
+  delete data.name;
+
   if (data.password) {
     const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*]).{6,}$/;
     if (!passwordRegex.test(data.password)) {
