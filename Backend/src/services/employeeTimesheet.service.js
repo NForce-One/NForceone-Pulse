@@ -474,7 +474,34 @@ export const cancelTimesheet = async (userId, weekStartDate) => {
   }
 
   if (timesheet.status === "SUBMITTED") {
-    throw new Error("Cannot cancel a submitted timesheet. Use Update to revert to draft first.");
+    const approvedCount = await TimeEntry.count({
+      where: {
+        userId,
+        entryDate: { [Op.between]: [ws, we] },
+        status: "APPROVED",
+      },
+    });
+    if (approvedCount > 0) {
+      throw new Error("Cannot cancel: some entries for this week have already been approved.");
+    }
+
+    await TimeEntry.destroy({
+      where: {
+        userId,
+        entryDate: { [Op.between]: [ws, we] },
+      },
+    });
+
+    // Fully remove the timesheet record itself (not just its entries) so a
+    // cancelled submission leaves no trace in Reports, Approvals, Team
+    // Timesheets, or the Dashboard — it's as if the week was never touched.
+    await timesheet.destroy();
+
+    return {
+      timesheet: null,
+      entries: [],
+      totalHours: 0,
+    };
   }
 
   await TimeEntry.destroy({

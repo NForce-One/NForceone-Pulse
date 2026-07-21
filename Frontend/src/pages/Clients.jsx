@@ -15,6 +15,7 @@ export const Clients = () => {
     name: "",
     status: "ACTIVE",
   });
+  const [formErrors, setFormErrors] = useState({});
 
   const loadClients = async () => {
     try {
@@ -33,11 +34,24 @@ export const Clients = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === "name") {
+      const sanitized = value.replace(/[^A-Za-z\s]/g, "");
+      setFormData((prev) => ({ ...prev, name: sanitized }));
+      setFormErrors((prev) => ({
+        ...prev,
+        name: sanitized.length !== value.length ? "Only alphabetic characters (A-Z) and spaces are allowed." : "",
+      }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      setFormErrors((prev) => ({ ...prev, name: "Client name is required." }));
+      return;
+    }
     try {
       if (editingId) {
         await updateClient(editingId, formData);
@@ -45,11 +59,13 @@ export const Clients = () => {
         await createClient(formData);
       }
       setFormData({ name: "", status: "ACTIVE" });
+      setFormErrors({});
       setShowForm(false);
       setEditingId(null);
       await loadClients();
     } catch (error) {
-      alert("Operation failed");
+      const message = error.response?.data?.message || "Operation failed";
+      setFormErrors((prev) => ({ ...prev, name: message }));
     }
   };
 
@@ -58,6 +74,7 @@ export const Clients = () => {
       name: client.name,
       status: client.status,
     });
+    setFormErrors({});
     setEditingId(client.id);
     setShowForm(true);
   };
@@ -79,7 +96,7 @@ export const Clients = () => {
           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">Client Management</h1>
           <p className="text-base text-[#64748B]">Manage clients and billing types</p>
         </div>
-        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", status: "ACTIVE" }); }}>
+        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", status: "ACTIVE" }); setFormErrors({}); }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Client
         </Button>
@@ -92,14 +109,17 @@ export const Clients = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Client Name" required />
+               <div>
+                 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Client Name" maxLength={100} required />
+                 {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+               </div>
                <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                  <option value="ACTIVE" className="bg-white">Active</option>
                  <option value="INACTIVE" className="bg-white">Inactive</option>
                </select>
                 <div className="flex gap-2 md:col-span-2">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setFormErrors({}); }}>Cancel</Button>
               </div>
             </form>
           </CardContent>

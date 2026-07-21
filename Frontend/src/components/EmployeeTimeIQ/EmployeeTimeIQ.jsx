@@ -235,9 +235,11 @@ export const EmployeeTimeIQ = () => {
 
   const handleProjectChange = useCallback((projectId) => {
     const id = projectId ? Number(projectId) : "";
+    if (selectedProject && selectedProject !== id) {
+      setSelectedManager("");
+    }
     setSelectedProject(id);
-    setSelectedManager("");
-  }, []);
+  }, [selectedProject]);
 
   const loadWeekData = useCallback(async (weekStart) => {
     try {
@@ -371,7 +373,7 @@ export const EmployeeTimeIQ = () => {
       clearTimeout(saveTimeoutRef.current);
     }
     saveTimeoutRef.current = setTimeout(() => {
-      const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd, selectedManager: sm } = dataRef.current;
+      const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd } = dataRef.current;
       if (ro || curRows.length === 0) return;
       const row = curRows.find((r) => r.rowId === rowId);
       if (!row || row.isPending) return;
@@ -383,7 +385,7 @@ export const EmployeeTimeIQ = () => {
           description: row.days[w.date]?.description || "",
           clientId: row.clientId,
           projectId: row.projectId,
-          managerId: sm ? Number(sm) : row.managerId,
+          managerId: row.managerId,
           clientName: row.clientName,
           projectName: row.projectName,
         })),
@@ -397,8 +399,8 @@ export const EmployeeTimeIQ = () => {
 
 
   const handleAddProject = useCallback(() => {
-    if (!selectedClient && !selectedProject) {
-      showSnackbar("Please select a Client and Project before adding a new project.", "error");
+    if (!selectedClient && !selectedProject && !selectedManager) {
+      showSnackbar("Please select a Client, Project and Manager before adding a new project.", "error");
       return;
     }
     if (!selectedClient) {
@@ -407,6 +409,10 @@ export const EmployeeTimeIQ = () => {
     }
     if (!selectedProject) {
       showSnackbar("Please select a Project first.", "error");
+      return;
+    }
+    if (!selectedManager) {
+      showSnackbar("Please select a Manager name.", "error");
       return;
     }
     if (projectRows.some((r) => Number(r.projectId) === Number(selectedProject))) {
@@ -422,7 +428,7 @@ export const EmployeeTimeIQ = () => {
       clientName: selectedClientData?.name || "",
       projectId: Number(selectedProject),
       projectName: selectedProjectData?.name || "",
-      managerId: null,
+      managerId: Number(selectedManager),
       days: {},
     };
     weekDates.forEach((wd) => {
@@ -431,7 +437,7 @@ export const EmployeeTimeIQ = () => {
     setProjectRows((prev) => [...prev, newRow]);
     setSelectedClient("");
     setSelectedProject("");
-  }, [selectedClient, selectedProject, allProjects, clients, weekDates, projectRows, showSnackbar]);
+  }, [selectedClient, selectedProject, selectedManager, allProjects, clients, weekDates, projectRows, showSnackbar]);
 
   const handlePendingClientChange = useCallback((rowId, clientId) => {
     const id = clientId ? Number(clientId) : null;
@@ -519,7 +525,7 @@ export const EmployeeTimeIQ = () => {
           comment: idx === 0 ? (row.comment || "") : undefined,
           clientId: row.clientId,
           projectId: row.projectId,
-          managerId: selectedManager ? Number(selectedManager) : null,
+          managerId: row.managerId || (selectedManager ? Number(selectedManager) : null),
           clientName: row.clientName,
           projectName: row.projectName,
         };
@@ -564,8 +570,8 @@ export const EmployeeTimeIQ = () => {
       showSnackbar("Please add at least one project", "error");
       return;
     }
-    if (!selectedManager) {
-      showSnackbar("Please select a manager for timesheet submission", "error");
+    if (projectRows.some((r) => !r.isPending && !r.managerId)) {
+      showSnackbar("Please assign a manager to every project before submitting.", "error");
       return;
     }
     if (totalHours <= 0) {
@@ -605,7 +611,7 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [projectRows, totalHours, selectedManager, weekDates, prepareSaveData, showSnackbar]);
+  }, [projectRows, totalHours, weekDates, prepareSaveData, showSnackbar]);
 
   const handleUpdate = useCallback(async () => {
     if (!window.confirm("Revert to draft for editing?")) return;
@@ -626,10 +632,13 @@ export const EmployeeTimeIQ = () => {
   }, [currentWeekStart, showSnackbar]);
 
   const handleCancel = useCallback(async () => {
-    if (timesheetStatus === "SUBMITTED") {
-      loadWeekData(currentWeekStart);
-      showSnackbar("Changes reverted", "info");
+    if (projectRows.length === 0) {
       return;
+    }
+    if (timesheetStatus === "SUBMITTED") {
+      if (!window.confirm("Cancel this submitted timesheet? All entries for this week will be permanently removed and this cannot be undone.")) {
+        return;
+      }
     }
     try {
       const res = await cancelETTimesheet(currentWeekStart);
@@ -642,7 +651,7 @@ export const EmployeeTimeIQ = () => {
     } catch (err) {
       showSnackbar(err.response?.data?.message || err.message || "Failed to cancel", "error");
     }
-  }, [currentWeekStart, timesheetStatus, loadWeekData, showSnackbar]);
+  }, [currentWeekStart, timesheetStatus, projectRows, loadWeekData, showSnackbar]);
 
   const navigateWeek = useCallback((direction) => {
     const cur = new Date(currentWeekStart + "T00:00:00");
@@ -745,10 +754,10 @@ export const EmployeeTimeIQ = () => {
           <select
             value={selectedManager}
             onChange={(e) => setSelectedManager(e.target.value ? Number(e.target.value) : "")}
-            disabled={isReadOnly}
+            disabled={!selectedClient || isReadOnly}
             className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">{!managersLoaded ? "Loading..." : allManagers.length === 0 ? "No Managers Available" : user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
+            <option value="">{!selectedClient ? "Select client first" : !managersLoaded ? "Loading..." : allManagers.length === 0 ? "No Managers Available" : user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
             {allManagers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
@@ -796,7 +805,7 @@ export const EmployeeTimeIQ = () => {
             {projectRows.length === 0 ? (
               <tr>
                 <td colSpan={12} className="px-4 py-8 text-center text-sm text-[#94A3B8]">
-                  No projects added yet. Select a client/project above and click "+ Add New Project".
+                  No projects added yet. Select a client, project and manager above and click "+ Add New Project".
                 </td>
               </tr>
             ) : (

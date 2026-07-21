@@ -108,9 +108,17 @@ export const notifyTimesheetSubmitted = async (record) => {
   const { label, prefix } = getDateLabel(record);
   const datePart = label || "unknown date";
 
-  // Notify manager about new submission
-  if (record.managerId || record.User?.managerId) {
-    const managerId = record.managerId || record.User?.managerId;
+  // Notify every manager involved in this timesheet (an employee can log
+  // time against multiple projects, each with its own manager)
+  const managerIds = new Set(
+    (record.managerIds && record.managerIds.length ? record.managerIds : [record.managerId])
+      .filter(Boolean)
+  );
+  if (record.User?.managerId) {
+    managerIds.add(record.User.managerId);
+  }
+
+  for (const managerId of managerIds) {
     const manager = await User.findByPk(managerId);
     if (manager) {
       await Notification.create({

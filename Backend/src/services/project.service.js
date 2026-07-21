@@ -2,8 +2,24 @@ import Project from "../models/project.model.js";
 import Client from "../models/client.model.js";
 import User from "../models/user.model.js";
 
+const PROJECT_NAME_MAX_LENGTH = 100;
+const projectNameRegex = /^[A-Za-z\s]+$/;
+
+const validateProjectName = (name) => {
+  if (!name || !name.trim()) {
+    throw new Error("Project name is required");
+  }
+  if (name.length > PROJECT_NAME_MAX_LENGTH) {
+    throw new Error(`Project name cannot exceed ${PROJECT_NAME_MAX_LENGTH} characters`);
+  }
+  if (!projectNameRegex.test(name)) {
+    throw new Error("Only alphabetic characters (A-Z) and spaces are allowed.");
+  }
+};
+
 // CREATE PROJECT
 export const createProject = async (data) => {
+  validateProjectName(data.name);
   return await Project.create(data);
 };
 
@@ -62,6 +78,10 @@ export const updateProject = async (id, data) => {
 
   if (!project) {
     throw new Error("Project not found");
+  }
+
+  if (data.name !== undefined) {
+    validateProjectName(data.name);
   }
 
   await project.update(data);
