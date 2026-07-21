@@ -36,6 +36,20 @@ export const getUserById = async (id) => {
   return user;
 };
 
+// Department is letters and spaces only. Blank/absent stays allowed so admin
+// user creation without a department keeps working.
+const DEPARTMENT_REGEX = /^[A-Za-z ]+$/;
+const validateDepartment = (department) => {
+  if (department === undefined || department === null || department === "") return;
+  if (
+    typeof department !== "string" ||
+    department.trim() === "" ||
+    !DEPARTMENT_REGEX.test(department)
+  ) {
+    throw new Error('"Department" must contain only letters and spaces.');
+  }
+};
+
 const generateEmployeeId = async () => {
   const maxUser = await User.findOne({
     attributes: [[sequelize.fn("MAX", sequelize.col("employeeId")), "maxEmployeeId"]],
@@ -62,6 +76,8 @@ export const createUser = async (data) => {
       "Password must be at least 6 characters, include 1 uppercase and 1 special character"
     );
   }
+
+  validateDepartment(department);
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const employeeId = await generateEmployeeId();
@@ -95,6 +111,8 @@ export const updateUser = async (id, data) => {
     throw new Error("Name cannot be updated after user creation");
   }
   delete data.name;
+
+  validateDepartment(data.department);
 
   if (data.password) {
     const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*]).{6,}$/;

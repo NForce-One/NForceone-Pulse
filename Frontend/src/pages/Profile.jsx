@@ -7,6 +7,8 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { User, Key, Save, Loader2 } from "lucide-react";
 
+const DEPARTMENT_ERROR_MESSAGE = '"Department" must contain only letters and spaces.';
+
 export const Profile = () => {
   const { user: authUser } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -43,7 +45,11 @@ export const Profile = () => {
 
   const validateProfile = () => {
     const errors = {};
-    if (!profileForm.department.trim()) errors.department = "Department is required";
+    if (!profileForm.department.trim()) {
+      errors.department = "Department is required";
+    } else if (!/^[A-Za-z ]+$/.test(profileForm.department.trim())) {
+      errors.department = DEPARTMENT_ERROR_MESSAGE;
+    }
     if (!profileForm.defaultHours || profileForm.defaultHours <= 0) {
       errors.defaultHours = "Hours must be greater than 0";
     }
@@ -169,8 +175,17 @@ export const Profile = () => {
                   name="department"
                   value={profileForm.department}
                   onChange={(e) => {
-                    setProfileForm({ ...profileForm, department: e.target.value });
-                    if (profileErrors.department) setProfileErrors({ ...profileErrors, department: "" });
+                    // Department accepts letters and spaces only; strip anything else
+                    // as it is typed or pasted, telling the user why. The message
+                    // clears on the next valid keystroke.
+                    const raw = e.target.value;
+                    const sanitized = raw.replace(/[^A-Za-z ]/g, "");
+                    setProfileForm({ ...profileForm, department: sanitized });
+                    if (raw !== sanitized) {
+                      setProfileErrors({ ...profileErrors, department: DEPARTMENT_ERROR_MESSAGE });
+                    } else if (profileErrors.department) {
+                      setProfileErrors({ ...profileErrors, department: "" });
+                    }
                   }}
                 />
                 {profileErrors.department && (

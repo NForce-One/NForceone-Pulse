@@ -154,7 +154,7 @@ export const Users = () => {
                <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
                  className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                <div className="relative">
-                  <Input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"}
+                  <Input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange} placeholder="Password"
                     className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200 pr-10" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#64748B] hover:text-[#1E293B] transition-colors duration-200">
