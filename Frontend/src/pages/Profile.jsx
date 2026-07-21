@@ -35,6 +35,9 @@ export const Profile = () => {
         defaultHours: cachedProfile.defaultHours || 8,
       });
       setIsLoading(false);
+      if (cachedProfile.name && cachedProfile.name !== authUser?.name) {
+        updateUser({ name: cachedProfile.name });
+      }
     }
   }, [cachedProfile]);
 
