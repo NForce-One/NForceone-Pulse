@@ -105,24 +105,30 @@ const buildMessage = (record, verb) => {
 // ================= EVENT-TRIGGERED NOTIFICATIONS =================
 
 export const notifyTimesheetSubmitted = async (record) => {
-  const { label, prefix } = getDateLabel(record);
-  const datePart = label || "unknown date";
+  try {
+    const { label, prefix } = getDateLabel(record);
+    const datePart = label || "unknown date";
+    const weekRange =
+      record.weekStartDate && record.weekEndDate
+        ? `${formatDateSafe(record.weekStartDate)} – ${formatDateSafe(record.weekEndDate)}`
+        : datePart;
 
-  // Notify manager about new submission
-  if (record.managerId || record.User?.managerId) {
     const managerId = record.managerId || record.User?.managerId;
-    const manager = await User.findByPk(managerId);
-    if (manager) {
-      await Notification.create({
-        userId: managerId,
-        type: "SUBMITTED",
-        title: "New Timesheet Submission",
-        message: `${record.User?.name || "An employee"} submitted a ${prefix} ${datePart}.`,
-        relatedId: record.id,
-        isRead: false,
-      });
+
+    // Notify manager about new submission
+    if (managerId) {
+      const manager = await User.findByPk(managerId);
+      if (manager) {
+        await Notification.create({
+          userId: managerId,
+          type: "SUBMITTED",
+          title: "New Timesheet Submission",
+          message: `${record.User?.name || "An employee"} submitted a ${prefix} ${datePart}.`,
+          relatedId: record.id,
+          isRead: false,
+        });
+      }
     }
-  }
 
     let managerName = "your manager";
     if (managerId) {
