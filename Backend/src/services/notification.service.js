@@ -130,6 +130,7 @@ export const notifyTimesheetSubmitted = async (record) => {
       }
     }
 
+    // Notify employee (confirmation)
     let managerName = "your manager";
     if (managerId) {
       const mgr = await User.findByPk(managerId, { attributes: ["id", "name"] });
