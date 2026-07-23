@@ -6,8 +6,8 @@ export const createClient = async (data) => {
 };
 
 // GET ALL
-export const getAllClients = async () => {
-  return await Client.findAll();
+export const getAllClients = async (status = null) => {
+  return await Client.findAll(status ? { where: { status } } : undefined);
 };
 
 // GET CLIENTS BY USER FROM TIME ENTRIES

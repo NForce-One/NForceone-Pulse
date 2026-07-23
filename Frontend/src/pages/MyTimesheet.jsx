@@ -85,8 +85,8 @@ export const MyTimesheet = () => {
   const loadDropdownData = async () => {
     try {
       const [clientsRes, projectsRes] = await Promise.all([
-        fetchClients(),
-        fetchProjects(),
+        fetchClients({ status: "ACTIVE" }),
+        fetchProjects({ status: "ACTIVE" }),
       ]);
       setClients(clientsRes?.data || []);
       setProjects(projectsRes?.data || []);

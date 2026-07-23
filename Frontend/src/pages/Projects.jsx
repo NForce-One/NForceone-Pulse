@@ -25,7 +25,7 @@ export const Projects = () => {
     try {
       const [projectsRes, clientsRes] = await Promise.all([
         fetchProjects(),
-        fetchClients(),
+        fetchClients({ status: "ACTIVE" }),
       ]);
       setProjects(projectsRes?.data || []);
       setClients(clientsRes?.data || []);
@@ -143,7 +143,7 @@ export const Projects = () => {
                   }`}
                 >
                   <option value="" className="bg-white">Select Client</option>
-                  {clients.map((c) => <option key={c.id} value={c.id} className="bg-white">{c.name}{c.status === "INACTIVE" ? " (Inactive)" : ""}</option>)}
+                  {clients.map((c) => <option key={c.id} value={c.id} className="bg-white">{c.name}</option>)}
                 </select>
                 {clientError && (
                   <p className="mt-1.5 text-xs text-red-600">{clientError}</p>

@@ -17,10 +17,19 @@ export const createProject = async (data) => {
 };
 
 // GET ALL PROJECTS
-export const getAllProjects = async () => {
+export const getAllProjects = async (status = null) => {
+  const clientInclude = { model: Client, attributes: ["id", "name", "status"] };
+  if (status) {
+    // Also exclude projects whose client no longer matches the requested status
+    // (e.g. an ACTIVE project left behind after its client was deactivated).
+    clientInclude.where = { status };
+    clientInclude.required = true;
+  }
+
   return await Project.findAll({
+    where: status ? { status } : undefined,
     include: [
-      { model: Client, attributes: ["id", "name"] },
+      clientInclude,
       { model: User, as: "Manager", attributes: ["id", "name"] },
     ],
     order: [["createdAt", "DESC"]],
@@ -71,6 +80,15 @@ export const updateProject = async (id, data) => {
 
   if (!project) {
     throw new Error("Project not found");
+  }
+
+  if (data.clientId && Number(data.clientId) !== project.clientId) {
+    const client = await Client.findByPk(data.clientId);
+    if (client && client.status === "INACTIVE") {
+      throw new Error(
+        "The selected client is inactive. You cannot proceed with creating a project for this client."
+      );
+    }
   }
 
   await project.update(data);

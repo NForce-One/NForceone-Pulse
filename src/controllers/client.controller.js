@@ -21,9 +21,14 @@ export const createClient = async (req, res) => {
 export const getClients = async (req, res) => {
   try {
     const userId = req.query.userId || null;
-    const clients = userId
+    const status = req.query.status ? String(req.query.status).toUpperCase() : null;
+    let clients = userId
       ? await clientService.getClientsByUser(userId)
-      : await clientService.getAllClients();
+      : await clientService.getAllClients(status);
+
+    if (status && userId) {
+      clients = clients.filter((c) => c.status === status);
+    }
 
     res.json({
       success: true,

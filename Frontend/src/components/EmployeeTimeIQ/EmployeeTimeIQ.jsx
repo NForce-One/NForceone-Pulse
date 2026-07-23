@@ -175,8 +175,8 @@ export const EmployeeTimeIQ = () => {
     (async () => {
       try {
         const [clientsRes, projectsRes] = await Promise.all([
-          fetchClients(),
-          fetchProjects(),
+          fetchClients({ status: "ACTIVE" }),
+          fetchProjects({ status: "ACTIVE" }),
         ]);
         const clients = clientsRes?.data || [];
         const projects = projectsRes?.data || [];
