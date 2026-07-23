@@ -1,7 +1,23 @@
 import Client from "../models/client.model.js";
 
+const CLIENT_NAME_MAX_LENGTH = 100;
+const clientNameRegex = /^[A-Za-z\s]+$/;
+
+const validateClientName = (name) => {
+  if (!name || !name.trim()) {
+    throw new Error("Client name is required");
+  }
+  if (name.length > CLIENT_NAME_MAX_LENGTH) {
+    throw new Error(`Client name cannot exceed ${CLIENT_NAME_MAX_LENGTH} characters`);
+  }
+  if (!clientNameRegex.test(name)) {
+    throw new Error("Only alphabetic characters (A-Z) and spaces are allowed.");
+  }
+};
+
 // CREATE
 export const createClient = async (data) => {
+  validateClientName(data.name);
   return await Client.create(data);
 };
 
@@ -48,6 +64,10 @@ export const updateClient = async (id, data) => {
 
   if (!client) {
     throw new Error("Client not found");
+  }
+
+  if (data.name !== undefined) {
+    validateClientName(data.name);
   }
 
   await client.update(data);
