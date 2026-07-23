@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Trash2 } from "lucide-react";
 
 export const CommentModal = ({
@@ -12,6 +12,7 @@ export const CommentModal = ({
   onClose,
 }) => {
   const textareaRef = useRef(null);
+  const [deleteError, setDeleteError] = useState(false);
 
   useEffect(() => {
     if (isOpen && textareaRef.current) {
@@ -25,8 +26,13 @@ export const CommentModal = ({
     }
   }, [isOpen, date]);
 
+  useEffect(() => {
+    setDeleteError(false);
+  }, [isOpen, date]);
+
   const handleInput = (e) => {
     onChange(e.target.value);
+    if (deleteError) setDeleteError(false);
     e.target.style.height = "auto";
     e.target.style.height = Math.min(e.target.scrollHeight, 280) + "px";
   };
@@ -36,6 +42,11 @@ export const CommentModal = ({
   };
 
   const handleDelete = () => {
+    if (!(value || "").trim()) {
+      setDeleteError(true);
+      return;
+    }
+    setDeleteError(false);
     if (window.confirm("Are you sure you want to delete this comment?")) {
       onDelete(rowId, date);
     }
@@ -64,9 +75,20 @@ export const CommentModal = ({
             placeholder="Describe work completed for this day..."
             rows={7}
             maxLength={200}
-            className="w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent resize-none"
+            aria-invalid={deleteError}
+            className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent resize-none ${
+              deleteError
+                ? "border-red-300 focus:ring-red-400"
+                : "border-[#E2E8F0] focus:ring-[#B33A2F]"
+            }`}
           />
-          <p className="text-[11px] text-[#94A3B8] mt-1.5">Maximum 200 characters allowed</p>
+          {deleteError ? (
+            <p className="text-[11px] text-red-500 font-semibold mt-1.5">
+              Nothing to delete. Please enter a comment before attempting to delete.
+            </p>
+          ) : (
+            <p className="text-[11px] text-[#94A3B8] mt-1.5">Maximum 200 characters allowed</p>
+          )}
         </div>
 
         <div className="flex items-center justify-between px-5 py-3.5 border-t border-[#E2E8F0] bg-[#F8FAFC]">

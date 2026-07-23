@@ -4,6 +4,15 @@ import User from "../models/user.model.js";
 
 // CREATE PROJECT
 export const createProject = async (data) => {
+  if (data.clientId) {
+    const client = await Client.findByPk(data.clientId);
+    if (client && client.status === "INACTIVE") {
+      throw new Error(
+        "The selected client is inactive. You cannot proceed with creating a project for this client."
+      );
+    }
+  }
+
   return await Project.create(data);
 };
 

@@ -174,6 +174,26 @@ export const saveDraftTimesheet = async (userId, data) => {
     throw new Error("Cannot modify an approved timesheet");
   }
 
+  for (const entry of dailyEntries) {
+    const cId = entry.clientId ? parseInt(entry.clientId) : (data.clientId ? parseInt(data.clientId) : null);
+    const pId = entry.projectId ? parseInt(entry.projectId) : (data.projectId ? parseInt(data.projectId) : null);
+
+    if (!cId) continue;
+
+    const findWhere = { userId, entryDate: entry.entryDate };
+    findWhere.projectId = pId !== null ? pId : { [Op.is]: null };
+
+    const existingEntry = await TimeEntry.findOne({ where: findWhere });
+    if (existingEntry) continue;
+
+    const client = await Client.findByPk(cId);
+    if (client && client.status === "INACTIVE") {
+      throw new Error(
+        "The selected client is inactive. You cannot proceed with creating a project for this client."
+      );
+    }
+  }
+
   let totalHours = 0;
 
   for (const entry of dailyEntries) {

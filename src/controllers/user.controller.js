@@ -34,7 +34,8 @@ export const updateUser = async (req, res) => {
     const user = await userService.updateUser(req.params.id, req.body);
     res.json({ success: true, data: user });
   } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
+    const status = error.message === "User not found" ? 404 : 400;
+    res.status(status).json({ success: false, message: error.message });
   }
 };
 
@@ -69,6 +70,8 @@ export const updateProfile = async (req, res) => {
   try {
     const { name, department, defaultHours } = req.body;
     const updateData = {};
+    // name is intentionally passed through: user.service.updateUser rejects
+    // any attempt to change it and drops an unchanged value as a no-op
     if (name !== undefined) updateData.name = name;
     if (department !== undefined) updateData.department = department;
     if (defaultHours !== undefined) updateData.defaultHours = Number(defaultHours);

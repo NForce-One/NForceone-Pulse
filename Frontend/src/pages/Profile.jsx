@@ -7,13 +7,15 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { User, Key, Save, Loader2 } from "lucide-react";
 
+const DEPARTMENT_ERROR_MESSAGE = '"Department" must contain only letters and spaces.';
+
 export const Profile = () => {
   const { user: authUser, updateUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [profileForm, setProfileForm] = useState({ name: "", department: "", defaultHours: 8 });
+  const [profileForm, setProfileForm] = useState({ department: "", defaultHours: 8 });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -30,7 +32,6 @@ export const Profile = () => {
     if (cachedProfile) {
       setProfile(cachedProfile);
       setProfileForm({
-        name: cachedProfile.name || "",
         department: cachedProfile.department || "",
         defaultHours: cachedProfile.defaultHours || 8,
       });
@@ -87,7 +88,6 @@ export const Profile = () => {
     setIsSaving(true);
     try {
       await updateProfile({
-        name: profileForm.name,
         department: profileForm.department,
         defaultHours: Number(profileForm.defaultHours),
       });
@@ -196,8 +196,17 @@ export const Profile = () => {
                   name="department"
                   value={profileForm.department}
                   onChange={(e) => {
-                    setProfileForm({ ...profileForm, department: e.target.value });
-                    if (profileErrors.department) setProfileErrors({ ...profileErrors, department: "" });
+                    // Department accepts letters and spaces only; strip anything else
+                    // as it is typed or pasted, telling the user why. The message
+                    // clears on the next valid keystroke.
+                    const raw = e.target.value;
+                    const sanitized = raw.replace(/[^A-Za-z ]/g, "");
+                    setProfileForm({ ...profileForm, department: sanitized });
+                    if (raw !== sanitized) {
+                      setProfileErrors({ ...profileErrors, department: DEPARTMENT_ERROR_MESSAGE });
+                    } else if (profileErrors.department) {
+                      setProfileErrors({ ...profileErrors, department: "" });
+                    }
                   }}
                 />
                 {profileErrors.department && (

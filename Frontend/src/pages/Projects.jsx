@@ -52,6 +52,9 @@ export const Projects = () => {
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "clientId") {
+      setClientError("");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -90,6 +93,7 @@ export const Projects = () => {
     });
     setFormErrors({});
     setEditingId(project.id);
+    setClientError("");
     setShowForm(true);
   };
 

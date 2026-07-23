@@ -149,6 +149,7 @@ export const EmployeeTimeIQ = () => {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState(null);
+  const [clientError, setClientError] = useState("");
 
   const totalHours = useMemo(() => {
     return projectRows.reduce((sum, row) => {
@@ -255,6 +256,19 @@ export const EmployeeTimeIQ = () => {
     setSelectedProject("");
     setSelectedManager("");
   }, []);
+
+  useEffect(() => {
+    if (!selectedClient) {
+      setClientError("");
+      return;
+    }
+    const client = clients.find((c) => Number(c.id) === Number(selectedClient));
+    setClientError(
+      client && client.status === "INACTIVE"
+        ? "The selected client is inactive. You cannot proceed with creating a project for this client."
+        : ""
+    );
+  }, [selectedClient, clients]);
 
   const handleProjectChange = useCallback((projectId) => {
     const id = projectId ? Number(projectId) : "";
@@ -456,6 +470,12 @@ export const EmployeeTimeIQ = () => {
     }
     const selectedProjectData = allProjects.find((p) => Number(p.id) === Number(selectedProject));
     const selectedClientData = clients.find((c) => Number(c.id) === Number(selectedClient));
+    if (selectedClientData && selectedClientData.status === "INACTIVE") {
+      setClientError(
+        "The selected client is inactive. You cannot proceed with creating a project for this client."
+      );
+      return;
+    }
     const rowId = `proj-${selectedProject}`;
     const newRow = {
       rowId,
@@ -816,13 +836,20 @@ export const EmployeeTimeIQ = () => {
             value={selectedClient}
             onChange={(e) => handleClientChange(e.target.value)}
             disabled={isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`h-8 w-full rounded-lg border bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+              clientError
+                ? "border-red-400 focus:ring-red-200"
+                : "border-[#E2E8F0] focus:ring-[#B33A2F]"
+            }`}
           >
             <option value="">{clients.length === 0 ? "Loading..." : "Select Client"}</option>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
+          {clientError && (
+            <p className="mt-1 text-[11px] font-medium text-red-600">{clientError}</p>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <label className="block text-[10px] font-semibold text-[#64748B] mb-0.5 uppercase tracking-wider">Project</label>
