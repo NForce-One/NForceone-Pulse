@@ -52,7 +52,7 @@ export const Sidebar = () => {
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
     // { name: "My Timesheet", path: "/timesheet", icon: Clock, roles: ["EMPLOYEE", "MANAGER"] },
-    { name: "Timesheets", path: "/employee/my-timesheet", icon: Calendar, roles: ["EMPLOYEE", "MANAGER"] },
+    { name: "Time Entries", path: "/employee/my-timesheet", icon: Calendar, roles: ["EMPLOYEE", "MANAGER"] },
     // { name: "Timer", path: "/timer", icon: Timer, roles: ["EMPLOYEE", "MANAGER"] },
     { name: "Team Timesheets", path: "/manager/team-timesheets", icon: FileText, roles: ["ADMIN"] },
     { name: "Approvals", path: "/approvals", icon: CheckSquare, roles: ["MANAGER", "ADMIN"] },
