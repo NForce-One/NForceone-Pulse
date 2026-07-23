@@ -161,12 +161,26 @@ export const submitTimesheet = async (timesheetId, userId, comment) => {
     comment,
   });
 
-  // 🔔 NOTIFICATION: Notify manager about new submission
-  if (timesheet.User?.managerId) {
+  // Collect every distinct manager assigned across this week's entries —
+  // different projects can be routed to different managers
+  const weekEntries = await TimeEntry.findAll({
+    where: {
+      userId: timesheet.userId,
+      entryDate: {
+        [Op.gte]: timesheet.weekStartDate,
+        [Op.lte]: timesheet.weekEndDate,
+      },
+    },
+    attributes: ["managerId"],
+  });
+  const managerIds = [...new Set(weekEntries.map((e) => e.managerId).filter(Boolean))];
+
+  // 🔔 NOTIFICATION: Notify every manager involved about the new submission
+  if (managerIds.length > 0 || timesheet.User?.managerId) {
     await notificationService.notifyTimesheetSubmitted({
       ...timesheet.toJSON(),
       userId: timesheet.userId,
-      managerId: timesheet.User.managerId,
+      managerIds,
       User: timesheet.User,
     });
   }

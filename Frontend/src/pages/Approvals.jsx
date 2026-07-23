@@ -248,6 +248,7 @@ export const Approvals = () => {
       );
       clearPageCache("approvals");
       refreshEntries();
+      window.dispatchEvent(new Event("approval-status-changed"));
     }
     processingRef.current = false;
     setProcessing(false);

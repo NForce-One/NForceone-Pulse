@@ -6,6 +6,7 @@ import User from "../models/user.model.js";
 import Timesheet from "../models/timesheet.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
+import * as notificationService from "./notification.service.js";
 
 const toLocalDate = (date) => {
   if (typeof date === "string") {
@@ -224,7 +225,7 @@ export const saveDraftTimesheet = async (userId, data) => {
       findWhere.projectId = { [Op.is]: null };
     }
 
-    const hasNoData = h === 0 && !description;
+    const hasNoData = h === 0 && !description && !comment;
 
     const entryData = {
       userId,
@@ -241,7 +242,7 @@ export const saveDraftTimesheet = async (userId, data) => {
       isBillable: true,
     };
 
-    if (hasNoData) {
+    if (hasNoData && !comment) {
       const existingEntry = await TimeEntry.findOne({ where: findWhere });
       if (!existingEntry) continue;
       await existingEntry.update({ ...entryData, status: "DRAFT" });
@@ -366,6 +367,9 @@ export const submitTimesheet = async (userId, data) => {
         if (dailyEntry?.managerId) {
           updateFields.managerId = dailyEntry.managerId;
         }
+        if (dailyEntry && dailyEntry.comment !== undefined) {
+          updateFields.comment = dailyEntry.comment || null;
+        }
         updatePromises.push(
           TimeEntry.update(updateFields, { where: { id: entry.id }, transaction: t })
         );
@@ -393,6 +397,22 @@ export const submitTimesheet = async (userId, data) => {
     });
   } catch (e) {
     console.error("Failed to create approval history (non-blocking):", e.message);
+  }
+
+  // Notify employee and manager
+  try {
+    const employee = await User.findByPk(userId);
+    const managerId = data.dailyEntries?.find((e) => e.managerId)?.managerId || employee?.managerId;
+    if (managerId) {
+      await notificationService.notifyTimesheetSubmitted({
+        ...timesheet.toJSON(),
+        userId,
+        managerId,
+        User: employee ? { name: employee.name, managerId } : undefined,
+      });
+    }
+  } catch (e) {
+    console.error("Failed to send submission notifications (non-blocking):", e.message);
   }
 
   return { timesheet: { id: timesheet.id, status: timesheet.status, totalHours }, totalHours };

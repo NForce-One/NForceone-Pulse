@@ -1,0 +1,102 @@
+# Task: Delete Only Time Entry Data for Fresh Testing
+
+## 🚨 Important Instructions (Must Follow Strictly)
+
+This task is ONLY for cleaning the existing time tracking data so I can perform fresh end-to-end testing.
+
+### DO NOT MODIFY ANYTHING EXCEPT THE DATA MENTIONED BELOW
+
+- Do NOT delete any database tables.
+- Do NOT modify the database schema.
+- Do NOT modify any models.
+- Do NOT modify any controllers.
+- Do NOT modify any services.
+- Do NOT modify any routes.
+- Do NOT modify any APIs.
+- Do NOT modify any backend code.
+- Do NOT modify any frontend code.
+- Do NOT modify any business logic.
+- Do NOT modify any UI.
+- Do NOT modify any authentication or authorization.
+- Do NOT modify any email functionality.
+- Do NOT modify any notifications.
+- Do NOT modify any reports.
+- Do NOT modify any approval workflow.
+- Do NOT modify any timesheet workflow.
+- Do NOT modify any project assignments.
+- Do NOT modify any client records.
+- Do NOT modify any project records.
+- Do NOT modify any user records.
+- Do NOT modify any manager records.
+- Do NOT modify any employee records.
+- Do NOT modify any holiday records.
+- Do NOT modify any billing rates.
+- Do NOT modify any timers.
+- Do NOT modify any tasks.
+- Do NOT modify any configuration.
+- Do NOT create any new records.
+- Do NOT delete any files.
+
+---
+
+## Delete ONLY the Following Data
+
+Delete ONLY the transactional data related to timesheet testing:
+
+- Time Entries
+- Timesheets
+- Approval History
+- Notifications generated for those timesheets (if any)
+
+These records should be removed so I can perform fresh testing from the beginning.
+
+---
+
+## Preserve Everything Else
+
+The following data must remain exactly as it is:
+
+- All Users
+- All Managers
+- All Employees
+- All Clients
+- All Projects
+- All Project Assignments
+- All Holidays
+- All Roles
+- All Database Tables
+- All APIs
+- All Backend Code
+- All Frontend Code
+- All Business Logic
+- All UI Components
+- All Database Structure
+
+Nothing else should be modified.
+
+---
+
+## Final Verification
+
+Before completing the task, verify and confirm:
+
+- Only the requested records were deleted.
+- No users were deleted.
+- No managers were deleted.
+- No employees were deleted.
+- No clients were deleted.
+- No projects were deleted.
+- No project assignments were deleted.
+- No database tables were deleted.
+- No schema changes were made.
+- No backend code was modified.
+- No frontend code was modified.
+- The application is fully functional.
+- The system is ready for fresh end-to-end testing.
+
+Finally provide:
+
+1. Tables cleaned.
+2. Number of records deleted from each table.
+3. Confirmation that ONLY the requested transactional data was deleted.
+4. Confirmation that no unrelated data or functionality was modified.

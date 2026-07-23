@@ -94,6 +94,17 @@ export const createTimeEntry = async (req, res) => {
   }
 };
 
+// ================= PENDING APPROVAL COUNT =================
+export const getPendingApprovalCount = async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    const count = await timeEntryService.getPendingApprovalCount(id, role);
+    res.json({ success: true, data: { count } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ================= GET ALL =================
 export const getTimeEntries = async (req, res) => {
   try {

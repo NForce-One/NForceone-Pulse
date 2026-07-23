@@ -6,6 +6,7 @@ import User from "../models/user.model.js";
 import Timesheet from "../models/timesheet.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
+import * as notificationService from "./notification.service.js";
 
 const toLocalDate = (date) => {
   if (typeof date === "string") {
@@ -224,7 +225,7 @@ export const saveDraftTimesheet = async (userId, data) => {
       findWhere.projectId = { [Op.is]: null };
     }
 
-    const hasNoData = h === 0 && !description;
+    const hasNoData = h === 0 && !description && !comment;
 
     const entryData = {
       userId,
@@ -366,6 +367,9 @@ export const submitTimesheet = async (userId, data) => {
         if (dailyEntry?.managerId) {
           updateFields.managerId = dailyEntry.managerId;
         }
+        if (dailyEntry && dailyEntry.comment !== undefined) {
+          updateFields.comment = dailyEntry.comment || null;
+        }
         updatePromises.push(
           TimeEntry.update(updateFields, { where: { id: entry.id }, transaction: t })
         );
@@ -393,6 +397,23 @@ export const submitTimesheet = async (userId, data) => {
     });
   } catch (e) {
     console.error("Failed to create approval history (non-blocking):", e.message);
+  }
+
+  try {
+    const managerEntry = entries.find((e) => e.managerId);
+    const managerId = managerEntry?.managerId || null;
+    const employeeUser = await User.findByPk(userId, { attributes: ["id", "name", "managerId"] });
+    const record = {
+      id: timesheet.id,
+      userId,
+      managerId: managerId || employeeUser?.managerId,
+      weekStartDate: ws,
+      weekEndDate: we,
+      User: employeeUser ? { name: employeeUser.name, managerId: employeeUser.managerId } : null,
+    };
+    await notificationService.notifyTimesheetSubmitted(record);
+  } catch (e) {
+    console.error("Failed to send submission notifications (non-blocking):", e.message);
   }
 
   return { timesheet: { id: timesheet.id, status: timesheet.status, totalHours }, totalHours };
@@ -494,7 +515,34 @@ export const cancelTimesheet = async (userId, weekStartDate) => {
   }
 
   if (timesheet.status === "SUBMITTED") {
-    throw new Error("Cannot cancel a submitted timesheet. Use Update to revert to draft first.");
+    const approvedCount = await TimeEntry.count({
+      where: {
+        userId,
+        entryDate: { [Op.between]: [ws, we] },
+        status: "APPROVED",
+      },
+    });
+    if (approvedCount > 0) {
+      throw new Error("Cannot cancel: some entries for this week have already been approved.");
+    }
+
+    await TimeEntry.destroy({
+      where: {
+        userId,
+        entryDate: { [Op.between]: [ws, we] },
+      },
+    });
+
+    // Fully remove the timesheet record itself (not just its entries) so a
+    // cancelled submission leaves no trace in Reports, Approvals, Team
+    // Timesheets, or the Dashboard — it's as if the week was never touched.
+    await timesheet.destroy();
+
+    return {
+      timesheet: null,
+      entries: [],
+      totalHours: 0,
+    };
   }
 
   await TimeEntry.destroy({

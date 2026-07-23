@@ -58,3 +58,11 @@
     background: #B33A2F;
   }
 }
+
+/* Hide browser native password reveal / credentials button */
+::-ms-reveal {
+  display: none !important;
+}
+input::-webkit-credentials-autofill-button {
+  display: none !important;
+}

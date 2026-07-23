@@ -20,6 +20,7 @@ export const Users = () => {
   const [editingId, setEditingId] = useState(null);
   const [nextEmployeeId, setNextEmployeeId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [nameError, setNameError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -45,11 +46,32 @@ export const Users = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === "name") {
+      if (value.length > 26) {
+        setNameError("Name cannot exceed 26 characters.");
+        return;
+      }
+      const hasInvalid = /[^A-Za-z ]/.test(value);
+      const filtered = value.replace(/[^A-Za-z ]/g, "");
+      setFormData((prev) => ({ ...prev, name: filtered }));
+      if (hasInvalid) {
+        setNameError("Only alphabetic characters (A-Z) and spaces are allowed.");
+      } else if (filtered.trim() === "" && filtered.length > 0) {
+        setNameError("Name is required");
+      } else {
+        setNameError("");
+      }
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.name.trim() || /[^A-Za-z ]/.test(formData.name) || formData.name.length > 26) {
+      setNameError("Only alphabetic characters (A-Z) and spaces are allowed.");
+      return;
+    }
     try {
       const payload = { ...formData };
       if (editingId) {
@@ -138,18 +160,10 @@ export const Users = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-<div className="relative group">
-                 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required
-                   readOnly={!!editingId}
-                   title={editingId ? "Name cannot be changed after user creation." : undefined}
-                   className={editingId
-                     ? "bg-gray-50 border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] cursor-not-allowed"
-                     : "bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"} />
-                 {editingId && (
-                   <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                     Name cannot be changed after user creation.
-                   </div>
-                 )}
+<div>
+                 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required maxLength={26}
+                   className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
+                 {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                </div>
                <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
                  className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
@@ -157,7 +171,7 @@ export const Users = () => {
                   <Input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange} placeholder="Password"
                     className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200 pr-10" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#64748B] hover:text-[#1E293B] transition-colors duration-200">
+                    className="absolute inset-y-0 right-0 flex items-center justify-center w-10 text-[#64748B] hover:text-[#1E293B] transition-colors duration-200">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>

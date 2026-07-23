@@ -124,15 +124,23 @@ export const notifyTimesheetSubmitted = async (record) => {
     }
   }
 
-  // Notify employee
-  await Notification.create({
-    userId: record.userId,
-    type: "SUBMITTED",
-    title: "Timesheet Submitted",
-    message: buildMessage(record, "submitted for approval"),
-    relatedId: record.id,
-    isRead: false,
-  });
+    let managerName = "your manager";
+    if (managerId) {
+      const mgr = await User.findByPk(managerId, { attributes: ["id", "name"] });
+      if (mgr) managerName = mgr.name;
+    }
+
+    await Notification.create({
+      userId: record.userId,
+      type: "SUBMITTED",
+      title: "Weekly Timesheet Submitted",
+      message: `Your weekly timesheet has been submitted successfully.\n\nWeek:\n${weekRange}\n\nSubmitted To:\n${managerName}`,
+      relatedId: record.id,
+      isRead: false,
+    });
+  } catch (err) {
+    console.error("Failed to create submission notifications:", err.message);
+  }
 };
 
 export const notifyTimesheetApproved = async (record) => {
