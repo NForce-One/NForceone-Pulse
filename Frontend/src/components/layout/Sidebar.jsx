@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { LayoutDashboard, Clock, CheckSquare, Users, Building, FolderOpen, BarChart3, Bell, User, Timer, FileText, Calendar } from "lucide-react";
+import { LayoutDashboard, Clock, CheckSquare, Users, Building, FolderOpen, Files, Bell, User, Timer, FileText, Calendar } from "lucide-react";
 import { cn } from "../../utils/twMerge";
 import { fetchUnreadCount, fetchPendingApprovalCount } from "../../services/api";
 import logo from "../../assets/logo.png";
@@ -56,7 +56,7 @@ export const Sidebar = () => {
     // { name: "Timer", path: "/timer", icon: Timer, roles: ["EMPLOYEE", "MANAGER"] },
     { name: "Team Timesheets", path: "/manager/team-timesheets", icon: FileText, roles: ["ADMIN"] },
     { name: "Approvals", path: "/approvals", icon: CheckSquare, roles: ["MANAGER", "ADMIN"] },
-    { name: "Reports", path: "/reports", icon: BarChart3, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
+    { name: "Files", path: "/reports", icon: Files, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
     { name: "Notifications", path: "/notifications", icon: Bell, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
     { name: "Profile", path: "/profile", icon: User, roles: ["EMPLOYEE", "MANAGER", "ADMIN"] },
     { name: "Users", path: "/admin/users", icon: Users, roles: ["ADMIN"] },
