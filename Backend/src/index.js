@@ -111,15 +111,21 @@ const app = express();
    GLOBAL MIDDLEWARE
 ====================== */
 
-// 🔥 VERY IMPORTANT FIX (CORS)
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "https://nforce-timetracker.vercel.app",
-];
+// 🔥 CORS — driven by CORS_ORIGINS env var (comma-separated), falls back to local dev
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
+  : ["http://localhost:5173", "http://localhost:5174"];
+
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) {
+      cb(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      cb(null, false);
+    }
+  },
+  credentials: true,
 }));
 
 app.use(express.json());

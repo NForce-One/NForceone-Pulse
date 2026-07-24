@@ -1,0 +1,27 @@
+name: Backend QA (develop)
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'Backend/**'
+      - '.github/workflows/backend-qa.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy Backend to Azure App Service (QA)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: app-pulse-api-qa-nf2607
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_QA }}
+          package: Backend
