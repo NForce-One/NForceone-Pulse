@@ -26,6 +26,7 @@ import {
   Trash2,
   MessageSquare,
   FileText,
+  AlertTriangle,
 } from "lucide-react";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -150,6 +151,7 @@ export const EmployeeTimeIQ = () => {
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState(null);
   const [clientError, setClientError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({ client: "", project: "", manager: "" });
 
   const totalHours = useMemo(() => {
     return projectRows.reduce((sum, row) => {
@@ -255,6 +257,7 @@ export const EmployeeTimeIQ = () => {
     setSelectedClient(id);
     setSelectedProject("");
     setSelectedManager("");
+    setFieldErrors((prev) => ({ ...prev, client: "", project: "", manager: "" }));
   }, []);
 
   useEffect(() => {
@@ -276,6 +279,7 @@ export const EmployeeTimeIQ = () => {
       setSelectedManager("");
     }
     setSelectedProject(id);
+    setFieldErrors((prev) => ({ ...prev, project: "" }));
   }, [selectedProject]);
 
   const loadWeekData = useCallback(async (weekStart) => {
@@ -348,6 +352,7 @@ export const EmployeeTimeIQ = () => {
     setTimesheetStatus(null);
     setTimesheetId(null);
     setManagerAction(null);
+    setFieldErrors({ client: "", project: "", manager: "" });
     loadWeekData(currentWeekStart);
   }, [currentWeekStart, loadWeekData]);
 
@@ -448,20 +453,12 @@ export const EmployeeTimeIQ = () => {
 
 
   const handleAddProject = useCallback(() => {
-    if (!selectedClient && !selectedProject && !selectedManager) {
-      showSnackbar("Please select a Client, Project and Manager before adding a new project.", "error");
-      return;
-    }
-    if (!selectedClient) {
-      showSnackbar("Please select a Client first.", "error");
-      return;
-    }
-    if (!selectedProject) {
-      showSnackbar("Please select a Project first.", "error");
-      return;
-    }
-    if (!selectedManager) {
-      showSnackbar("Please select a Manager name.", "error");
+    const errors = {};
+    if (!selectedClient) errors.client = "Please select a Client.";
+    if (!selectedProject) errors.project = "Please select a Project.";
+    if (!selectedManager) errors.manager = "Please select a Manager.";
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...errors }));
       return;
     }
     if (projectRows.some((r) => Number(r.projectId) === Number(selectedProject))) {
@@ -492,6 +489,8 @@ export const EmployeeTimeIQ = () => {
     setProjectRows((prev) => [...prev, newRow]);
     setSelectedClient("");
     setSelectedProject("");
+    setSelectedManager("");
+    setFieldErrors({ client: "", project: "", manager: "" });
   }, [selectedClient, selectedProject, selectedManager, allProjects, clients, weekDates, projectRows, showSnackbar]);
 
   const handlePendingClientChange = useCallback((rowId, clientId) => {
@@ -797,20 +796,12 @@ export const EmployeeTimeIQ = () => {
             <ChevronLeft className="w-4 h-4 text-[#64748B]" />
           </button>
           <div className="text-center min-w-[180px]">
-            <p className="text-sm font-semibold text-[#1E293B]">
-              {format(new Date(currentWeekStart + "T00:00:00"), "MMM dd")} — {format(new Date(weekEnd + "T00:00:00"), "MMM dd, yyyy")}
+            <p className="week-nav-date text-sm font-semibold text-[#1E293B]" style={{ textDecoration: "none", WebkitTextDecoration: "none", borderBottom: "none", outline: "none", boxShadow: "none", userSelect: "none" }}>
+              {format(new Date(currentWeekStart + "T00:00:00"), "MMM dd")} - {format(new Date(weekEnd + "T00:00:00"), "MMM dd, yyyy")}
             </p>
             <p className="text-[11px] font-medium text-[#B33A2F] mt-0.5">
               {format(new Date(), "EEEE, MMMM d, yyyy")}
             </p>
-            {timesheetStatus && (
-              <span className={`inline-block mt-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                timesheetStatus === "DRAFT" ? "bg-yellow-100 text-yellow-700"
-                : timesheetStatus === "SUBMITTED" ? "bg-blue-100 text-blue-700"
-                : timesheetStatus === "APPROVED" ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-              }`}>{timesheetStatus}</span>
-            )}
           </div>
           <button onClick={() => navigateWeek("next")} className="p-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#B33A2F]/30 transition-all" title="Next week">
             <ChevronRight className="w-4 h-4 text-[#64748B]" />
@@ -837,7 +828,7 @@ export const EmployeeTimeIQ = () => {
             onChange={(e) => handleClientChange(e.target.value)}
             disabled={isReadOnly}
             className={`h-8 w-full rounded-lg border bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
-              clientError
+              clientError || fieldErrors.client
                 ? "border-red-400 focus:ring-red-200"
                 : "border-[#E2E8F0] focus:ring-[#B33A2F]"
             }`}
@@ -847,8 +838,11 @@ export const EmployeeTimeIQ = () => {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
-          {clientError && (
-            <p className="mt-1 text-[11px] font-medium text-red-600">{clientError}</p>
+          {(clientError || fieldErrors.client) && (
+            <p className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {clientError || fieldErrors.client}
+            </p>
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -857,27 +851,50 @@ export const EmployeeTimeIQ = () => {
             value={selectedProject}
             onChange={(e) => handleProjectChange(e.target.value)}
             disabled={!selectedClient || isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`h-8 w-full rounded-lg border bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+              fieldErrors.project
+                ? "border-red-400 focus:ring-red-200"
+                : "border-[#E2E8F0] focus:ring-[#B33A2F]"
+            }`}
           >
             <option value="">{!selectedClient ? "Select client first" : filteredProjects.length === 0 ? "No projects" : "Select Project"}</option>
             {filteredProjects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          {fieldErrors.project && (
+            <p className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {fieldErrors.project}
+            </p>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <label className="block text-[10px] font-semibold text-[#64748B] mb-0.5 uppercase tracking-wider">{user?.role === "MANAGER" ? "Admin" : "Manager"}</label>
           <select
             value={selectedManager}
-            onChange={(e) => setSelectedManager(e.target.value ? Number(e.target.value) : "")}
+            onChange={(e) => {
+              setSelectedManager(e.target.value ? Number(e.target.value) : "");
+              if (e.target.value) setFieldErrors((prev) => ({ ...prev, manager: "" }));
+            }}
             disabled={!selectedClient || isReadOnly}
-            className="h-8 w-full rounded-lg border border-[#E2E8F0] bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`h-8 w-full rounded-lg border bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+              fieldErrors.manager
+                ? "border-red-400 focus:ring-red-200"
+                : "border-[#E2E8F0] focus:ring-[#B33A2F]"
+            }`}
           >
-            <option value="">{!selectedClient ? "Select client first" : !managersLoaded ? "Loading..." : allManagers.length === 0 ? "No Managers Available" : user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
+            <option value="">{!managersLoaded ? "Loading..." : allManagers.length === 0 ? "No Managers Available" : user?.role === "MANAGER" ? "Select Admin" : "Select Manager"}</option>
             {allManagers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </select>
+          {fieldErrors.manager && (
+            <p className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {fieldErrors.manager}
+            </p>
+          )}
         </div>
       </div>
 
@@ -886,7 +903,7 @@ export const EmployeeTimeIQ = () => {
           onClick={handleAddProject}
           className="mb-3 h-9 rounded-lg border-2 border-dashed border-[#E2E8F0] text-sm font-medium text-[#B33A2F] hover:border-[#B33A2F] hover:bg-[#B33A2F]/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed px-4"
         >
-          + Add New Project
++ Add Record
         </button>
       )}
 
@@ -921,7 +938,7 @@ export const EmployeeTimeIQ = () => {
             {projectRows.length === 0 ? (
               <tr>
                 <td colSpan={12} className="px-4 py-8 text-center text-sm text-[#94A3B8]">
-                  No projects added yet. Select a client, project and manager above and click "+ Add New Project".
+                  No records added yet. Select a client, project and manager above and click "+ Add Record".
                 </td>
               </tr>
             ) : (
@@ -961,6 +978,12 @@ export const EmployeeTimeIQ = () => {
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-[#1E293B] truncate max-w-[160px]">{row.projectName}</span>
                           <span className="text-[10px] text-[#64748B] truncate max-w-[160px]">{row.clientName}</span>
+                          {(() => {
+                            const mgr = allManagers.find((m) => Number(m.id) === Number(row.managerId));
+                            return mgr ? (
+                              <span className="text-[10px] text-[#94A3B8] truncate max-w-[160px]">Manager: {mgr.name}</span>
+                            ) : null;
+                          })()}
                         </div>
                       {/* )} */}
                     </td>

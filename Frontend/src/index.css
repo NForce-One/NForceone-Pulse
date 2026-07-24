@@ -66,3 +66,21 @@
 input::-webkit-credentials-autofill-button {
   display: none !important;
 }
+
+/* Remove blue underline/highlight from week date range in EmployeeTimeIQ */
+.week-nav-date,
+.week-nav-date * {
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
+  border-bottom: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.week-nav-date::selection,
+.week-nav-date *::selection {
+  background: transparent !important;
+  color: inherit !important;
+}
