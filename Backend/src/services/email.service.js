@@ -1,26 +1,26 @@
-import { Resend } from "resend";
+import { EmailClient } from "@azure/communication-email";
 
-let _resend = null;
-const getResend = () => {
-  if (!_resend) {
-    _resend = new Resend(process.env.RESEND_API_KEY);
+let _client = null;
+const getClient = () => {
+  if (!_client) {
+    _client = new EmailClient(process.env.ACS_CONNECTION_STRING);
   }
-  return _resend;
+  return _client;
 };
 
-const getFromEmail = () => process.env.FROM_EMAIL || "NForce Pulse <onboarding@resend.dev>";
+const getFromEmail = () => process.env.ACS_SENDER_ADDRESS;
 
 export const sendEmail = async ({ to, subject, html }) => {
   console.log("[EMAIL-SERVICE] ===== sendEmail called =====");
   console.log("[EMAIL-SERVICE] to:", to);
   console.log("[EMAIL-SERVICE] subject:", subject);
   console.log("[EMAIL-SERVICE] html.length:", html?.length);
-  console.log("[EMAIL-SERVICE] RESEND_API_KEY configured:", !!process.env.RESEND_API_KEY);
-  console.log("[EMAIL-SERVICE] FROM_EMAIL:", process.env.FROM_EMAIL);
+  console.log("[EMAIL-SERVICE] ACS configured:", !!process.env.ACS_CONNECTION_STRING);
+  console.log("[EMAIL-SERVICE] ACS_SENDER_ADDRESS:", process.env.ACS_SENDER_ADDRESS);
 
-  if (!process.env.RESEND_API_KEY) {
-    console.error("[EMAIL-SERVICE] RESEND_API_KEY is not configured");
-    throw new Error("Email service is not configured. Set RESEND_API_KEY in environment variables.");
+  if (!process.env.ACS_CONNECTION_STRING || !process.env.ACS_SENDER_ADDRESS) {
+    console.error("[EMAIL-SERVICE] ACS email is not configured");
+    throw new Error("Email service is not configured. Set ACS_CONNECTION_STRING and ACS_SENDER_ADDRESS in environment variables.");
   }
 
   if (!to || !subject || !html) {
@@ -29,21 +29,22 @@ export const sendEmail = async ({ to, subject, html }) => {
   }
 
   try {
-    console.log("[EMAIL-SERVICE] Calling Resend API...");
-    const { data, error } = await getResend().emails.send({
-      from: getFromEmail(),
-      to,
-      subject,
-      html,
+    console.log("[EMAIL-SERVICE] Sending via Azure Communication Services...");
+    const recipients = (Array.isArray(to) ? to : [to]).map((address) => ({ address }));
+    const poller = await getClient().beginSend({
+      senderAddress: getFromEmail(),
+      content: { subject, html },
+      recipients: { to: recipients },
     });
+    const result = await poller.pollUntilDone();
 
-    if (error) {
-      console.error("[EMAIL-SERVICE] Resend send error:", error);
-      throw new Error(`Failed to send email: ${error.message}`);
+    if (result.status !== "Succeeded") {
+      console.error("[EMAIL-SERVICE] ACS send status:", result.status, result.error);
+      throw new Error(`Failed to send email: ${result.error?.message || result.status}`);
     }
 
-    console.log("[EMAIL-SERVICE] Email sent successfully via Resend. ID:", data?.id);
-    return { success: true, messageId: data?.id };
+    console.log("[EMAIL-SERVICE] Email sent successfully via ACS. ID:", result.id);
+    return { success: true, messageId: result.id };
   } catch (err) {
     console.error("[EMAIL-SERVICE] ===== EMAIL SEND CAUGHT ERROR =====");
     console.error("[EMAIL-SERVICE] Error name:", err.name);
