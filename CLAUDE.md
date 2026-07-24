@@ -48,7 +48,7 @@ Model associations are NOT defined in the model files — they are defined centr
 
 **Auth:** JWT via `middleware/auth.middleware.js` — `protect` verifies the token and sets `req.user`; `authorizeRoles("ADMIN", "MANAGER")` gates by role. Roles are the uppercase strings `ADMIN` / `MANAGER` / `EMPLOYEE`.
 
-**Email:** Resend API (`services/email.service.js`), HTML built in `src/templates/*.template.js`.
+**Email:** Azure Communication Services via `@azure/communication-email` (`services/email.service.js`); env vars `ACS_CONNECTION_STRING` + `ACS_SENDER_ADDRESS`; HTML built in `src/templates/*.template.js`. (Migrated off Resend.)
 
 **EmployeeTimeIQ** is the weekly-grid timesheet feature: backend at `/api/employee-timesheet` (`employeeTimesheet.*` files), frontend in `Frontend/src/components/EmployeeTimeIQ/`. Time entries have a uniqueness invariant of one row per (userId, entryDate, projectId), a 24h/day cap, and HH.MM input is interpreted as hours+minutes (e.g. 7.30 = 7h 30m) — displayed as `Xh XXm`.
 
@@ -65,4 +65,14 @@ Model associations are NOT defined in the model files — they are defined centr
 
 - ~4000 `Backend/node_modules` files are historically tracked in git even though `node_modules/` is now gitignored — expect noisy `git status` after `npm install`; never stage `node_modules` changes alongside code.
 - Utility scripts at `Backend/` root (`create_admin.js`, `seed_admin.js`, `check_users.js`, `check_tables.js`, `fix_managers.js`) are run directly with `node` against the configured DB.
-- Deployment targets: Vercel (frontend + serverless backend copy) and Railway (`railway.json`, `Procfile` run the real `Backend`).
+
+## Deployment (Azure)
+
+Live hosting is Azure, branch-driven via GitHub Actions in `.github/workflows/`: **`develop` → QA, `main` → Prod**. Frontend = Static Web Apps; backend = App Service (Linux, Node 22, resource group `rg-pulse`); DB = one MySQL Flexible Server with DBs `nforce_qa`/`nforce_prod` (SSL required — `DB_SSL=true`). Legacy Vercel/Railway configs (root `src/`, `api/`, `vercel.json`, `railway.json`, `Procfile`) are no longer the deploy path.
+
+- Backend builds in CI (`npm ci`) and ships prebuilt `node_modules`; server-side Oryx build is OFF (`SCM_DO_BUILD_DURING_DEPLOYMENT=false`).
+- Frontend `VITE_API_URL` is a **build-time** env in the SWA workflow, not a runtime App Service setting.
+- Dependency delivery: OneDeploy tars the CI-built `node_modules` into `wwwroot/node_modules.tar.gz` + `oryx-manifest.toml`, and symlinks `node_modules -> /node_modules` (ephemeral, outside `/home`). The tarball re-extracts into `/node_modules` on **every** container start — these two files ARE how deps reach a fresh worker, not stale cruft. **Do NOT delete them unless you also keep a real `node_modules` directory in `wwwroot`**: deleting the artifacts while leaving the dangling `node_modules` symlink means a recycled container has no `express`, node exits 1 on boot, and the API 503s — which the browser reports as a **CORS error** ("No 'Access-Control-Allow-Origin' header"). Recovery: `rm -f node_modules _del_node_modules` in `wwwroot` via Kudu `/api/command`, re-run the backend workflow to regenerate tarball+manifest, restart. (Debugging note: Kudu `/api/command` runs in the SCM container, not the worker — its `/node_modules` is always empty, so a `node src/index.js` there is NOT authoritative; use the worker's `/home/LogFiles/*_docker.log` and `*_containerStream.log`.)
+- `azure/webapps-deploy` reports success even when the server-side deploy fails — verify via Kudu `/api/deployments` (`status:4` = success, `active:true`).
+
+Windows/Git Bash: the Azure CLI isn't on PATH — call `"/c/Program Files/Microsoft SDKs/Azure/CLI2/wbin/az"`. Prefix `az` commands passing resource IDs (leading `/subscriptions/...`) with `MSYS_NO_PATHCONV=1`, or Git Bash mangles them into `C:/Program Files/Git/subscriptions/...`.
