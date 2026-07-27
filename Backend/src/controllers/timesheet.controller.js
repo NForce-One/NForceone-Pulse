@@ -111,7 +111,8 @@ export const approveTimesheet = async (req, res) => {
     const timesheet = await timesheetService.approveTimesheet(
       req.params.id,
       req.user.id,
-      req.body.comment
+      req.body.comment,
+      req.user.role
     );
 
     res.json({
@@ -139,7 +140,8 @@ export const rejectTimesheet = async (req, res) => {
     const timesheet = await timesheetService.rejectTimesheet(
       req.params.id,
       req.user.id,
-      req.body.comment
+      req.body.comment,
+      req.user.role
     );
 
     res.json({

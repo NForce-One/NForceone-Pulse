@@ -143,7 +143,9 @@ export const EmployeeTimeIQ = () => {
   const [projectRows, setProjectRows] = useState([]);
   const [timesheetStatus, setTimesheetStatus] = useState(null);
   const [timesheetId, setTimesheetId] = useState(null);
-  const [managerAction, setManagerAction] = useState(null);
+  // Keyed by project row id — each project can be routed to a different
+  // manager, so each one's approve/reject action is tracked independently.
+  const [managerActionsByRow, setManagerActionsByRow] = useState({});
   const [managerActionModal, setManagerActionModal] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -161,7 +163,8 @@ export const EmployeeTimeIQ = () => {
 
   const isSubmitted = timesheetStatus === "SUBMITTED";
   const isApproved = timesheetStatus === "APPROVED";
-  const isReadOnly = isSubmitted || isApproved;
+  const isRejected = timesheetStatus === "REJECTED";
+  const isReadOnly = isSubmitted || isApproved || isRejected;
 
   const showSnackbar = useCallback((message, type = "info", duration = 3000) => {
     setSnackbar({ message, type });
@@ -351,19 +354,20 @@ export const EmployeeTimeIQ = () => {
     setProjectRows([]);
     setTimesheetStatus(null);
     setTimesheetId(null);
-    setManagerAction(null);
+    setManagerActionsByRow({});
     setFieldErrors({ client: "", project: "", manager: "" });
     loadWeekData(currentWeekStart);
   }, [currentWeekStart, loadWeekData]);
 
   useEffect(() => {
     if (!timesheetId) {
-      setManagerAction(null);
+      setManagerActionsByRow({});
       return;
     }
     fetchETManagerAction(timesheetId).then((res) => {
-      setManagerAction(res?.data || null);
-    }).catch(() => setManagerAction(null));
+      const actions = Array.isArray(res?.data) ? res.data : [];
+      setManagerActionsByRow(Object.fromEntries(actions.map((a) => [a.rowId, a])));
+    }).catch(() => setManagerActionsByRow({}));
   }, [timesheetId]);
 
   const saveTimeoutRef = useRef(null);
@@ -946,6 +950,11 @@ export const EmployeeTimeIQ = () => {
                 const rowTotal = Object.values(row.days).reduce(
                   (s, d) => s + (Math.max(0, parseHHMM(d.hours))), 0
                 );
+                const rowAction = managerActionsByRow[row.rowId];
+                // A project a manager already approved stays locked even if a
+                // different manager's rejection elsewhere unlocks the rest of
+                // the timesheet for edits/resubmission.
+                const rowApproved = rowAction?.status === "APPROVED";
                 return (
                   <tr key={row.rowId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50 transition-colors">
                     <td className="px-3 py-2 border-r border-[#E2E8F0]">
@@ -990,7 +999,7 @@ export const EmployeeTimeIQ = () => {
                     {weekDates.map((wd) => {
                       const dayData = row.days[wd.date] || { hours: "", description: "" };
                       const parts = parseHHMMToParts(dayData.hours);
-                      const cellDisabled = isReadOnly || row.isPending;
+                      const cellDisabled = isReadOnly || row.isPending || rowApproved;
                       const cellInputClass = "h-6 rounded border border-[#E2E8F0] bg-white text-[10px] text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]";
                       return (
                         <td key={wd.date} className={`px-1 py-1.5 border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
@@ -1054,8 +1063,8 @@ export const EmployeeTimeIQ = () => {
                     </td>
                     <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
                       {(() => {
-                        if (managerAction) {
-                          const isApproved = managerAction.status === "APPROVED";
+                        if (rowAction) {
+                          const isApproved = rowAction.status === "APPROVED";
                           return (
                             <div className="flex items-center justify-center gap-1">
                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
@@ -1063,9 +1072,9 @@ export const EmployeeTimeIQ = () => {
                               }`}>
                                 {isApproved ? "Approved" : "Rejected"}
                               </span>
-                              {managerAction.comment && (
+                              {rowAction.comment && (
                                 <button
-                                  onClick={() => setManagerActionModal(managerAction)}
+                                  onClick={() => setManagerActionModal(rowAction)}
                                   className="p-0.5 rounded bg-[#B33A2F]/10 text-[#B33A2F] ring-1 ring-[#B33A2F]/30"
                                   title="View comment"
                                 >
@@ -1082,7 +1091,7 @@ export const EmployeeTimeIQ = () => {
                       })()}
                     </td>
                     <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
-                      {!isReadOnly && (
+                      {!isReadOnly && !rowApproved && (
                         <button
                           onClick={() => handleRemoveProject(row.rowId)}
                           className="p-1 rounded hover:bg-red-50 text-[#94A3B8] hover:text-red-500 transition-colors"
@@ -1130,33 +1139,37 @@ export const EmployeeTimeIQ = () => {
       </div>
 
       {/* ===== SECTION 4: Buttons ===== */}
-      <div className="flex items-center justify-end gap-2 mt-3">
-        {!isApproved && (
-          <Button variant="ghost" onClick={handleCancel} disabled={isBusy} className="h-8 text-xs px-3 text-[#64748B]">
-            <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel
-          </Button>
-        )}
-        {isApproved ? (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-            <span className="text-xs font-semibold text-green-700">Approved</span>
-          </div>
-        ) : isSubmitted ? (
-          <Button variant="outline" onClick={handleUpdate} disabled={isBusy} className="h-8 text-xs px-3">
-            <RotateCcw className="w-3.5 h-3.5 mr-1" /> {saving ? "Reverting..." : "Update"}
-          </Button>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={handleSaveDraft} disabled={isBusy || projectRows.length === 0} className="h-8 text-xs px-3">
-              {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
-              Save Draft
+      {/* Once every project is approved there's nothing left to do here — the
+          per-project "Approved" status is already visible in the grid above. */}
+      {!isApproved && (
+        <div className="flex items-center justify-end gap-2 mt-3">
+          {isRejected ? (
+            <Button variant="danger" onClick={handleUpdate} disabled={isBusy} className="h-8 text-xs px-3">
+              <RotateCcw className="w-3.5 h-3.5 mr-1" /> {saving ? "Reverting..." : "Update"}
             </Button>
-            <Button onClick={handleSubmit} disabled={isBusy || projectRows.length === 0 || totalHours <= 0} className="h-8 text-xs px-3">
-              {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1" />}
-              Submit
-            </Button>
-          </>
-        )}
-      </div>
+          ) : isSubmitted ? (
+            <>
+              <Button variant="ghost" onClick={handleCancel} disabled={isBusy} className="h-8 text-xs px-3 text-[#64748B]">
+                <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel
+              </Button>
+              <Button variant="outline" onClick={handleUpdate} disabled={isBusy} className="h-8 text-xs px-3">
+                <RotateCcw className="w-3.5 h-3.5 mr-1" /> {saving ? "Reverting..." : "Update"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={handleSaveDraft} disabled={isBusy || projectRows.length === 0} className="h-8 text-xs px-3">
+                {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
+                Save Draft
+              </Button>
+              <Button onClick={handleSubmit} disabled={isBusy || projectRows.length === 0 || totalHours <= 0} className="h-8 text-xs px-3">
+                {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1" />}
+                Submit
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {commentModalRowId && (
         <CommentModal

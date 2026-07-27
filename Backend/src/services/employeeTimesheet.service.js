@@ -436,8 +436,8 @@ export const updateTimesheet = async (userId, data) => {
     throw new Error("No timesheet found for this week.");
   }
 
-  if (timesheet.status !== "SUBMITTED") {
-    throw new Error("Only submitted timesheets can be updated via this endpoint.");
+  if (timesheet.status !== "SUBMITTED" && timesheet.status !== "REJECTED") {
+    throw new Error("Only submitted or rejected timesheets can be updated via this endpoint.");
   }
 
   await timesheet.update({ status: "DRAFT" });
@@ -450,7 +450,7 @@ export const updateTimesheet = async (userId, data) => {
   });
 
   for (const entry of entries) {
-    if (entry.status === "SUBMITTED") {
+    if (entry.status === "SUBMITTED" || entry.status === "REJECTED") {
       await entry.update({ status: "DRAFT" });
     }
   }
@@ -458,24 +458,27 @@ export const updateTimesheet = async (userId, data) => {
   return { timesheet: { id: timesheet.id, status: "DRAFT" }, message: "Timesheet reverted to draft." };
 };
 
+// A timesheet week can hold several projects, each routed to its own manager.
+// The result here is grouped per project (matching the frontend's own
+// per-project row grouping) so one manager's approve/reject doesn't get
+// displayed against a different manager's project.
 export const getManagerAction = async (timesheetId) => {
   const timesheet = await Timesheet.findByPk(timesheetId, {
     attributes: ["id", "userId", "weekStartDate", "weekEndDate"],
   });
-  if (!timesheet) return null;
+  if (!timesheet) return [];
 
   const entries = await TimeEntry.findAll({
     where: {
       userId: timesheet.userId,
       entryDate: { [Op.between]: [timesheet.weekStartDate, timesheet.weekEndDate] },
     },
-    attributes: ["id"],
+    attributes: ["id", "projectId", "client", "project", "status"],
   });
+  if (entries.length === 0) return [];
 
   const entryIds = entries.map((e) => e.id);
-  if (entryIds.length === 0) return null;
-
-  const action = await ApprovalHistory.findOne({
+  const histories = await ApprovalHistory.findAll({
     where: {
       timeEntryId: { [Op.in]: entryIds },
       action: { [Op.in]: ["APPROVED", "REJECTED"] },
@@ -484,14 +487,39 @@ export const getManagerAction = async (timesheetId) => {
     order: [["createdAt", "DESC"]],
   });
 
-  if (!action) return null;
+  // Same row key the frontend uses to group entries into project rows
+  const rowKeyFor = (entry) =>
+    entry.projectId ? `proj-${entry.projectId}` : `unassigned-${entry.client || ""}-${entry.project || ""}`;
 
-  return {
-    status: action.action,
-    managerName: action.Actor?.name || "Unknown",
-    comment: action.comment || "",
-    date: action.createdAt,
-  };
+  const groups = new Map();
+  entries.forEach((entry) => {
+    const key = rowKeyFor(entry);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(entry);
+  });
+
+  const actions = [];
+  groups.forEach((groupEntries, rowId) => {
+    const statuses = groupEntries.map((e) => e.status);
+    let status = null;
+    if (statuses.every((s) => s === "APPROVED")) status = "APPROVED";
+    else if (statuses.some((s) => s === "REJECTED")) status = "REJECTED";
+    if (!status) return; // this project is still pending/draft — nothing decided yet
+
+    const groupEntryIds = new Set(groupEntries.map((e) => e.id));
+    // histories is ordered newest-first, so the first match is this project's latest action
+    const latestHistory = histories.find((h) => groupEntryIds.has(h.timeEntryId));
+
+    actions.push({
+      rowId,
+      status,
+      managerName: latestHistory?.Actor?.name || "Unknown",
+      comment: latestHistory?.comment || "",
+      date: latestHistory?.createdAt || null,
+    });
+  });
+
+  return actions;
 };
 
 export const cancelTimesheet = async (userId, weekStartDate) => {

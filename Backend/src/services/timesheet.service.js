@@ -13,6 +13,27 @@ import { approvedTimesheetTemplate } from "../templates/approvedTimesheet.templa
 import { rejectedTimesheetTemplate } from "../templates/rejectedTimesheet.template.js";
 import { sendEmail } from "./email.service.js";
 
+// A timesheet can span projects assigned to different managers. Each manager's
+// approve/reject action only resolves the entries assigned to them, so the
+// timesheet-level status has to be derived from the full set of entry statuses
+// rather than force-set to whatever the most recent actor decided.
+//
+// The frontend (TeamTimesheets.jsx, EmployeeTimeIQ.jsx) only knows how to
+// render/gate DRAFT/SUBMITTED/APPROVED/REJECTED, so a mixed outcome (one
+// project approved, another rejected) rolls up to REJECTED — it correctly
+// signals "needs your attention" and unlocks editing, while each project's
+// own TimeEntry.status independently keeps its real APPROVED/REJECTED value.
+const deriveOverallStatus = (entryStatuses) => {
+  const unique = new Set(entryStatuses);
+  if (unique.size === 1 && unique.has("APPROVED")) return "APPROVED";
+  const hasPending = entryStatuses.some((s) => s === "SUBMITTED" || s === "DRAFT");
+  // Other managers' entries are still awaiting a decision
+  if (hasPending) return "SUBMITTED";
+  // Every entry is terminal: either unanimously rejected, or a mix of
+  // approved/rejected across different managers' projects
+  return "REJECTED";
+};
+
 // ================= GET ALL TIMESHEETS =================
 export const getAllTimesheets = async (whereClause = {}) => {
   return await Timesheet.findAll({
@@ -139,7 +160,10 @@ export const submitTimesheet = async (timesheetId, userId, comment) => {
   timesheet.comment = comment || null;
   await timesheet.save();
 
-  // Update all entries in the timesheet to SUBMITTED
+  // Update all entries in the timesheet to SUBMITTED — except ones a manager
+  // already approved. Different projects can be routed to different managers,
+  // so a project that's already been approved must not be reset to pending
+  // just because the employee resubmits other rejected/draft entries.
   await TimeEntry.update(
     { status: "SUBMITTED" },
     {
@@ -149,6 +173,7 @@ export const submitTimesheet = async (timesheetId, userId, comment) => {
           [Op.gte]: timesheet.weekStartDate,
           [Op.lte]: timesheet.weekEndDate,
         },
+        status: { [Op.ne]: "APPROVED" },
       },
     }
   );
@@ -189,9 +214,9 @@ export const submitTimesheet = async (timesheetId, userId, comment) => {
 };
 
 // ================= APPROVE TIMESHEET =================
-export const approveTimesheet = async (timesheetId, managerId, comment) => {
+export const approveTimesheet = async (timesheetId, managerId, comment, actorRole = "MANAGER") => {
   console.log("[APPROVE-EMAIL] ===== START APPROVE TIMESHEET =====");
-  console.log("[APPROVE-EMAIL] timesheetId:", timesheetId, "managerId:", managerId);
+  console.log("[APPROVE-EMAIL] timesheetId:", timesheetId, "managerId:", managerId, "actorRole:", actorRole);
 
   const timesheet = await Timesheet.findByPk(timesheetId, {
     include: [{ model: User, attributes: ["id", "name", "email"] }],
@@ -210,40 +235,48 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
     throw new Error("Only submitted timesheets can be approved");
   }
 
-  timesheet.status = "APPROVED";
-  await timesheet.save();
-  console.log("[APPROVE-EMAIL] Timesheet saved with APPROVED status");
-
-  // Update all entries in the timesheet
-  await TimeEntry.update(
-    { status: "APPROVED" },
-    {
-      where: {
-        userId: timesheet.userId,
-        entryDate: {
-          [Op.gte]: timesheet.weekStartDate,
-          [Op.lte]: timesheet.weekEndDate,
-        },
-      },
-    }
-  );
-  console.log("[APPROVE-EMAIL] Time entries updated to APPROVED");
-
-  // Fetch entries for approval history and email template
-  const entries = await TimeEntry.findAll({
-    where: {
-      userId: timesheet.userId,
-      entryDate: {
-        [Op.gte]: timesheet.weekStartDate,
-        [Op.lte]: timesheet.weekEndDate,
-      },
+  const weekWhere = {
+    userId: timesheet.userId,
+    entryDate: {
+      [Op.gte]: timesheet.weekStartDate,
+      [Op.lte]: timesheet.weekEndDate,
     },
+  };
+
+  // A manager can only approve the projects assigned to them; an admin can
+  // still override the whole timesheet regardless of per-project manager.
+  const scopedWhere = actorRole === "ADMIN" ? weekWhere : { ...weekWhere, managerId };
+
+  // Only entries still awaiting a decision within this actor's scope are
+  // touched — entries already resolved by another manager are left alone.
+  const entriesToApprove = await TimeEntry.findAll({
+    where: { ...scopedWhere, status: "SUBMITTED" },
     attributes: ["id", "project", "entryDate", "hours"],
   });
-  console.log("[APPROVE-EMAIL] Entries fetched, count:", entries.length);
-  const liveTotalHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
-  const approvalHistories = entries.map((entry) => ({
+  if (entriesToApprove.length === 0) {
+    throw new Error("No time entries pending your approval on this timesheet");
+  }
+
+  await TimeEntry.update(
+    { status: "APPROVED" },
+    { where: { id: { [Op.in]: entriesToApprove.map((e) => e.id) } } }
+  );
+  console.log("[APPROVE-EMAIL] Time entries updated to APPROVED:", entriesToApprove.length);
+
+  // Recompute the parent timesheet status from every entry in the week —
+  // other managers' entries may still be pending or already rejected.
+  const allWeekEntries = await TimeEntry.findAll({
+    where: weekWhere,
+    attributes: ["status"],
+  });
+  timesheet.status = deriveOverallStatus(allWeekEntries.map((e) => e.status));
+  await timesheet.save();
+  console.log("[APPROVE-EMAIL] Timesheet saved with status:", timesheet.status);
+
+  const liveTotalHours = entriesToApprove.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+
+  const approvalHistories = entriesToApprove.map((entry) => ({
     timeEntryId: entry.id,
     actorId: managerId,
     action: "APPROVED",
@@ -264,13 +297,18 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
   });
   console.log("[APPROVE-EMAIL] Timesheet-level approval history created");
 
-  // 🔔 NOTIFICATION: Notify employee about approval
-  console.log("[APPROVE-EMAIL] Creating notification...");
-  await notificationService.notifyTimesheetApproved({
-    ...timesheet.toJSON(),
-    User: timesheet.User,
-  });
-  console.log("[APPROVE-EMAIL] Notification created successfully");
+  // 🔔 NOTIFICATION: Only tell the employee "your timesheet is approved" once
+  // every entry across every manager has landed on APPROVED.
+  if (timesheet.status === "APPROVED") {
+    console.log("[APPROVE-EMAIL] Creating notification...");
+    await notificationService.notifyTimesheetApproved({
+      ...timesheet.toJSON(),
+      User: timesheet.User,
+    });
+    console.log("[APPROVE-EMAIL] Notification created successfully");
+  } else {
+    console.log("[APPROVE-EMAIL] Skipping full-approval notification; timesheet status is", timesheet.status);
+  }
 
   // 📧 EMAIL: Send approval notification to employee
   console.log("[APPROVE-EMAIL] ===== ENTERING EMAIL BLOCK =====");
@@ -282,7 +320,7 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
     console.log("[APPROVE-EMAIL] Manager fetched:", JSON.stringify({ id: managerId, name: manager?.name }));
 
     console.log("[APPROVE-EMAIL] Mapping entries for template...");
-    const approvedEntries = entries.map((e) => {
+    const approvedEntries = entriesToApprove.map((e) => {
       const plain = typeof e.toJSON === 'function' ? e.toJSON() : e;
       return {
         project: plain.project,
@@ -314,7 +352,10 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
 
     const emailResult = await sendEmail({
       to: recipientEmail,
-      subject: "Timesheet Approved - NForce Pulse",
+      subject:
+        timesheet.status === "APPROVED"
+          ? "Timesheet Approved - NForce Pulse"
+          : "Timesheet Entries Approved - NForce Pulse",
       html,
     });
     console.log("[APPROVE-EMAIL] sendEmail completed. Result:", JSON.stringify(emailResult));
@@ -330,9 +371,9 @@ export const approveTimesheet = async (timesheetId, managerId, comment) => {
 };
 
 // ================= REJECT TIMESHEET =================
-export const rejectTimesheet = async (timesheetId, managerId, comment) => {
+export const rejectTimesheet = async (timesheetId, managerId, comment, actorRole = "MANAGER") => {
   console.log("[REJECT-EMAIL] ===== START REJECT TIMESHEET =====");
-  console.log("[REJECT-EMAIL] timesheetId:", timesheetId, "managerId:", managerId);
+  console.log("[REJECT-EMAIL] timesheetId:", timesheetId, "managerId:", managerId, "actorRole:", actorRole);
 
   const timesheet = await Timesheet.findByPk(timesheetId, {
     include: [{ model: User, attributes: ["id", "name", "email"] }],
@@ -351,40 +392,48 @@ export const rejectTimesheet = async (timesheetId, managerId, comment) => {
     throw new Error("Only submitted timesheets can be rejected");
   }
 
-  timesheet.status = "REJECTED";
-  await timesheet.save();
-  console.log("[REJECT-EMAIL] Timesheet saved with REJECTED status");
-
-  // Update all entries in the timesheet
-  await TimeEntry.update(
-    { status: "REJECTED" },
-    {
-      where: {
-        userId: timesheet.userId,
-        entryDate: {
-          [Op.gte]: timesheet.weekStartDate,
-          [Op.lte]: timesheet.weekEndDate,
-        },
-      },
-    }
-  );
-  console.log("[REJECT-EMAIL] Time entries updated to REJECTED");
-
-  // Fetch entries for approval history and email template
-  const entries = await TimeEntry.findAll({
-    where: {
-      userId: timesheet.userId,
-      entryDate: {
-        [Op.gte]: timesheet.weekStartDate,
-        [Op.lte]: timesheet.weekEndDate,
-      },
+  const weekWhere = {
+    userId: timesheet.userId,
+    entryDate: {
+      [Op.gte]: timesheet.weekStartDate,
+      [Op.lte]: timesheet.weekEndDate,
     },
+  };
+
+  // A manager can only reject the projects assigned to them; an admin can
+  // still override the whole timesheet regardless of per-project manager.
+  const scopedWhere = actorRole === "ADMIN" ? weekWhere : { ...weekWhere, managerId };
+
+  // Only entries still awaiting a decision within this actor's scope are
+  // touched — entries already resolved by another manager are left alone.
+  const entriesToReject = await TimeEntry.findAll({
+    where: { ...scopedWhere, status: "SUBMITTED" },
     attributes: ["id", "project", "entryDate", "hours"],
   });
-  console.log("[REJECT-EMAIL] Entries fetched, count:", entries.length);
-  const liveTotalHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
 
-  const approvalHistories = entries.map((entry) => ({
+  if (entriesToReject.length === 0) {
+    throw new Error("No time entries pending your review on this timesheet");
+  }
+
+  await TimeEntry.update(
+    { status: "REJECTED" },
+    { where: { id: { [Op.in]: entriesToReject.map((e) => e.id) } } }
+  );
+  console.log("[REJECT-EMAIL] Time entries updated to REJECTED:", entriesToReject.length);
+
+  // Recompute the parent timesheet status from every entry in the week —
+  // other managers' entries may still be pending or already approved.
+  const allWeekEntries = await TimeEntry.findAll({
+    where: weekWhere,
+    attributes: ["status"],
+  });
+  timesheet.status = deriveOverallStatus(allWeekEntries.map((e) => e.status));
+  await timesheet.save();
+  console.log("[REJECT-EMAIL] Timesheet saved with status:", timesheet.status);
+
+  const liveTotalHours = entriesToReject.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+
+  const approvalHistories = entriesToReject.map((entry) => ({
     timeEntryId: entry.id,
     actorId: managerId,
     action: "REJECTED",
@@ -423,7 +472,7 @@ export const rejectTimesheet = async (timesheetId, managerId, comment) => {
     console.log("[REJECT-EMAIL] Manager fetched:", JSON.stringify({ id: managerId, name: manager?.name }));
 
     console.log("[REJECT-EMAIL] Mapping entries for template...");
-    const rejectedEntries = entries.map((e) => {
+    const rejectedEntries = entriesToReject.map((e) => {
       const plain = typeof e.toJSON === 'function' ? e.toJSON() : e;
       return {
         project: plain.project,
