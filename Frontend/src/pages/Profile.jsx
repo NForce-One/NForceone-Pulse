@@ -48,8 +48,6 @@ export const Profile = () => {
 
   const validateProfile = () => {
     const errors = {};
-    if (!profileForm.name.trim()) errors.name = "Name is required";
-    else if (/[^A-Za-z ]/.test(profileForm.name)) errors.name = "Name must contain only letters and spaces.";
     if (!profileForm.department.trim()) errors.department = "Department is required";
     if (!profileForm.defaultHours && profileForm.defaultHours !== 0) {
       errors.defaultHours = "Hours must be greater than 0";
@@ -94,7 +92,6 @@ export const Profile = () => {
       setMessage("Profile updated successfully");
       clearPageCache("profile");
       await refreshProfile();
-      updateUser({ name: profileForm.name });
     } catch (err) {
       setError(err.response?.data?.message || "Update failed");
     } finally {
@@ -159,29 +156,14 @@ export const Profile = () => {
            <CardContent>
              <form onSubmit={handleProfileSubmit} className="space-y-4">
                <div>
-                 <label className="text-sm text-[#64748B]">Name *</label>
-                <Input
-                  name="name"
-                  value={profileForm.name}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const hasInvalid = /[^A-Za-z ]/.test(raw);
-                    const filtered = raw.replace(/[^A-Za-z ]/g, "");
-                    setProfileForm({ ...profileForm, name: filtered });
-                    if (hasInvalid) {
-                      setProfileErrors({ ...profileErrors, name: "Name must contain only letters and spaces." });
-                    } else if (profileErrors.name && profileErrors.name !== "Name must contain only letters and spaces.") {
-                      setProfileErrors({ ...profileErrors, name: "" });
-                    } else {
-                      setProfileErrors({ ...profileErrors, name: "" });
-                    }
-                  }}
-                  required
-                />
-                {profileErrors.name && (
-                  <p className="text-red-400 text-xs mt-1">{profileErrors.name}</p>
-                )}
-              </div>
+                 <label className="text-sm text-[#64748B]">Name</label>
+                 <Input
+                   value={profile?.name || ""}
+                   disabled
+                   title="Name cannot be changed after user creation."
+                   className="bg-[#F8FAFC] cursor-not-allowed"
+                 />
+               </div>
 <div>
                  <label className="text-sm text-[#64748B]">Email</label>
                  <Input value={profile?.email || ""} disabled className="bg-[#F8FAFC] cursor-not-allowed" />

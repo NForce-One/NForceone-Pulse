@@ -1,6 +1,8 @@
 // Tests for the Name-field rules in user management:
 //  - name can be set when creating a user
-//  - name cannot be changed once the user exists (service + controller level)
+//  - name can be changed by an admin through User Management (PUT /users/:id)
+//  - name cannot be changed through the self-service profile API (PUT /users/me/profile)
+//  - the allow-flag is server-controlled and cannot be spoofed via the request body
 // Runs with the built-in Node test runner: `npm test` (node --test tests/)
 // The Sequelize model is stubbed at the class level, so no database is needed.
 
@@ -95,16 +97,36 @@ test("createUser still enforces the existing email and password validations", as
   );
 });
 
-test("updateUser rejects a changed name", async () => {
+test("updateUser rejects a changed name by default (no allowNameChange flag)", async () => {
   const fakeUser = makeFakeUser();
   User.findByPk = async () => fakeUser;
 
   await assert.rejects(
     userService.updateUser(1, { name: "Tampered Name" }),
-    /Name cannot be updated after user creation/
+    /Name can only be updated by an administrator through User Management/
   );
   assert.equal(fakeUser.lastUpdatePayload, null);
   assert.equal(fakeUser.name, "Original Name");
+});
+
+test("updateUser allows a changed name when allowNameChange is true", async () => {
+  const fakeUser = makeFakeUser();
+  User.findByPk = async () => fakeUser;
+
+  const updated = await userService.updateUser(1, { name: "New Name" }, { allowNameChange: true });
+
+  assert.equal(fakeUser.lastUpdatePayload.name, "New Name");
+  assert.equal(updated.name, "New Name");
+});
+
+test("updateUser rejects an empty name even when allowNameChange is true", async () => {
+  const fakeUser = makeFakeUser();
+  User.findByPk = async () => fakeUser;
+
+  await assert.rejects(
+    userService.updateUser(1, { name: "   " }, { allowNameChange: true }),
+    /Name is required/
+  );
 });
 
 test("updateUser allows other fields and drops an unchanged name as a no-op", async () => {
@@ -125,16 +147,17 @@ test("updateUser allows other fields and drops an unchanged name as a no-op", as
   assert.equal(fakeUser.name, "Original Name");
 });
 
-test("PUT /users/:id controller returns 400 when the name is changed", async () => {
-  User.findByPk = async () => makeFakeUser();
+test("PUT /users/:id controller (admin) successfully updates the name", async () => {
+  const fakeUser = makeFakeUser();
+  User.findByPk = async () => fakeUser;
 
-  const req = { params: { id: 1 }, body: { name: "Tampered Name" } };
+  const req = { params: { id: 1 }, body: { name: "Admin Renamed" } };
   const res = makeFakeRes();
   await updateUserController(req, res);
 
-  assert.equal(res.statusCode, 400);
-  assert.equal(res.body.success, false);
-  assert.match(res.body.message, /Name cannot be updated after user creation/);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(fakeUser.lastUpdatePayload.name, "Admin Renamed");
 });
 
 test("PUT /users/:id controller still returns 404 for a missing user", async () => {
@@ -157,7 +180,23 @@ test("PUT /users/me/profile controller returns 400 when the name is changed", as
 
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.success, false);
-  assert.match(res.body.message, /Name cannot be updated after user creation/);
+  assert.match(res.body.message, /Name can only be updated by an administrator through User Management/);
+});
+
+test("PUT /users/me/profile controller rejects a name change even if the request body claims admin intent", async () => {
+  // allowNameChange is never read from req.body — only the admin controller sets it in code —
+  // so a crafted Postman/devtools request body cannot bypass this rejection.
+  User.findByPk = async () => makeFakeUser();
+
+  const req = {
+    user: { id: 1 },
+    body: { name: "Tampered Name", allowNameChange: true, isAdmin: true },
+  };
+  const res = makeFakeRes();
+  await updateProfileController(req, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.message, /Name can only be updated by an administrator through User Management/);
 });
 
 test("PUT /users/me/profile controller still updates other profile fields", async () => {

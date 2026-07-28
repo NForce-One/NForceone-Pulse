@@ -31,7 +31,7 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const user = await userService.updateUser(req.params.id, req.body);
+    const user = await userService.updateUser(req.params.id, req.body, { allowNameChange: true });
     res.json({ success: true, data: user });
   } catch (error) {
     const status = error.message === "User not found" ? 404 : 400;
@@ -70,8 +70,9 @@ export const updateProfile = async (req, res) => {
   try {
     const { name, department, defaultHours } = req.body;
     const updateData = {};
-    // name is intentionally passed through: user.service.updateUser rejects
-    // any attempt to change it and drops an unchanged value as a no-op
+    // name is intentionally passed through without allowNameChange: the self-service
+    // profile API can never change a name — only the admin User Management API can —
+    // so user.service.updateUser rejects a changed value and drops an unchanged one as a no-op
     if (name !== undefined) updateData.name = name;
     if (department !== undefined) updateData.department = department;
     if (defaultHours !== undefined) updateData.defaultHours = Number(defaultHours);

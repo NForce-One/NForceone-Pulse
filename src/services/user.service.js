@@ -94,7 +94,7 @@ export const createUser = async (data) => {
   });
 };
 
-export const updateUser = async (id, data) => {
+export const updateUser = async (id, data, { allowNameChange = false } = {}) => {
   const user = await User.findByPk(id);
 
   if (!user) {
@@ -104,12 +104,19 @@ export const updateUser = async (id, data) => {
   // Employee ID must remain unchanged on edit
   delete data.employeeId;
 
-  // Name is set once at creation and is immutable afterwards.
-  // Resending the current name is tolerated as a no-op so older clients keep working.
+  // Name may only be changed by the admin User Management flow
+  // (allowNameChange: true). Every other caller — notably the self-service
+  // profile API — gets the current name resent as a no-op or rejected.
   if (data.name !== undefined && data.name !== user.name) {
-    throw new Error("Name cannot be updated after user creation");
+    if (!allowNameChange) {
+      throw new Error("Name can only be updated by an administrator through User Management");
+    }
+    if (typeof data.name !== "string" || !data.name.trim()) {
+      throw new Error("Name is required");
+    }
+  } else {
+    delete data.name;
   }
-  delete data.name;
 
   validateDepartment(data.department);
 

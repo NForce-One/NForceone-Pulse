@@ -73,7 +73,7 @@ describe("Users page — Name field rules", () => {
     expect(nameInput).toBeRequired();
   });
 
-  it("shows the name as read-only when editing an existing user", async () => {
+  it("lets the admin edit the name of an existing user", async () => {
     const user = userEvent.setup();
     render(<Users />);
 
@@ -81,25 +81,27 @@ describe("Users page — Name field rules", () => {
     const nameInput = screen.getByPlaceholderText("Full Name");
 
     expect(nameInput).toHaveValue("Jane Doe");
-    expect(nameInput.readOnly).toBe(true);
+    expect(nameInput.readOnly).toBe(false);
 
-    // typing must not change a read-only field
-    await user.type(nameInput, "Hacked");
-    expect(nameInput).toHaveValue("Jane Doe");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Janet Doe");
+    expect(nameInput).toHaveValue("Janet Doe");
   });
 
-  it("omits the name from the update payload", async () => {
+  it("includes the updated name in the update payload but omits employeeId", async () => {
     const user = userEvent.setup();
     render(<Users />);
 
     await openEditForm(user);
-    await user.type(screen.getByPlaceholderText(/leave blank/i), "NewPass1!");
+    const nameInput = screen.getByPlaceholderText("Full Name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Janet Doe");
     await user.click(screen.getByRole("button", { name: "Update" }));
 
     await waitFor(() => expect(api.updateUser).toHaveBeenCalledTimes(1));
     const [id, payload] = api.updateUser.mock.calls[0];
     expect(id).toBe(5);
-    expect("name" in payload).toBe(false);
+    expect(payload.name).toBe("Janet Doe");
     expect("employeeId" in payload).toBe(false);
     expect(payload.email).toBe("jane@example.com");
   });

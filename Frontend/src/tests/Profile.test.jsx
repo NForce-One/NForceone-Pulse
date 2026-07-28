@@ -11,7 +11,7 @@ vi.mock("../services/api", () => ({
 }));
 
 vi.mock("../context/AuthContext", () => ({
-  useAuth: () => ({ user: { id: 1 } }),
+  useAuth: () => ({ user: { id: 1 }, updateUser: vi.fn() }),
 }));
 
 // the profile object must be referentially stable across renders:

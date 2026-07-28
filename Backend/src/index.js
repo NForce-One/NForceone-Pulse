@@ -114,7 +114,7 @@ const app = express();
 // 🔥 CORS — driven by CORS_ORIGINS env var (comma-separated), falls back to local dev
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
-  : ["http://localhost:5173", "http://localhost:5174"];
+  : ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"];
 
 app.use(cors({
   origin: (origin, cb) => {
