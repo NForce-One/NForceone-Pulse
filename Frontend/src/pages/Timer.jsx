@@ -53,8 +53,8 @@ export const TimerPage = () => {
   const loadDropdownData = useCallback(async () => {
     try {
       const [clientsRes, projectsRes, tasksRes] = await Promise.all([
-        fetchClients(),
-        fetchProjects(),
+        fetchClients({ status: "ACTIVE" }),
+        fetchProjects({ status: "ACTIVE" }),
         fetchTasks(),
       ]);
       setClients(clientsRes?.data || []);

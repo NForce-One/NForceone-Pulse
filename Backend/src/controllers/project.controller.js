@@ -21,9 +21,14 @@ export const createProject = async (req, res) => {
 export const getProjects = async (req, res) => {
   try {
     const userId = req.query.userId || null;
-    const projects = userId
+    const status = req.query.status ? String(req.query.status).toUpperCase() : null;
+    let projects = userId
       ? await projectService.getProjectsByUser(userId)
-      : await projectService.getAllProjects();
+      : await projectService.getAllProjects(status);
+
+    if (status && userId) {
+      projects = projects.filter((p) => p.status === status);
+    }
 
     res.json({
       success: true,

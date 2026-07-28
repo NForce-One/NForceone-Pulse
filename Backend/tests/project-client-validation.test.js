@@ -1,6 +1,10 @@
-// Tests for the "no project creation for an inactive client" rule:
+// Tests for the "no project creation/re-assignment for an inactive client" rule:
 //  - createProject rejects a clientId whose Client.status is INACTIVE
 //  - createProject still works normally for an ACTIVE client or no client at all
+//  - updateProject rejects changing a project's clientId to an INACTIVE client
+//  - updateProject still allows editing a project whose clientId is left
+//    unchanged, even if that client has since gone INACTIVE (no regression
+//    for previously-created projects)
 //  - the rule is enforced at the service layer, so it also covers requests
 //    that reach the API directly (bypassing the UI)
 // Runs with the built-in Node test runner: `npm test` (node --test tests/)
@@ -17,6 +21,7 @@ import { createProject as createProjectController } from "../src/controllers/pro
 const originals = {
   clientFindByPk: Client.findByPk,
   projectCreate: Project.create,
+  projectFindByPk: Project.findByPk,
 };
 
 const makeFakeRes = () => {
@@ -35,6 +40,7 @@ const makeFakeRes = () => {
 afterEach(() => {
   Client.findByPk = originals.clientFindByPk;
   Project.create = originals.projectCreate;
+  Project.findByPk = originals.projectFindByPk;
 });
 
 test("createProject rejects a clientId that belongs to an inactive client", async () => {
@@ -97,4 +103,37 @@ test("POST /projects controller succeeds for an active client", async () => {
   assert.equal(res.statusCode, 201);
   assert.equal(res.body.success, true);
   assert.equal(res.body.data.name, "New Project");
+});
+
+test("updateProject rejects re-assigning a project to an inactive client", async () => {
+  const existing = { id: 1, clientId: 5, update: async () => {
+    throw new Error("project.update should not be called for an inactive client");
+  } };
+  Project.findByPk = async () => existing;
+  Client.findByPk = async (id) => ({ id, status: "INACTIVE" });
+
+  await assert.rejects(
+    projectService.updateProject(1, { clientId: 9 }),
+    /The selected client is inactive\. You cannot proceed with creating a project for this client\./
+  );
+});
+
+test("updateProject allows re-assigning a project to a different active client", async () => {
+  const existing = { id: 1, clientId: 5, update: async (data) => Object.assign(existing, data) };
+  Project.findByPk = async () => existing;
+  Client.findByPk = async (id) => ({ id, status: "ACTIVE" });
+
+  const project = await projectService.updateProject(1, { clientId: 9 });
+  assert.equal(project.clientId, 9);
+});
+
+test("updateProject still allows editing a project when its clientId is left unchanged, even if that client is now inactive", async () => {
+  const existing = { id: 1, clientId: 5, name: "Old Name", update: async (data) => Object.assign(existing, data) };
+  Project.findByPk = async () => existing;
+  Client.findByPk = async () => {
+    throw new Error("Client.findByPk should not be called when clientId is unchanged");
+  };
+
+  const project = await projectService.updateProject(1, { clientId: 5, name: "New Name" });
+  assert.equal(project.name, "New Name");
 });

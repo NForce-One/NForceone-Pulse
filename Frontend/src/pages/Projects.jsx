@@ -20,12 +20,13 @@ export const Projects = () => {
     status: "ACTIVE",
   });
   const [formErrors, setFormErrors] = useState({});
+  const [clientError, setClientError] = useState("");
 
   const loadData = async () => {
     try {
       const [projectsRes, clientsRes] = await Promise.all([
         fetchProjects(),
-        fetchClients(),
+        fetchClients({ status: "ACTIVE" }),
       ]);
       setProjects(projectsRes?.data || []);
       setClients(clientsRes?.data || []);
@@ -63,6 +64,20 @@ export const Projects = () => {
       setFormErrors((prev) => ({ ...prev, name: "Project name is required." }));
       return;
     }
+
+    if (!editingId) {
+      const selectedClient = clients.find(
+        (c) => String(c.id) === String(formData.clientId)
+      );
+      if (selectedClient && selectedClient.status === "INACTIVE") {
+        setClientError(
+          "The selected client is inactive. You cannot proceed with creating a project for this client."
+        );
+        return;
+      }
+    }
+    setClientError("");
+
     try {
       const payload = {
         ...formData,
@@ -75,12 +90,17 @@ export const Projects = () => {
       }
       setFormData({ name: "", description: "", clientId: "", status: "ACTIVE" });
       setFormErrors({});
+      setClientError("");
       setShowForm(false);
       setEditingId(null);
       await loadData();
     } catch (error) {
       const message = error.response?.data?.message || "Operation failed";
-      setFormErrors((prev) => ({ ...prev, name: message }));
+      if (message.toLowerCase().includes("inactive")) {
+        setClientError(message);
+      } else {
+        setFormErrors((prev) => ({ ...prev, name: message }));
+      }
     }
   };
 
@@ -92,8 +112,8 @@ export const Projects = () => {
       status: project.status,
     });
     setFormErrors({});
-    setEditingId(project.id);
     setClientError("");
+    setEditingId(project.id);
     setShowForm(true);
   };
 
@@ -114,7 +134,7 @@ export const Projects = () => {
           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight">Project Management</h1>
           <p className="text-base text-[#64748B]">Manage projects and budgets</p>
         </div>
-        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", description: "", clientId: "", status: "ACTIVE" }); setFormErrors({}); }}>
+        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", description: "", clientId: "", status: "ACTIVE" }); setFormErrors({}); setClientError(""); }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Project
         </Button>
@@ -131,10 +151,24 @@ export const Projects = () => {
                 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Project Name" maxLength={100} required />
                 {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
               </div>
-              <select name="clientId" value={formData.clientId} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
-                <option value="" className="bg-white">Select Client</option>
-                {clients.map((c) => <option key={c.id} value={c.id} className="bg-white">{c.name}</option>)}
-              </select>
+              <div>
+                <select
+                  name="clientId"
+                  value={formData.clientId}
+                  onChange={handleInputChange}
+                  className={`h-10 w-full rounded-lg border bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 transition-all duration-200 ${
+                    clientError
+                      ? "border-red-400 focus:ring-red-200"
+                      : "border-[#E2E8F0] focus:ring-[#B33A2F]"
+                  }`}
+                >
+                  <option value="" className="bg-white">Select Client</option>
+                  {clients.map((c) => <option key={c.id} value={c.id} className="bg-white">{c.name}</option>)}
+                </select>
+                {clientError && (
+                  <p className="mt-1.5 text-xs text-red-600">{clientError}</p>
+                )}
+              </div>
               <select name="status" value={formData.status} onChange={handleInputChange} className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200">
                 <option value="ACTIVE" className="bg-white">Active</option>
                 <option value="INACTIVE" className="bg-white">Inactive</option>
@@ -145,7 +179,7 @@ export const Projects = () => {
               </div>
               <div className="flex gap-2 md:col-span-3">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setFormErrors({}); }}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setFormErrors({}); setClientError(""); }}>Cancel</Button>
               </div>
             </form>
           </CardContent>

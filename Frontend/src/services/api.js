@@ -259,8 +259,10 @@ export const getTimesheetHistory = async (id) => {
 
 // ================= CLIENTS =================
 
-export const fetchClients = async (userId = null) => {
-  const params = userId ? { userId } : {};
+export const fetchClients = async ({ userId, status } = {}) => {
+  const params = {};
+  if (userId) params.userId = userId;
+  if (status) params.status = status;
   const response = await api.get("/clients", { params });
   return response.data;
 };
@@ -282,8 +284,10 @@ export const deleteClient = async (id) => {
 
 // ================= PROJECTS =================
 
-export const fetchProjects = async (userId = null) => {
-  const params = userId ? { userId } : {};
+export const fetchProjects = async ({ userId, status } = {}) => {
+  const params = {};
+  if (userId) params.userId = userId;
+  if (status) params.status = status;
   const response = await api.get("/projects", { params });
   return response.data;
 };
