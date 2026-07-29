@@ -49,6 +49,8 @@ function getNotificationIcon(type) {
       return <Timer className="w-5 h-5 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />;
     case "SUBMITTED":
       return <Send className="w-5 h-5 text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />;
+    case "RESUBMITTED":
+      return <Send className="w-5 h-5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />;
     case "APPROVED":
       return <CheckCircle className="w-5 h-5 text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]" />;
     case "REJECTED":
@@ -67,9 +69,11 @@ function getNotificationBg(type, isRead) {
        return "bg-orange-50 border-orange-200";
      case "PENDING_SUBMISSION":
        return "bg-yellow-50 border-yellow-200";
-     case "SUBMITTED":
-       return "bg-blue-50 border-blue-200";
-     case "APPROVED":
+      case "SUBMITTED":
+        return "bg-blue-50 border-blue-200";
+      case "RESUBMITTED":
+        return "bg-amber-50 border-amber-200";
+      case "APPROVED":
        return "bg-green-50 border-green-200";
      case "REJECTED":
        return "bg-red-50 border-red-200";
@@ -88,6 +92,8 @@ function getTypeBadge(type) {
       return { label: "Pending", variant: "warning" };
     case "SUBMITTED":
       return { label: "Submitted", variant: "info" };
+    case "RESUBMITTED":
+      return { label: "Re-Submitted", variant: "warning" };
     case "APPROVED":
       return { label: "Approved", variant: "success" };
     case "REJECTED":

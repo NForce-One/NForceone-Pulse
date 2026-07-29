@@ -48,8 +48,8 @@ export const fetchETManagerAction = async (timesheetId) => {
   return extractData(res.data);
 };
 
-export const cancelETTimesheet = async (weekStartDate) => {
-  const res = await api.post("/employee-timesheet/cancel", { weekStartDate });
+export const cancelETTimesheet = async (weekStartDate, projectId) => {
+  const res = await api.post("/employee-timesheet/cancel", { weekStartDate, projectId });
   return extractData(res.data);
 };
 

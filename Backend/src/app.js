@@ -267,6 +267,11 @@ app.use((err, req, res, next) => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    try {
+      await sequelize.query(
+        "ALTER TABLE notifications MODIFY COLUMN `type` ENUM('MISSING_ENTRY','PENDING_SUBMISSION','SUBMITTED','RESUBMITTED','APPROVED','REJECTED','MANAGER_REMINDER') NOT NULL;"
+      );
+    } catch (e) { /* non-critical */ }
     const { seedDefaultHolidays } = await import("./utils/holidayConfig.js");
     await seedDefaultHolidays();
   } catch (error) {

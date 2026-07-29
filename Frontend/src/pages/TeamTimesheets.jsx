@@ -319,6 +319,8 @@ export const TeamTimesheets = () => {
         return `${base} bg-red-100 text-red-700 border border-red-200`;
       case "SUBMITTED":
         return `${base} bg-blue-100 text-blue-700 border border-blue-200`;
+      case "RESUBMITTED":
+        return `${base} bg-amber-100 text-amber-700 border border-amber-200`;
       default:
         return `${base} bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]`;
     }
@@ -468,8 +470,8 @@ export const TeamTimesheets = () => {
                   className="h-10 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#B33A2F]"
                 >
                   <option value="ALL" className="bg-white">All Status</option>
-                  <option value="DRAFT" className="bg-white">Draft</option>
                   <option value="SUBMITTED" className="bg-white">Submitted</option>
+                  <option value="RESUBMITTED" className="bg-white">Re-Submitted</option>
                   <option value="APPROVED" className="bg-white">Approved</option>
                   <option value="REJECTED" className="bg-white">Rejected</option>
                 </select>
@@ -552,7 +554,7 @@ export const TeamTimesheets = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {ts.submission_status === "SUBMITTED" && (
+                          {(ts.submission_status === "SUBMITTED" || ts.submission_status === "RESUBMITTED") && (
                             <>
                               <button
                                 onClick={() => handleApprove(ts.id)}

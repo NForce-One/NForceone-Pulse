@@ -27,6 +27,7 @@ import {
   MessageSquare,
   FileText,
   AlertTriangle,
+  ChevronDown,
 } from "lucide-react";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -107,6 +108,27 @@ const getSnackbarStyles = (type) => {
   return "bg-[#1E293B] text-white";
 };
 
+const deriveRowStatus = (row, managerActionsByRow, previouslyRejectedSet, previouslyApprovedSet) => {
+  const rowAction = managerActionsByRow[row.rowId];
+  if (rowAction) {
+    if (rowAction.status === "APPROVED") return "APPROVED";
+    if (rowAction.status === "REJECTED") return "REJECTED";
+  }
+  const statuses = row.entryStatuses || [];
+  if (statuses.length === 0) return "DRAFT";
+  const allApproved = statuses.every((s) => s === "APPROVED");
+  if (allApproved) return "APPROVED";
+  const anyRejected = statuses.some((s) => s === "REJECTED");
+  if (anyRejected) return "REJECTED";
+  const anySubmitted = statuses.some((s) => s === "SUBMITTED");
+  if (anySubmitted) {
+    if (previouslyRejectedSet.has(row.rowId)) return "RE-SUBMITTED";
+    if (previouslyApprovedSet.has(row.rowId)) return "RE-SUBMITTED";
+    return "SUBMITTED";
+  }
+  return "DRAFT";
+};
+
 export const EmployeeTimeIQ = () => {
   const { user } = useAuth();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
@@ -147,6 +169,37 @@ export const EmployeeTimeIQ = () => {
   // manager, so each one's approve/reject action is tracked independently.
   const [managerActionsByRow, setManagerActionsByRow] = useState({});
   const [managerActionModal, setManagerActionModal] = useState(null);
+  const [managerCommentExpanded, setManagerCommentExpanded] = useState(false);
+  useEffect(() => { setManagerCommentExpanded(false); }, [managerActionModal]);
+  const previouslyRejectedRef = useRef(new Set());
+  const previouslyApprovedRef = useRef(new Set());
+  const pollingRef = useRef(null);
+
+  const refreshManagerActions = useCallback(async () => {
+    if (!timesheetId) return;
+    try {
+      const res = await fetchETManagerAction(timesheetId);
+      const actions = Array.isArray(res?.data) ? res.data : [];
+      const actionsMap = Object.fromEntries(actions.map((a) => [a.rowId, a]));
+      previouslyRejectedRef.current.forEach((rowId) => {
+        if (actionsMap[rowId] && actionsMap[rowId].status !== "REJECTED") {
+          previouslyRejectedRef.current.delete(rowId);
+        }
+      });
+      previouslyApprovedRef.current.forEach((rowId) => {
+        if (actionsMap[rowId] && actionsMap[rowId].status !== "APPROVED") {
+          previouslyApprovedRef.current.delete(rowId);
+        }
+      });
+      actions.forEach((a) => {
+        if (a.status === "REJECTED") previouslyRejectedRef.current.add(a.rowId);
+        if (a.status === "APPROVED") previouslyApprovedRef.current.add(a.rowId);
+      });
+      setManagerActionsByRow(actionsMap);
+    } catch (e) {
+      console.error("Failed to refresh manager actions:", e);
+    }
+  }, [timesheetId]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -161,11 +214,6 @@ export const EmployeeTimeIQ = () => {
     }, 0);
   }, [projectRows]);
 
-  const isSubmitted = timesheetStatus === "SUBMITTED";
-  const isApproved = timesheetStatus === "APPROVED";
-  const isRejected = timesheetStatus === "REJECTED";
-  const isReadOnly = isSubmitted || isApproved || isRejected;
-
   const showSnackbar = useCallback((message, type = "info", duration = 3000) => {
     setSnackbar({ message, type });
     setTimeout(() => setSnackbar(null), duration);
@@ -174,19 +222,34 @@ export const EmployeeTimeIQ = () => {
   const [commentModalRowId, setCommentModalRowId] = useState(null);
   const [commentValue, setCommentValue] = useState("");
 
+  const [openActionsRowId, setOpenActionsRowId] = useState(null);
+  const actionsMenuRefs = useRef({});
+
+  useEffect(() => {
+    if (!openActionsRowId) return;
+    const handleClickOutside = (e) => {
+      const el = actionsMenuRefs.current[openActionsRowId];
+      if (el && !el.contains(e.target)) {
+        setOpenActionsRowId(null);
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === "Escape") setOpenActionsRowId(null);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [openActionsRowId]);
+
   const filteredProjects = useMemo(() => {
     if (!selectedClient) return [];
     return allProjects.filter(
       (p) => Number(p.clientId) === Number(selectedClient) && p.status === "ACTIVE"
     );
   }, [selectedClient, allProjects]);
-
-  const getProjectsForClient = useCallback((clientId) => {
-    if (!clientId) return [];
-    return allProjects.filter(
-      (p) => Number(p.clientId) === Number(clientId) && p.status === "ACTIVE"
-    );
-  }, [allProjects]);
 
   useEffect(() => {
     // Restore cached dropdown data for instant display
@@ -276,15 +339,6 @@ export const EmployeeTimeIQ = () => {
     );
   }, [selectedClient, clients]);
 
-  const handleProjectChange = useCallback((projectId) => {
-    const id = projectId ? Number(projectId) : "";
-    if (selectedProject && selectedProject !== id) {
-      setSelectedManager("");
-    }
-    setSelectedProject(id);
-    setFieldErrors((prev) => ({ ...prev, project: "" }));
-  }, [selectedProject]);
-
   const loadWeekData = useCallback(async (weekStart) => {
     try {
       setLoading(true);
@@ -314,7 +368,10 @@ export const EmployeeTimeIQ = () => {
               projectName: entry.project || "",
               managerId: entry.managerId || null,
               comment: entry.comment || "",
+              savedOnServer: true,
+              persistedProjectId: entry.projectId || null,
               days: {},
+              entryStatuses: [],
             };
           }
           if (entry.comment && !rowMap[key].comment) {
@@ -324,6 +381,9 @@ export const EmployeeTimeIQ = () => {
             hours: decimalToHHMMString(entry.hours),
             description: entry.description || "",
           };
+          if (entry.status) {
+            rowMap[key].entryStatuses.push(entry.status);
+          }
         });
 
         const rows = Object.values(rowMap);
@@ -350,6 +410,15 @@ export const EmployeeTimeIQ = () => {
     }
   }, []);
 
+  const handleProjectChange = useCallback((projectId) => {
+    const id = projectId ? Number(projectId) : "";
+    if (selectedProject && selectedProject !== id) {
+      setSelectedManager("");
+    }
+    setSelectedProject(id);
+    setFieldErrors((prev) => ({ ...prev, project: "" }));
+  }, [selectedProject]);
+
   useEffect(() => {
     setProjectRows([]);
     setTimesheetStatus(null);
@@ -364,17 +433,23 @@ export const EmployeeTimeIQ = () => {
       setManagerActionsByRow({});
       return;
     }
-    fetchETManagerAction(timesheetId).then((res) => {
-      const actions = Array.isArray(res?.data) ? res.data : [];
-      setManagerActionsByRow(Object.fromEntries(actions.map((a) => [a.rowId, a])));
-    }).catch(() => setManagerActionsByRow({}));
-  }, [timesheetId]);
+    refreshManagerActions();
+  }, [timesheetId, refreshManagerActions]);
+
+  useEffect(() => {
+    if (!timesheetId || timesheetStatus !== "SUBMITTED") {
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+      return;
+    }
+    pollingRef.current = setInterval(refreshManagerActions, 30000);
+    return () => { if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; } };
+  }, [timesheetId, timesheetStatus, refreshManagerActions]);
 
   const saveTimeoutRef = useRef(null);
-  const dataRef = useRef({ projectRows: [], isReadOnly: false, currentWeekStart: "", weekDates: [], selectedManager: "" });
-  dataRef.current = { projectRows, isReadOnly, currentWeekStart, weekDates, selectedManager };
-  const unmountDataRef = useRef({ rows: [], isReadOnly: false, weekStart: "" });
-  unmountDataRef.current = { rows: projectRows, isReadOnly, weekStart: currentWeekStart };
+  const dataRef = useRef({ projectRows: [], currentWeekStart: "", weekDates: [], selectedManager: "", managerActionsByRow: {} });
+  dataRef.current = { projectRows, currentWeekStart, weekDates, selectedManager, managerActionsByRow };
+  const unmountDataRef = useRef({ rows: [], weekStart: "" });
+  unmountDataRef.current = { rows: projectRows, weekStart: currentWeekStart };
 
   useEffect(() => {
     return () => {
@@ -383,6 +458,38 @@ export const EmployeeTimeIQ = () => {
         saveTimeoutRef.current = null;
       }
     };
+  }, []);
+
+  const handleRejectedClientChange = useCallback((rowId, newClientId) => {
+    const client = clients.find((c) => Number(c.id) === Number(newClientId));
+    setProjectRows((prev) =>
+      prev.map((r) =>
+        r.rowId === rowId
+          ? { ...r, clientId: newClientId ? Number(newClientId) : null, clientName: client?.name || "", projectId: null, projectName: "" }
+          : r
+      )
+    );
+  }, [clients]);
+
+  const handleRejectedProjectChange = useCallback((rowId, newProjectId) => {
+    const project = allProjects.find((p) => Number(p.id) === Number(newProjectId));
+    setProjectRows((prev) =>
+      prev.map((r) =>
+        r.rowId === rowId
+          ? { ...r, projectId: newProjectId ? Number(newProjectId) : null, projectName: project?.name || "" }
+          : r
+      )
+    );
+  }, [allProjects]);
+
+  const handleRejectedManagerChange = useCallback((rowId, newManagerId) => {
+    setProjectRows((prev) =>
+      prev.map((r) =>
+        r.rowId === rowId
+          ? { ...r, managerId: newManagerId ? Number(newManagerId) : null }
+          : r
+      )
+    );
   }, []);
 
   const handleCellChange = useCallback((rowId, date, value) => {
@@ -429,10 +536,12 @@ export const EmployeeTimeIQ = () => {
       clearTimeout(saveTimeoutRef.current);
     }
     saveTimeoutRef.current = setTimeout(() => {
-      const { projectRows: curRows, isReadOnly: ro, currentWeekStart: ws, weekDates: wd } = dataRef.current;
-      if (ro || curRows.length === 0) return;
+      const { projectRows: curRows, currentWeekStart: ws, weekDates: wd, managerActionsByRow: mabr } = dataRef.current;
+      if (curRows.length === 0) return;
       const row = curRows.find((r) => r.rowId === rowId);
       if (!row || row.isPending) return;
+      const rStatus = deriveRowStatus(row, mabr, previouslyRejectedRef.current, previouslyApprovedRef.current);
+      if (rStatus !== "DRAFT" && rStatus !== "REJECTED") return;
       console.log("[autoSave] timer fired for rowId:", rowId, "comment:", row.comment, "date:", new Date().toISOString());
       const data = {
         weekStartDate: ws,
@@ -497,44 +606,6 @@ export const EmployeeTimeIQ = () => {
     setFieldErrors({ client: "", project: "", manager: "" });
   }, [selectedClient, selectedProject, selectedManager, allProjects, clients, weekDates, projectRows, showSnackbar]);
 
-  const handlePendingClientChange = useCallback((rowId, clientId) => {
-    const id = clientId ? Number(clientId) : null;
-    const client = clients.find((c) => Number(c.id) === id);
-    setProjectRows((prev) =>
-      prev.map((row) =>
-        row.rowId === rowId
-          ? { ...row, clientId: id, clientName: client?.name || "", projectId: null, projectName: "" }
-          : row
-      )
-    );
-  }, [clients]);
-
-  const handlePendingProjectChange = useCallback((rowId, projectId) => {
-    const id = projectId ? Number(projectId) : null;
-    const project = allProjects.find((p) => Number(p.id) === id);
-    if (!project) return;
-    if (projectRows.some((r) => Number(r.projectId) === id && r.rowId !== rowId)) {
-      showSnackbar("This project is already added for this week", "error");
-      return;
-    }
-    const client = clients.find((c) => Number(c.id) === Number(project.clientId));
-    setProjectRows((prev) =>
-      prev.map((row) =>
-        row.rowId === rowId
-          ? {
-              ...row,
-              isPending: false,
-              projectId: id,
-              projectName: project.name,
-              clientId: Number(project.clientId),
-              clientName: client?.name || "",
-              rowId: `proj-${id}`,
-            }
-          : row
-      )
-    );
-  }, [allProjects, clients, projectRows, showSnackbar]);
-
   const handleRemoveProject = useCallback(async (rowId) => {
     const row = projectRows.find((r) => r.rowId === rowId);
     if (!row) return;
@@ -555,26 +626,25 @@ export const EmployeeTimeIQ = () => {
       saveTimeoutRef.current = null;
     }
 
-    const updatedRows = projectRows.map((row) =>
-      row.rowId === rowId ? { ...row, comment: text } : row
-    );
-    setProjectRows(updatedRows);
+    const row = projectRows.find((r) => r.rowId === rowId);
+    if (!row) return;
+    const updatedRow = { ...row, comment: text };
+    setProjectRows((prev) => prev.map((r) => (r.rowId === rowId ? updatedRow : r)));
 
-    const dailyEntries = updatedRows.filter((r) => !r.isPending).flatMap((row) =>
-      weekDates.map((wd, idx) => ({
+    // Only this row's own entries are saved — a comment edit on one project
+    // must never touch another project's entries or status.
+    if (!updatedRow.isPending) {
+      const dailyEntries = weekDates.map((wd, idx) => ({
         entryDate: wd.date,
-        hours: parseHHMM(row.days[wd.date]?.hours),
-        description: row.days[wd.date]?.description || "",
-        comment: idx === 0 ? (row.comment || "") : undefined,
-        clientId: row.clientId,
-        projectId: row.projectId,
-        managerId: selectedManager ? Number(selectedManager) : row.managerId,
-        clientName: row.clientName,
-        projectName: row.projectName,
-      }))
-    );
-    if (dailyEntries.length > 0) {
-      console.log("[handleCommentSave] saving comment:", text, "rowId:", rowId, "entries:", dailyEntries.map((e) => ({ date: e.entryDate, comment: e.comment, pid: e.projectId })));
+        hours: parseHHMM(updatedRow.days[wd.date]?.hours),
+        description: updatedRow.days[wd.date]?.description || "",
+        comment: idx === 0 ? (updatedRow.comment || "") : undefined,
+        clientId: updatedRow.clientId,
+        projectId: updatedRow.projectId,
+        managerId: updatedRow.managerId,
+        clientName: updatedRow.clientName,
+        projectName: updatedRow.projectName,
+      }));
       try {
         await saveETDraft({ weekStartDate: currentWeekStart, dailyEntries });
         showSnackbar("Comment saved", "success");
@@ -585,7 +655,7 @@ export const EmployeeTimeIQ = () => {
     }
     setCommentModalRowId(null);
     setCommentValue("");
-  }, [projectRows, weekDates, currentWeekStart, selectedManager, showSnackbar]);
+  }, [projectRows, weekDates, currentWeekStart, showSnackbar]);
 
   const handleCommentDelete = useCallback(async (rowId, date) => {
     if (saveTimeoutRef.current) {
@@ -593,25 +663,25 @@ export const EmployeeTimeIQ = () => {
       saveTimeoutRef.current = null;
     }
 
-    const updatedRows = projectRows.map((row) =>
-      row.rowId === rowId ? { ...row, comment: "" } : row
-    );
-    setProjectRows(updatedRows);
+    const row = projectRows.find((r) => r.rowId === rowId);
+    if (!row) return;
+    const updatedRow = { ...row, comment: "" };
+    setProjectRows((prev) => prev.map((r) => (r.rowId === rowId ? updatedRow : r)));
 
-    const dailyEntries = updatedRows.filter((r) => !r.isPending).flatMap((row) =>
-      weekDates.map((wd, idx) => ({
+    // Only this row's own entries are saved — a comment edit on one project
+    // must never touch another project's entries or status.
+    if (!updatedRow.isPending) {
+      const dailyEntries = weekDates.map((wd, idx) => ({
         entryDate: wd.date,
-        hours: parseHHMM(row.days[wd.date]?.hours),
-        description: row.days[wd.date]?.description || "",
-        comment: idx === 0 ? (row.comment || "") : undefined,
-        clientId: row.clientId,
-        projectId: row.projectId,
-        managerId: selectedManager ? Number(selectedManager) : row.managerId,
-        clientName: row.clientName,
-        projectName: row.projectName,
-      }))
-    );
-    if (dailyEntries.length > 0) {
+        hours: parseHHMM(updatedRow.days[wd.date]?.hours),
+        description: updatedRow.days[wd.date]?.description || "",
+        comment: idx === 0 ? (updatedRow.comment || "") : undefined,
+        clientId: updatedRow.clientId,
+        projectId: updatedRow.projectId,
+        managerId: updatedRow.managerId,
+        clientName: updatedRow.clientName,
+        projectName: updatedRow.projectName,
+      }));
       try {
         await saveETDraft({ weekStartDate: currentWeekStart, dailyEntries });
         showSnackbar("Comment deleted", "info");
@@ -622,11 +692,18 @@ export const EmployeeTimeIQ = () => {
     }
     setCommentModalRowId(null);
     setCommentValue("");
-  }, [projectRows, weekDates, currentWeekStart, selectedManager, showSnackbar]);
+  }, [projectRows, weekDates, currentWeekStart, showSnackbar]);
 
   const prepareSaveData = useCallback(() => ({
     weekStartDate: currentWeekStart,
-    dailyEntries: projectRows.filter((r) => !r.isPending).flatMap((row) =>
+    // Only currently-editable rows (Draft/Rejected) are included — a bulk
+    // Save Draft must never touch a sibling project that's already
+    // Submitted/Re-Submitted/Approved.
+    dailyEntries: projectRows.filter((r) => {
+      if (r.isPending) return false;
+      const status = deriveRowStatus(r, managerActionsByRow, previouslyRejectedRef.current, previouslyApprovedRef.current);
+      return status === "DRAFT" || status === "REJECTED";
+    }).flatMap((row) =>
       weekDates.map((wd, idx) => {
         const dayData = row.days[wd.date] || { hours: "", description: "" };
         return {
@@ -642,17 +719,19 @@ export const EmployeeTimeIQ = () => {
         };
       })
     ),
-  }), [currentWeekStart, projectRows, selectedManager, weekDates]);
+  }), [currentWeekStart, projectRows, selectedManager, weekDates, managerActionsByRow]);
 
-  const handleSaveDraft = useCallback(async () => {
-    if (projectRows.length === 0) {
-      showSnackbar("Please add at least one project", "error");
+  const handleSaveDraftRow = useCallback(async (row) => {
+    if (!row || row.isPending) return;
+    const rowTotal = Object.values(row.days).reduce(
+      (sum, d) => sum + Math.max(0, parseHHMM(d.hours)), 0
+    );
+    if (rowTotal <= 0) {
+      showSnackbar("Cannot save an empty project. Add hours first.", "error");
       return;
     }
     const exceededDay = weekDates.find((wd) => {
-      const dayTotal = projectRows.reduce((sum, row) => {
-        return sum + parseHHMM(row.days[wd.date]?.hours);
-      }, 0);
+      const dayTotal = projectRows.reduce((sum, r) => sum + parseHHMM(r.days[wd.date]?.hours), 0);
       return dayTotal > 24;
     });
     if (exceededDay) {
@@ -661,11 +740,29 @@ export const EmployeeTimeIQ = () => {
     }
     try {
       setSaving(true);
-      const data = prepareSaveData();
-      const res = await saveETDraft(data);
+      const dailyEntries = weekDates.map((wd, idx) => ({
+        entryDate: wd.date,
+        hours: parseHHMM(row.days[wd.date]?.hours),
+        description: row.days[wd.date]?.description || "",
+        comment: idx === 0 ? (row.comment || "") : undefined,
+        clientId: row.clientId,
+        projectId: row.projectId,
+        managerId: row.managerId,
+        clientName: row.clientName,
+        projectName: row.projectName,
+      }));
+      const res = await saveETDraft({ weekStartDate: currentWeekStart, dailyEntries });
       if (res?.success) {
-        setTimesheetStatus(res.data?.timesheet?.status || "DRAFT");
-        showSnackbar("Draft saved successfully!", "success");
+        const newTsId = res.data?.timesheet?.id;
+        if (newTsId) setTimesheetId(newTsId);
+        setProjectRows((prev) =>
+          prev.map((r) =>
+            r.rowId === row.rowId
+              ? { ...r, savedOnServer: true, persistedProjectId: r.projectId }
+              : r
+          )
+        );
+        showSnackbar(`"${row.projectName}" draft saved!`, "success");
       } else {
         showSnackbar(res?.message || "Failed to save draft", "error");
       }
@@ -674,47 +771,68 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSaving(false);
     }
-  }, [projectRows, weekDates, prepareSaveData, showSnackbar]);
+  }, [projectRows, weekDates, currentWeekStart, showSnackbar]);
 
-  const handleSubmit = useCallback(async () => {
-    if (projectRows.length === 0) {
-      showSnackbar("Please add at least one project", "error");
+  // Submitting is per-project — this must only ever affect the ONE row
+  // passed in, never any sibling project in the same week.
+  const handleSubmitRow = useCallback(async (row) => {
+    if (!row.managerId) {
+      showSnackbar("Please assign a manager before submitting.", "error");
       return;
     }
-    if (projectRows.some((r) => !r.isPending && !r.managerId)) {
-      showSnackbar("Please assign a manager to every project before submitting.", "error");
-      return;
-    }
-    if (totalHours <= 0) {
-      showSnackbar("Cannot submit empty timesheet. Add hours first.", "error");
+    const rowTotal = Object.values(row.days).reduce(
+      (sum, d) => sum + Math.max(0, parseHHMM(d.hours)), 0
+    );
+    if (rowTotal <= 0) {
+      showSnackbar("Cannot submit an empty project. Add hours first.", "error");
       return;
     }
     const exceededDay = weekDates.find((wd) => {
-      const dayTotal = projectRows.reduce((sum, row) => {
-        return sum + parseHHMM(row.days[wd.date]?.hours);
-      }, 0);
+      const dayTotal = projectRows.reduce((sum, r) => sum + parseHHMM(r.days[wd.date]?.hours), 0);
       return dayTotal > 24;
     });
     if (exceededDay) {
       showSnackbar("Maximum 24 hours can be logged per day across all projects.", "error");
       return;
     }
-    if (!window.confirm("Submit this timesheet for approval?")) return;
+    if (!window.confirm(`Submit "${row.projectName}" for approval?`)) return;
     try {
       setSubmitting(true);
-      const data = prepareSaveData();
-      const saveRes = await saveETDraft(data);
+      const dailyEntries = weekDates.map((wd, idx) => ({
+        entryDate: wd.date,
+        hours: parseHHMM(row.days[wd.date]?.hours),
+        description: row.days[wd.date]?.description || "",
+        comment: idx === 0 ? (row.comment || "") : undefined,
+        clientId: row.clientId,
+        projectId: row.projectId,
+        managerId: row.managerId,
+        clientName: row.clientName,
+        projectName: row.projectName,
+      }));
+      const saveRes = await saveETDraft({ weekStartDate: currentWeekStart, dailyEntries });
       if (!saveRes?.success) {
         showSnackbar(saveRes?.message || "Failed to save before submit", "error");
-        setSubmitting(false);
         return;
       }
-      setTimesheetStatus(saveRes.data?.timesheet?.status || "DRAFT");
-      const res = await submitETTimesheet(data);
+      const res = await submitETTimesheet({ weekStartDate: currentWeekStart, projectId: row.projectId, dailyEntries });
       if (res?.success) {
-        setTimesheetStatus("SUBMITTED");
-        showSnackbar("Timesheet submitted successfully!", "success");
+        const newTsId = res.data?.timesheet?.id;
+        if (newTsId) setTimesheetId(newTsId);
+        setProjectRows((prev) =>
+          prev.map((r) =>
+            r.rowId === row.rowId
+              ? { ...r, entryStatuses: ["SUBMITTED"], savedOnServer: true }
+              : r
+          )
+        );
+        setManagerActionsByRow((prev) => {
+          const next = { ...prev };
+          delete next[row.rowId];
+          return next;
+        });
+        showSnackbar(`"${row.projectName}" submitted successfully!`, "success");
         window.dispatchEvent(new Event("approval-status-changed"));
+        refreshManagerActions();
       } else {
         showSnackbar(res?.message || "Failed to submit", "error");
       }
@@ -723,16 +841,34 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [projectRows, totalHours, weekDates, prepareSaveData, showSnackbar]);
+  }, [weekDates, projectRows, currentWeekStart, showSnackbar, refreshManagerActions]);
 
-  const handleUpdate = useCallback(async () => {
-    if (!window.confirm("Revert to draft for editing?")) return;
+  // Reverting to draft is per-project — must never affect a sibling
+  // project's own Submitted/Approved status.
+  const handleUpdateRow = useCallback(async (row) => {
+    if (!window.confirm(`Revert "${row.projectName}" to draft for editing?`)) return;
     try {
       setSaving(true);
-      const res = await updateETTimesheet({ weekStartDate: currentWeekStart });
+      const res = await updateETTimesheet({ weekStartDate: currentWeekStart, projectId: row.projectId });
       if (res?.success) {
-        setTimesheetStatus("DRAFT");
-        showSnackbar("Timesheet reverted to draft. Edit and re-submit.", "success");
+        const newTsId = res.data?.timesheet?.id;
+        if (newTsId) setTimesheetId(newTsId);
+        setProjectRows((prev) =>
+          prev.map((r) =>
+            r.rowId === row.rowId
+              ? { ...r, entryStatuses: ["DRAFT"] }
+              : r
+          )
+        );
+        previouslyRejectedRef.current.delete(row.rowId);
+        previouslyApprovedRef.current.delete(row.rowId);
+        setManagerActionsByRow((prev) => {
+          const next = { ...prev };
+          delete next[row.rowId];
+          return next;
+        });
+        showSnackbar(`"${row.projectName}" reverted to draft. Edit and re-submit.`, "success");
+        refreshManagerActions();
       } else {
         showSnackbar(res?.message || "Failed to update", "error");
       }
@@ -741,29 +877,33 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSaving(false);
     }
-  }, [currentWeekStart, showSnackbar]);
+  }, [currentWeekStart, showSnackbar, refreshManagerActions]);
 
-  const handleCancel = useCallback(async () => {
-    if (projectRows.length === 0) {
+  // Cancelling is per-project — must never remove or affect a sibling
+  // project's entries or status.
+  const handleCancelRow = useCallback(async (row) => {
+    if (!window.confirm(`Cancel "${row.projectName}"? All non-approved entries for this project will be permanently removed and this cannot be undone. Any entries already approved by a manager will be kept.`)) {
       return;
     }
-    if (timesheetStatus === "SUBMITTED") {
-      if (!window.confirm("Cancel this submitted timesheet? All entries for this week will be permanently removed and this cannot be undone.")) {
-        return;
-      }
-    }
     try {
-      const res = await cancelETTimesheet(currentWeekStart);
+      const res = await cancelETTimesheet(currentWeekStart, row.projectId);
       if (res?.success) {
-        await loadWeekData(currentWeekStart);
-        showSnackbar("Timesheet cancelled. All entries removed.", "info");
+        setProjectRows((prev) => prev.filter((r) => r.rowId !== row.rowId));
+        previouslyRejectedRef.current.delete(row.rowId);
+        previouslyApprovedRef.current.delete(row.rowId);
+        setManagerActionsByRow((prev) => {
+          const next = { ...prev };
+          delete next[row.rowId];
+          return next;
+        });
+        showSnackbar(`"${row.projectName}" cancelled. Non-approved entries removed.`, "info");
       } else {
         showSnackbar("Failed to cancel timesheet", "error");
       }
     } catch (err) {
       showSnackbar(err.response?.data?.message || err.message || "Failed to cancel", "error");
     }
-  }, [currentWeekStart, timesheetStatus, projectRows, loadWeekData, showSnackbar]);
+  }, [currentWeekStart, showSnackbar]);
 
   const navigateWeek = useCallback((direction) => {
     const cur = new Date(currentWeekStart + "T00:00:00");
@@ -830,7 +970,6 @@ export const EmployeeTimeIQ = () => {
           <select
             value={selectedClient}
             onChange={(e) => handleClientChange(e.target.value)}
-            disabled={isReadOnly}
             className={`h-8 w-full rounded-lg border bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
               clientError || fieldErrors.client
                 ? "border-red-400 focus:ring-red-200"
@@ -854,7 +993,7 @@ export const EmployeeTimeIQ = () => {
           <select
             value={selectedProject}
             onChange={(e) => handleProjectChange(e.target.value)}
-            disabled={!selectedClient || isReadOnly}
+            disabled={!selectedClient}
             className={`h-8 w-full rounded-lg border bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
               fieldErrors.project
                 ? "border-red-400 focus:ring-red-200"
@@ -881,7 +1020,7 @@ export const EmployeeTimeIQ = () => {
               setSelectedManager(e.target.value ? Number(e.target.value) : "");
               if (e.target.value) setFieldErrors((prev) => ({ ...prev, manager: "" }));
             }}
-            disabled={!selectedClient || isReadOnly}
+            disabled={!selectedClient}
             className={`h-8 w-full rounded-lg border bg-white px-2 py-1.5 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
               fieldErrors.manager
                 ? "border-red-400 focus:ring-red-200"
@@ -902,22 +1041,20 @@ export const EmployeeTimeIQ = () => {
         </div>
       </div>
 
-      {!isReadOnly && (
-        <button
-          onClick={handleAddProject}
-          className="mb-3 h-9 rounded-lg border-2 border-dashed border-[#E2E8F0] text-sm font-medium text-[#B33A2F] hover:border-[#B33A2F] hover:bg-[#B33A2F]/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed px-4"
-        >
+      <button
+        onClick={handleAddProject}
+        className="mb-3 h-9 rounded-lg border-2 border-dashed border-[#E2E8F0] text-sm font-medium text-[#B33A2F] hover:border-[#B33A2F] hover:bg-[#B33A2F]/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed px-4"
+      >
 + Add Record
-        </button>
-      )}
+      </button>
 
       {/* ===== SECTION 3: Multi-Project Weekly Table ===== */}
       <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-x-auto">
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-              <th className="px-3 py-2 text-left text-[10px] font-bold text-[#64748B] uppercase tracking-wider min-w-[130px]">
-                Project
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-[#64748B] uppercase tracking-wider min-w-[150px]">
+                Project Details
               </th>
               {weekDates.map((wd) => (
                 <th key={wd.date} className={`px-1.5 py-2 text-center border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/5" : ""}`}>
@@ -951,58 +1088,86 @@ export const EmployeeTimeIQ = () => {
                   (s, d) => s + (Math.max(0, parseHHMM(d.hours))), 0
                 );
                 const rowAction = managerActionsByRow[row.rowId];
-                // A project a manager already approved stays locked even if a
-                // different manager's rejection elsewhere unlocks the rest of
-                // the timesheet for edits/resubmission.
                 const rowApproved = rowAction?.status === "APPROVED";
+                const rowStatus = deriveRowStatus(row, managerActionsByRow, previouslyRejectedRef.current, previouslyApprovedRef.current);
+                // Each project has its own independent lifecycle — a row's own
+                // status (not the week's aggregate) decides whether it's editable.
+                const rowEditable = rowStatus === "DRAFT" || rowStatus === "REJECTED";
                 return (
                   <tr key={row.rowId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50 transition-colors">
-                    <td className="px-3 py-2 border-r border-[#E2E8F0]">
-                      {/* [TEMP-HIDE] Add Project dropdown logic commented out per requirement */}
-                      {/* {row.isPending ? (
-                        <div className="flex flex-col gap-1.5 min-w-[180px]">
-                          <select
-                            value={row.clientId || ""}
-                            onChange={(e) => handlePendingClientChange(row.rowId, e.target.value)}
-                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
-                          >
-                            <option value="">Select Client</option>
-                            {clients.map((c) => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={row.projectId || ""}
-                            onChange={(e) => handlePendingProjectChange(row.rowId, e.target.value)}
-                            disabled={!row.clientId}
-                            className="h-7 rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-xs text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <option value="">{!row.clientId ? "Select client first" : "Select Project"}</option>
-                            {row.clientId && getProjectsForClient(row.clientId).map((p) => (
-                              <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                          </select>
+                    <td className="px-3 py-2 align-top border-r border-[#E2E8F0]">
+                      {rowStatus === "REJECTED" ? (
+                        <div className="flex flex-col gap-1.5 min-w-[150px]">
+                          <div>
+                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide">Client</p>
+                            <select
+                              value={row.clientId || ""}
+                              onChange={(e) => handleRejectedClientChange(row.rowId, e.target.value)}
+                              className="mt-0.5 h-7 w-full rounded border border-[#E2E8F0] bg-white px-1.5 py-0.5 text-[11px] text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
+                            >
+                              <option value="">Select Client</option>
+                              {clients.filter((c) => c.status === "ACTIVE").map((c) => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide">Project</p>
+                            <select
+                              value={row.projectId || ""}
+                              onChange={(e) => handleRejectedProjectChange(row.rowId, e.target.value)}
+                              disabled={!row.clientId}
+                              className="mt-0.5 h-7 w-full rounded border border-[#E2E8F0] bg-white px-1.5 py-0.5 text-[11px] text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <option value="">{!row.clientId ? "Select client first" : "Select Project"}</option>
+                              {allProjects.filter((p) => Number(p.clientId) === Number(row.clientId) && p.status === "ACTIVE").map((p) => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide">{user?.role === "MANAGER" ? "Admin" : "Manager"}</p>
+                            <select
+                              value={row.managerId || ""}
+                              onChange={(e) => handleRejectedManagerChange(row.rowId, e.target.value)}
+                              className="mt-0.5 h-7 w-full rounded border border-[#E2E8F0] bg-white px-1.5 py-0.5 text-[11px] text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
+                            >
+                              <option value="">Select {user?.role === "MANAGER" ? "Admin" : "Manager"}</option>
+                              {allManagers.map((m) => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
-                      ) : ( */}
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-[#1E293B] truncate max-w-[160px]">{row.projectName}</span>
-                          <span className="text-[10px] text-[#64748B] truncate max-w-[160px]">{row.clientName}</span>
-                          {(() => {
-                            const mgr = allManagers.find((m) => Number(m.id) === Number(row.managerId));
-                            return mgr ? (
-                              <span className="text-[10px] text-[#94A3B8] truncate max-w-[160px]">Manager: {mgr.name}</span>
-                            ) : null;
-                          })()}
+                      ) : (
+                        <div className="flex flex-col gap-1 min-w-[150px]">
+                          <div className="leading-none">
+                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide leading-none">Client</p>
+                            <p className="text-[11px] text-[#1E293B] leading-tight truncate max-w-[150px] mt-0.5">{row.clientName || "-"}</p>
+                          </div>
+                          <div className="leading-none">
+                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide leading-none">Project</p>
+                            <p className="text-[12px] font-semibold text-[#1E293B] leading-tight truncate max-w-[150px] mt-0.5">{row.projectName || "-"}</p>
+                          </div>
+                          <div className="leading-none">
+                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide leading-none">{user?.role === "MANAGER" ? "Admin" : "Manager"}</p>
+                            <p className="text-[11px] text-[#64748B] leading-tight truncate max-w-[150px] mt-0.5">
+                              {(() => {
+                                const mgr = allManagers.find((m) => Number(m.id) === Number(row.managerId));
+                                return mgr ? mgr.name : "-";
+                              })()}
+                            </p>
+                          </div>
                         </div>
-                      {/* )} */}
+                      )}
                     </td>
                     {weekDates.map((wd) => {
                       const dayData = row.days[wd.date] || { hours: "", description: "" };
                       const parts = parseHHMMToParts(dayData.hours);
-                      const cellDisabled = isReadOnly || row.isPending || rowApproved;
+                      const cellDisabled = !rowEditable || row.isPending || rowApproved || !row.projectId;
                       const cellInputClass = "h-6 rounded border border-[#E2E8F0] bg-white text-[10px] text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]";
                       return (
-                        <td key={wd.date} className={`px-1 py-1.5 border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
+                        <td key={wd.date} className={`px-1 py-1.5 align-top border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
                           <div className="flex items-center justify-center gap-0.5">
                             <input
                               type="number"
@@ -1042,7 +1207,7 @@ export const EmployeeTimeIQ = () => {
                         </td>
                       );
                     })}
-                    <td className="px-1.5 py-2 text-center border-l border-[#E2E8F0] w-14">
+                    <td className="px-1.5 py-2 align-top text-center border-l border-[#E2E8F0] w-14">
                       <button
                         onClick={() => {
                           setCommentModalRowId(row.rowId);
@@ -1058,21 +1223,18 @@ export const EmployeeTimeIQ = () => {
                         )}
                       </button>
                     </td>
-                    <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
+                    <td className="px-2 py-2 align-top text-center border-l border-[#E2E8F0]">
                       <span className="text-sm font-bold text-[#1E293B]">{formatHoursToHHMM(rowTotal)}</span>
                     </td>
-                    <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
+                    <td className="px-2 py-2 align-top text-center border-l border-[#E2E8F0]">
                       {(() => {
-                        if (rowAction) {
-                          const isApproved = rowAction.status === "APPROVED";
+                        if (rowStatus === "APPROVED") {
                           return (
                             <div className="flex items-center justify-center gap-1">
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                isApproved ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                              }`}>
-                                {isApproved ? "Approved" : "Rejected"}
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">
+                                Approved
                               </span>
-                              {rowAction.comment && (
+                              {rowAction?.comment && (
                                 <button
                                   onClick={() => setManagerActionModal(rowAction)}
                                   className="p-0.5 rounded bg-[#B33A2F]/10 text-[#B33A2F] ring-1 ring-[#B33A2F]/30"
@@ -1084,22 +1246,101 @@ export const EmployeeTimeIQ = () => {
                             </div>
                           );
                         }
-                        if (timesheetStatus === "SUBMITTED") {
-                          return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Pending</span>;
+                        if (rowStatus === "REJECTED") {
+                          return (
+                            <div className="flex items-center justify-center gap-1">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                                Rejected
+                              </span>
+                              {rowAction?.comment && (
+                                <button
+                                  onClick={() => setManagerActionModal(rowAction)}
+                                  className="p-0.5 rounded bg-[#B33A2F]/10 text-[#B33A2F] ring-1 ring-[#B33A2F]/30"
+                                  title="View comment"
+                                >
+                                  <MessageSquare className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (rowStatus === "SUBMITTED") {
+                          return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Submitted (Pending)</span>;
+                        }
+                        if (rowStatus === "RE-SUBMITTED") {
+                          return <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">Re-Submitted</span>;
+                        }
+                        if (rowStatus === "DRAFT" && row.savedOnServer) {
+                          return <span className="text-[10px] font-bold text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded-full">Draft</span>;
                         }
                         return <span className="text-[#94A3B8]">-</span>;
                       })()}
                     </td>
-                    <td className="px-2 py-2 text-center border-l border-[#E2E8F0]">
-                      {!isReadOnly && !rowApproved && (
-                        <button
-                          onClick={() => handleRemoveProject(row.rowId)}
-                          className="p-1 rounded hover:bg-red-50 text-[#94A3B8] hover:text-red-500 transition-colors"
-                          title={`Remove ${row.projectName}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                    <td className="px-2 py-2 align-top text-center border-l border-[#E2E8F0]">
+                      {(() => {
+                        let actionItems = [];
+                        if (rowStatus === "DRAFT") {
+                          actionItems = [
+                            { key: "delete", label: "Delete", icon: Trash2, danger: true, onClick: () => handleRemoveProject(row.rowId) },
+                            { key: "save", label: "Save Draft", icon: Save, disabled: isBusy, onClick: () => handleSaveDraftRow(row) },
+                            { key: "submit", label: "Submit", icon: Send, disabled: isBusy || rowTotal <= 0, onClick: () => handleSubmitRow(row) },
+                          ];
+                        } else if (rowStatus === "SUBMITTED" || rowStatus === "RE-SUBMITTED") {
+                          actionItems = [
+                            { key: "cancel", label: "Cancel", icon: XCircle, disabled: isBusy, onClick: () => handleCancelRow(row) },
+                          ];
+                        } else if (rowStatus === "REJECTED") {
+                          actionItems = [
+                            { key: "update", label: "Update", icon: RotateCcw, disabled: isBusy, onClick: () => handleUpdateRow(row) },
+                            { key: "save", label: "Save Draft", icon: Save, disabled: isBusy, onClick: () => handleSaveDraftRow(row) },
+                            { key: "submit", label: "Submit", icon: Send, disabled: isBusy || rowTotal <= 0, onClick: () => handleSubmitRow(row) },
+                          ];
+                        } else if (rowStatus === "APPROVED") {
+                          actionItems = [
+                            { key: "update", label: "Update", icon: RotateCcw, disabled: isBusy, onClick: () => handleUpdateRow(row) },
+                            { key: "submit", label: "Submit", icon: Send, disabled: isBusy || rowTotal <= 0, onClick: () => handleSubmitRow(row) },
+                          ];
+                        }
+                        const isOpen = openActionsRowId === row.rowId;
+                        const hasItems = actionItems.length > 0;
+                        return (
+                          <div
+                            className="relative inline-block text-left"
+                            ref={(el) => { actionsMenuRefs.current[row.rowId] = el; }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => hasItems && setOpenActionsRowId(isOpen ? null : row.rowId)}
+                              disabled={!hasItems}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#64748B] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] hover:border-[#B33A2F]/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              Actions
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                            {isOpen && hasItems && (
+                              <div className="absolute right-0 z-20 mt-1 w-36 bg-white border border-[#E2E8F0] rounded-lg shadow-lg py-1">
+                                {actionItems.map((item) => (
+                                  <button
+                                    key={item.key}
+                                    type="button"
+                                    disabled={item.disabled}
+                                    onClick={() => {
+                                      setOpenActionsRowId(null);
+                                      item.onClick();
+                                    }}
+                                    className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                                      item.danger ? "text-red-600 hover:bg-red-50" : "text-[#1E293B] hover:bg-[#F8FAFC]"
+                                    }`}
+                                  >
+                                    <item.icon className="w-3.5 h-3.5" />
+                                    {item.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
@@ -1138,38 +1379,7 @@ export const EmployeeTimeIQ = () => {
         </table>
       </div>
 
-      {/* ===== SECTION 4: Buttons ===== */}
-      {/* Once every project is approved there's nothing left to do here — the
-          per-project "Approved" status is already visible in the grid above. */}
-      {!isApproved && (
-        <div className="flex items-center justify-end gap-2 mt-3">
-          {isRejected ? (
-            <Button variant="danger" onClick={handleUpdate} disabled={isBusy} className="h-8 text-xs px-3">
-              <RotateCcw className="w-3.5 h-3.5 mr-1" /> {saving ? "Reverting..." : "Update"}
-            </Button>
-          ) : isSubmitted ? (
-            <>
-              <Button variant="ghost" onClick={handleCancel} disabled={isBusy} className="h-8 text-xs px-3 text-[#64748B]">
-                <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel
-              </Button>
-              <Button variant="outline" onClick={handleUpdate} disabled={isBusy} className="h-8 text-xs px-3">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" /> {saving ? "Reverting..." : "Update"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="secondary" onClick={handleSaveDraft} disabled={isBusy || projectRows.length === 0} className="h-8 text-xs px-3">
-                {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
-                Save Draft
-              </Button>
-              <Button onClick={handleSubmit} disabled={isBusy || projectRows.length === 0 || totalHours <= 0} className="h-8 text-xs px-3">
-                {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1" />}
-                Submit
-              </Button>
-            </>
-          )}
-        </div>
-      )}
+      {/* ===== SECTION 4: Buttons (moved to per-row in table) ===== */}
 
       {commentModalRowId && (
         <CommentModal
@@ -1190,57 +1400,54 @@ export const EmployeeTimeIQ = () => {
         />
       )}
 
-      {managerActionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setManagerActionModal(null)}></div>
-          <div className="relative w-full max-w-md bg-white border border-[#E2E8F0] rounded-xl shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
-              <h2 className="text-lg font-semibold text-[#1E293B] flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#B33A2F]" />
-                Admin Response
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Admin Status</span>
-                <div className="mt-1">
-                  <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
-                    managerActionModal.status === "APPROVED" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                  }`}>
-                    {managerActionModal.status === "APPROVED" ? "Approved" : "Rejected"}
-                  </span>
-                </div>
+      {managerActionModal && (() => {
+        const comment = managerActionModal.comment || "";
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setManagerActionModal(null)}></div>
+            <div className="relative w-full max-w-2xl bg-white border border-[#E2E8F0] rounded-xl shadow-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[#1E293B]">Manager Response</h2>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                  managerActionModal.status === "APPROVED" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                }`}>
+                  {managerActionModal.status === "APPROVED" ? "Approved" : "Rejected"}
+                </span>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Admin</span>
-                <p className="mt-1 text-sm font-medium text-[#1E293B]">{managerActionModal.managerName}</p>
-              </div>
-              {managerActionModal.comment && (
+              <div className="px-6 py-5 space-y-4">
                 <div>
-                  <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Comment</span>
-                  <p className="mt-1 text-sm text-[#1E293B] bg-[#F8FAFC] rounded-lg p-3 border border-[#E2E8F0]">
-                    "{managerActionModal.comment}"
+                  <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Manager</span>
+                  <p className="mt-1.5 text-sm font-medium text-[#1E293B]">{managerActionModal.managerName}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Date</span>
+                  <p className="mt-1.5 text-sm text-[#64748B]">
+                    {managerActionModal.date ? format(new Date(managerActionModal.date), "dd-MMM-yyyy") : "-"}
                   </p>
                 </div>
-              )}
-              <div>
-                <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Date</span>
-                <p className="mt-1 text-sm text-[#64748B]">
-                  {format(new Date(managerActionModal.date), "dd-MMM-yyyy")}
-                </p>
+                <div>
+                  <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Manager Comment</span>
+                  {comment ? (
+                    <div className="mt-1.5 w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#1E293B] leading-relaxed whitespace-pre-wrap break-words">
+                      {comment}
+                    </div>
+                  ) : (
+                    <p className="mt-1.5 text-sm text-[#94A3B8]">-</p>
+                  )}
+                </div>
+              </div>
+              <div className="px-6 pb-5 flex justify-center">
+                <button
+                  onClick={() => setManagerActionModal(null)}
+                  className="px-6 py-2 text-sm font-medium text-[#64748B] hover:text-[#1E293B] bg-white border border-[#E2E8F0] rounded-lg hover:bg-[#F1F5F9] transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </div>
-            <div className="px-6 py-3 border-t border-[#E2E8F0] bg-[#F8FAFC] flex justify-end">
-              <button
-                onClick={() => setManagerActionModal(null)}
-                className="px-4 py-2 text-sm font-medium text-[#64748B] hover:text-[#1E293B] bg-white border border-[#E2E8F0] rounded-lg hover:bg-[#F1F5F9] transition-colors"
-              >
-                Close
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
     </div>
   );

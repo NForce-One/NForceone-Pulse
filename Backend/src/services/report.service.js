@@ -342,7 +342,11 @@ export const getDashboardStats = async (userId, role, startDate = null, endDate 
     whereClause.managerId = userId;
   }
 
-  const statusFilter = { status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] } };
+  // A manager's Team dashboard must never surface an employee's draft — only
+  // the employee's own (self) view is allowed to see DRAFT-status entries.
+  const statusFilter = isTeamView
+    ? { status: { [Op.in]: ["SUBMITTED", "APPROVED", "REJECTED"] } }
+    : { status: { [Op.in]: ["DRAFT", "SUBMITTED", "APPROVED", "REJECTED"] } };
 
   const weekEntries = await TimeEntry.findAll({
     where: {

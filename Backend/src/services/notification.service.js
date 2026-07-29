@@ -150,26 +150,99 @@ export const notifyTimesheetSubmitted = async (record) => {
   }
 };
 
+export const notifyTimesheetResubmitted = async (record) => {
+  try {
+    const weekRange =
+      record.weekStartDate && record.weekEndDate
+        ? `${formatDateSafe(record.weekStartDate)} – ${formatDateSafe(record.weekEndDate)}`
+        : "unknown date";
+
+    // Notify manager about re-submission
+    const managerId = record.managerId || record.User?.managerId;
+    if (managerId) {
+      const manager = await User.findByPk(managerId);
+      if (manager) {
+        await Notification.create({
+          userId: managerId,
+          type: "RESUBMITTED",
+          title: "Timesheet Re-Submitted",
+          message: `${record.User?.name || "An employee"} re-submitted a timesheet for the week of ${formatDateSafe(record.weekStartDate) || "unknown date"}.`,
+          relatedId: record.id,
+          isRead: false,
+        });
+      }
+    }
+
+    // Notify employee (re-submission confirmation)
+    let managerName = "your manager";
+    if (managerId) {
+      const mgr = await User.findByPk(managerId, { attributes: ["id", "name"] });
+      if (mgr) managerName = mgr.name;
+    }
+
+    await Notification.create({
+      userId: record.userId,
+      type: "RESUBMITTED",
+      title: "Weekly Timesheet Re-Submitted",
+      message: `Your weekly timesheet has been re-submitted successfully.\n\nWeek:\n${weekRange}\n\nSubmitted To:\n${managerName}`,
+      relatedId: record.id,
+      isRead: false,
+    });
+  } catch (err) {
+    console.error("Failed to create re-submission notification:", err.message);
+  }
+};
+
 export const notifyTimesheetApproved = async (record) => {
-  await Notification.create({
-    userId: record.userId,
-    type: "APPROVED",
-    title: "Timesheet Approved",
-    message: buildMessage(record, "approved"),
-    relatedId: record.id,
-    isRead: false,
-  });
+  try {
+    const weekRange =
+      record.weekStartDate && record.weekEndDate
+        ? `${formatDateSafe(record.weekStartDate)} – ${formatDateSafe(record.weekEndDate)}`
+        : "unknown date";
+
+    let actorName = "your manager";
+    if (record.actorId) {
+      const actor = await User.findByPk(record.actorId, { attributes: ["id", "name"] });
+      if (actor) actorName = actor.name;
+    }
+
+    await Notification.create({
+      userId: record.userId,
+      type: "APPROVED",
+      title: "Weekly Timesheet Approved",
+      message: `Your weekly timesheet has been approved by your manager.\n\nWeek:\n${weekRange}\n\nApproved By:\n${actorName}`,
+      relatedId: record.id || record.relatedId,
+      isRead: false,
+    });
+  } catch (err) {
+    console.error("Failed to create approval notification:", err.message);
+  }
 };
 
 export const notifyTimesheetRejected = async (record) => {
-  await Notification.create({
-    userId: record.userId,
-    type: "REJECTED",
-    title: "Timesheet Rejected",
-    message: buildMessage(record, "rejected. Please review and resubmit"),
-    relatedId: record.id,
-    isRead: false,
-  });
+  try {
+    const weekRange =
+      record.weekStartDate && record.weekEndDate
+        ? `${formatDateSafe(record.weekStartDate)} – ${formatDateSafe(record.weekEndDate)}`
+        : "unknown date";
+
+    let actorName = "your manager";
+    if (record.actorId) {
+      const actor = await User.findByPk(record.actorId, { attributes: ["id", "name"] });
+      if (actor) actorName = actor.name;
+    }
+
+    await Notification.create({
+      userId: record.userId,
+      type: "REJECTED",
+      title: "Weekly Timesheet Rejected",
+      message: `Your weekly timesheet has been rejected by your manager.\n\nWeek:\n${weekRange}\n\nRejected By:\n${actorName}`,
+      relatedId: record.id || record.relatedId,
+      isRead: false,
+    });
+  } catch (err) {
+    console.error("Failed to create rejection notification:", err.message);
+  }
 };
 
 export const notifyPendingApprovals = async (managerId, count) => {

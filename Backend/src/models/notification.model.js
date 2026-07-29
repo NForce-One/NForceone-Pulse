@@ -18,6 +18,7 @@ const Notification = sequelize.define(
         "MISSING_ENTRY",
         "PENDING_SUBMISSION",
         "SUBMITTED",
+        "RESUBMITTED",
         "APPROVED",
         "REJECTED",
         "MANAGER_REMINDER"

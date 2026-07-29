@@ -96,12 +96,13 @@ export const Approvals = () => {
       const weekStart = getWeekStart(entry.entryDate);
       const key = `${entry.userId}_${weekStart}`;
       if (!weekKeys[key]) {
-        weekKeys[key] = { key, status: entry.status };
+        weekKeys[key] = { key, status: entry.status, previouslyApproved: entry.previouslyApproved || false };
       }
     });
     const groups = Object.values(weekKeys);
     return {
-      pending: groups.filter((g) => g.status === "SUBMITTED").length,
+      pending: groups.filter((g) => g.status === "SUBMITTED" && !g.previouslyApproved).length,
+      resubmitted: groups.filter((g) => g.status === "SUBMITTED" && g.previouslyApproved).length,
       approved: groups.filter((g) => g.status === "APPROVED").length,
       rejected: groups.filter((g) => g.status === "REJECTED").length,
       all: groups.length,
@@ -109,7 +110,8 @@ export const Approvals = () => {
   }, [entries]);
 
   const filteredEntries = useMemo(() => {
-    if (statusFilter === "pending") return entries.filter((e) => e.status === "SUBMITTED");
+    if (statusFilter === "pending") return entries.filter((e) => e.status === "SUBMITTED" && !e.previouslyApproved);
+    if (statusFilter === "resubmitted") return entries.filter((e) => e.status === "SUBMITTED" && e.previouslyApproved);
     if (statusFilter === "approved") return entries.filter((e) => e.status === "APPROVED");
     if (statusFilter === "rejected") return entries.filter((e) => e.status === "REJECTED");
     return entries;
@@ -161,6 +163,7 @@ export const Approvals = () => {
           submissionDate,
           latestEntry,
           status: group.entries[0]?.status || "SUBMITTED",
+          previouslyApproved: group.entries.some((e) => e.previouslyApproved),
         };
       })
       .sort((a, b) => b.weekStart.localeCompare(a.weekStart) || a.name.localeCompare(b.name));
@@ -212,6 +215,10 @@ export const Approvals = () => {
 
   const handleConfirm = async () => {
     if (processingRef.current) return;
+    if (modal.action === "reject" && !modal.comment.trim()) {
+      setModal((prev) => ({ ...prev, error: "Comment is required when rejecting." }));
+      return;
+    }
     processingRef.current = true;
     setProcessing(true);
     const { entryIds, action, comment } = modal;
@@ -282,6 +289,7 @@ export const Approvals = () => {
       <div className="flex items-center gap-1 bg-[#F8FAFC] rounded-xl p-1 border border-[#E2E8F0] w-fit">
         {[
           { key: "pending", label: "Pending", count: weeklyCounts.pending },
+          { key: "resubmitted", label: "Re-Submitted", count: weeklyCounts.resubmitted },
           { key: "approved", label: "Approved", count: weeklyCounts.approved },
           { key: "rejected", label: "Rejected", count: weeklyCounts.rejected },
           { key: "all", label: "All", count: weeklyCounts.all },
@@ -332,7 +340,7 @@ export const Approvals = () => {
               ) : grouped.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-8 text-[#64748B]">
-                    {statusFilter === "pending" ? "No pending approvals" : statusFilter === "approved" ? "No approved submissions found" : statusFilter === "rejected" ? "No rejected submissions" : "No submissions found"}
+                    {statusFilter === "pending" ? "No pending approvals" : statusFilter === "resubmitted" ? "No re-submitted entries" : statusFilter === "approved" ? "No approved submissions found" : statusFilter === "rejected" ? "No rejected submissions" : "No submissions found"}
                   </td>
                 </tr>
               ) : (
@@ -345,7 +353,12 @@ export const Approvals = () => {
                     >
                       {/* Employee */}
                       <td className="px-4 py-3">
-                        <div className="text-sm font-semibold text-[#1E293B]">{group.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-[#1E293B]">{group.name}</span>
+                          {group.previouslyApproved && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Re-Submitted</span>
+                          )}
+                        </div>
                         {group.employeeId != null && <div className="text-[11px] text-[#94A3B8]">Emp ID: {group.employeeId}</div>}
                       </td>
 
@@ -625,7 +638,7 @@ export const Approvals = () => {
                 ) : (
                   <X className="w-5 h-5 text-red-600" />
                 )}
-                {modal.action === "approve" ? `Approve ${modal.entryIds.length} ${modal.entryIds.length === 1 ? "Entry" : "Entries"}` : `Reject ${modal.entryIds.length} ${modal.entryIds.length === 1 ? "Entry" : "Entries"}`}
+                {modal.action === "approve" ? "Approve Timesheet" : "Reject Timesheet"}
               </h2>
               <p className="text-sm text-[#64748B] mt-1">
                 {modal.action === "approve"
@@ -635,12 +648,12 @@ export const Approvals = () => {
             </div>
             <div className="p-6">
               <label className="block text-sm font-medium text-[#64748B] mb-2">
-                Manager Comment / Note <span className="text-[#94A3B8] font-normal">(optional)</span>
+                Manager Comment / Note {modal.action === "reject" ? <span className="text-red-500 font-normal">(required)</span> : <span className="text-[#94A3B8] font-normal">(optional)</span>}
               </label>
               <textarea
                 value={modal.comment}
-                onChange={(e) => setModal((prev) => ({ ...prev, comment: e.target.value }))}
-                placeholder={modal.action === "approve" ? "e.g. Good work (optional)" : "e.g. Please improve (optional)"}
+                onChange={(e) => { setModal((prev) => ({ ...prev, comment: e.target.value, error: "" })); }}
+                placeholder={modal.action === "approve" ? "e.g. Good work (optional)" : "e.g. Please improve (required)"}
                 rows={4}
                 className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:border-[#B33A2F] focus:ring-1 focus:ring-[#B33A2F]/30 transition-colors resize-none"
               />
@@ -665,7 +678,7 @@ export const Approvals = () => {
                 ) : (
                   <Button
                     onClick={handleConfirm}
-                    disabled={processing}
+                    disabled={processing || !modal.comment.trim()}
                     variant="danger"
                   >
                     <X className="w-4 h-4 mr-2" />

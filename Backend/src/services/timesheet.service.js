@@ -304,6 +304,7 @@ export const approveTimesheet = async (timesheetId, managerId, comment, actorRol
     await notificationService.notifyTimesheetApproved({
       ...timesheet.toJSON(),
       User: timesheet.User,
+      actorId: managerId,
     });
     console.log("[APPROVE-EMAIL] Notification created successfully");
   } else {
@@ -459,6 +460,7 @@ export const rejectTimesheet = async (timesheetId, managerId, comment, actorRole
   await notificationService.notifyTimesheetRejected({
     ...timesheet.toJSON(),
     User: timesheet.User,
+    actorId: managerId,
   });
   console.log("[REJECT-EMAIL] Notification created successfully");
 
@@ -612,9 +614,13 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
     });
     const reportingUserIds = reportingUsers.map((u) => u.id);
 
-    // Also find users who have submitted time entries to this manager
+    // Also find users who have actually submitted time entries to this
+    // manager. A DRAFT entry already carries the managerId the employee
+    // picked in EmployeeTimeIQ (needed so a later Submit knows who to route
+    // to) — excluding DRAFT here means an ad hoc project-manager selection
+    // doesn't grant that manager visibility until the employee submits.
     const entryUsers = await TimeEntry.findAll({
-      where: { managerId },
+      where: { managerId, status: { [Op.ne]: "DRAFT" } },
       attributes: ["userId"],
     });
     const entryUserIds = entryUsers.map((e) => e.userId);
@@ -625,9 +631,18 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
     whereClause.userId = { [Op.in]: allTeamMemberIds };
   }
 
-  // Apply status filter
-  if (filters.status && filters.status !== "ALL") {
-    whereClause.status = filters.status;
+  // Apply status filter. Managers/Admins must never see a timesheet before
+  // the employee actually submits it, so DRAFT is always excluded here —
+  // regardless of which filter tab is selected (including "ALL" or an
+  // explicit "DRAFT" request from an old/bypassed client).
+  if (filters.status && filters.status !== "ALL" && filters.status !== "DRAFT") {
+    if (filters.status === "RESUBMITTED") {
+      whereClause.status = "SUBMITTED";
+    } else {
+      whereClause.status = filters.status;
+    }
+  } else {
+    whereClause.status = { [Op.ne]: "DRAFT" };
   }
 
   // Apply date range filter
@@ -655,15 +670,12 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
 
   return Promise.all(
     timesheets.map(async (ts) => {
-      // Live-sum from TimeEntry instead of trusting the denormalized
-      // Timesheet.totalHours/billableHours columns, which can go stale
-      // when an entry is edited/deleted after the timesheet was saved.
       const entries = await TimeEntry.findAll({
         where: {
           userId: ts.userId,
           entryDate: { [Op.gte]: ts.weekStartDate, [Op.lte]: ts.weekEndDate },
         },
-        attributes: ["hours", "isBillable"],
+        attributes: ["id", "hours", "isBillable", "status"],
       });
       const loggedHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
       const billableHours = entries
@@ -674,16 +686,26 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
       const billableMinutes = Math.round(billableHours * 60);
       const nonBillableMinutes = totalMinutes - billableMinutes;
 
-      // Calculate expected hours based on user's required hours per day
-      // defaultHours is per day, 5 working days per week
       const userDefaultHours = ts.User?.defaultHours || 8.0;
       const expectedHours = 5 * userDefaultHours;
       const missingHours = Math.max(0, expectedHours - loggedHours);
 
-      // Split name into first and last name
       const nameParts = (ts.User?.name || "").split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
+
+      let previouslyResubmitted = false;
+      if (ts.status === "SUBMITTED") {
+        const entryIds = entries.map((e) => e.id);
+        if (entryIds.length > 0) {
+          const priorActionHistory = await ApprovalHistory.findAll({
+            where: { timeEntryId: { [Op.in]: entryIds }, action: { [Op.in]: ["APPROVED", "REJECTED"] } },
+            attributes: ["id"],
+            limit: 1,
+          });
+          previouslyResubmitted = priorActionHistory.length > 0;
+        }
+      }
 
       return {
         id: ts.id,
@@ -695,7 +717,7 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
         total_minutes: totalMinutes,
         total_billable_minutes: billableMinutes,
         total_non_billable_minutes: nonBillableMinutes,
-        submission_status: ts.status,
+        submission_status: previouslyResubmitted ? "RESUBMITTED" : ts.status,
         missing_hours: parseFloat(missingHours.toFixed(2)),
         User: ts.User,
       };

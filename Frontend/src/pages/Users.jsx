@@ -5,7 +5,6 @@ import {
   updateUser,
   deleteUser,
   toggleUserStatus,
-  getNextEmployeeId,
 } from "../services/api";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -18,7 +17,6 @@ export const Users = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [nextEmployeeId, setNextEmployeeId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [nameError, setNameError] = useState("");
   const [formData, setFormData] = useState({
@@ -84,7 +82,6 @@ export const Users = () => {
       setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", employeeId: "" });
       setShowForm(false);
       setEditingId(null);
-      setNextEmployeeId(null);
       setShowPassword(false);
       await loadData();
     } catch (error) {
@@ -100,7 +97,6 @@ export const Users = () => {
       role: user.role,
       employeeId: user.employeeId || "",
     });
-    setNextEmployeeId(null);
     setEditingId(user.id);
     setShowPassword(false);
     setShowForm(true);
@@ -110,14 +106,6 @@ export const Users = () => {
     setEditingId(null);
     setShowPassword(false);
     setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", employeeId: "" });
-    try {
-      const res = await getNextEmployeeId();
-      const empId = res?.data?.employeeId;
-      setNextEmployeeId(empId);
-      setFormData((prev) => ({ ...prev, employeeId: empId }));
-    } catch {
-      setNextEmployeeId(null);
-    }
     setShowForm(true);
   };
 
@@ -181,21 +169,16 @@ export const Users = () => {
                  <option value="MANAGER" className="bg-white">Manager</option>
                  <option value="ADMIN" className="bg-white">Admin</option>
                </select>
-               <div className="relative group">
-                   <input
-                     name="employeeId"
-                     value={editingId ? `Employee ID: ${formData.employeeId}` : formData.employeeId ? `Employee ID: ${formData.employeeId}` : "Generating..."}
-                     readOnly
-                     title="Employee ID is generated automatically."
-                     className="h-10 w-full rounded-lg border border-[#E2E8F0] bg-gray-50 px-3 py-2 text-sm text-[#1E293B] cursor-not-allowed"
-                   />
-                   <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                     Employee ID is generated automatically.
-                   </div>
-                 </div>
+               <Input
+                 name="employeeId"
+                 value={formData.employeeId}
+                 onChange={handleInputChange}
+                 placeholder="Enter Employee ID"
+                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
+               />
               <div className="flex gap-2">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setNextEmployeeId(null); setShowPassword(false); }}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setShowPassword(false); }}>Cancel</Button>
               </div>
             </form>
           </CardContent>

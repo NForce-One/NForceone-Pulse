@@ -48,9 +48,19 @@ const getEntriesWithUser = async (whereClause = {}) => {
       }
     });
 
+    const approvalHistoryAll = await ApprovalHistory.findAll({
+      where: {
+        timeEntryId: { [Op.in]: entryIds },
+        action: { [Op.in]: ["APPROVED", "REJECTED"] },
+      },
+      attributes: ["timeEntryId"],
+    });
+    const previouslyApprovedOrRejectedIds = new Set(approvalHistoryAll.map((h) => h.timeEntryId));
+
     entries.forEach((entry) => {
       const approval = approvalMap[entry.id];
       entry.dataValues.managerComment = approval?.comment || null;
+      entry.dataValues.previouslyApproved = entry.status === "SUBMITTED" && previouslyApprovedOrRejectedIds.has(entry.id);
     });
   }
 
@@ -80,8 +90,15 @@ export const getEntriesByManager = async (managerId) => {
 };
 
 // ================= GET SUBMITTED ENTRIES FOR MANAGER APPROVAL =================
+// A DRAFT entry already carries the managerId the employee picked (needed so
+// a later Submit knows who to route to), but the Approvals page must only
+// ever show entries the employee actually submitted — never a draft in
+// progress — so DRAFT is excluded here regardless of managerId.
 export const getSubmittedToManager = async (managerId) => {
-  return await getEntriesWithUser({ managerId });
+  return await getEntriesWithUser({
+    managerId,
+    status: { [Op.ne]: "DRAFT" },
+  });
 };
 
 // ================= GET MANAGER ENTRIES FOR ADMIN APPROVAL =================
@@ -94,6 +111,7 @@ export const getManagerEntriesForAdmin = async () => {
   if (managerIds.length === 0) return [];
   return await getEntriesWithUser({
     userId: { [Op.in]: managerIds },
+    status: { [Op.ne]: "DRAFT" },
   });
 };
 

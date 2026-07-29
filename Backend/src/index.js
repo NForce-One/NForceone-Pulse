@@ -326,6 +326,16 @@ const startServer = async () => {
     // The notification model is already correctly defined
     await sequelize.sync();
 
+    // Safely add RESUBMITTED to notifications type ENUM if missing
+    try {
+      await sequelize.query(
+        "ALTER TABLE notifications MODIFY COLUMN `type` ENUM('MISSING_ENTRY','PENDING_SUBMISSION','SUBMITTED','RESUBMITTED','APPROVED','REJECTED','MANAGER_REMINDER') NOT NULL;"
+      );
+      console.log("✅ Ensured RESUBMITTED is in notifications type ENUM");
+    } catch (enumErr) {
+      console.log("⚠️ Could not update notifications ENUM:", enumErr.message);
+    }
+
     // Safely add employeeId column to users table if missing
     try {
       const queryInterface = sequelize.getQueryInterface();

@@ -6,6 +6,7 @@ import User from "../models/user.model.js";
 import Timesheet from "../models/timesheet.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
+import Notification from "../models/notification.model.js";
 import * as notificationService from "./notification.service.js";
 
 const toLocalDate = (date) => {
@@ -194,8 +195,6 @@ export const saveDraftTimesheet = async (userId, data) => {
     }
   }
 
-  let totalHours = 0;
-
   for (const entry of dailyEntries) {
     const { entryDate, hours, description, comment } = entry;
 
@@ -216,7 +215,6 @@ export const saveDraftTimesheet = async (userId, data) => {
     }
 
     const h = Math.max(0, parseFloat(hours) || 0);
-    totalHours += h;
 
     const findWhere = { userId, entryDate };
     if (pId !== null) {
@@ -269,11 +267,29 @@ export const saveDraftTimesheet = async (userId, data) => {
     }
   }
 
-  if (timesheet.status === "SUBMITTED" || timesheet.status === "REJECTED") {
-    await timesheet.update({ totalHours, status: "DRAFT" });
+  // Recalculate totalHours from ALL entries in the week (not just the saved
+  // project) and derive the aggregate timesheet status from every project's
+  // entries so that saving one project never clobbers a sibling's status.
+  const allWeekEntries = await TimeEntry.findAll({
+    where: { userId, entryDate: { [Op.between]: [ws, we] } },
+  });
+  const weekTotalHours = allWeekEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+
+  const allStatuses = [...new Set(allWeekEntries.map((e) => e.status))];
+  let aggregateStatus;
+  if (allStatuses.length === 0 || allStatuses.every((s) => s === "DRAFT")) {
+    aggregateStatus = "DRAFT";
+  } else if (allStatuses.every((s) => s === "APPROVED")) {
+    aggregateStatus = "APPROVED";
+  } else if (allStatuses.some((s) => s === "SUBMITTED")) {
+    aggregateStatus = "SUBMITTED";
+  } else if (allStatuses.some((s) => s === "REJECTED")) {
+    aggregateStatus = "REJECTED";
   } else {
-    await timesheet.update({ totalHours });
+    aggregateStatus = timesheet.status || "DRAFT";
   }
+
+  await timesheet.update({ totalHours: weekTotalHours, status: aggregateStatus });
 
   const updatedEntries = await TimeEntry.findAll({
     where: {
@@ -304,12 +320,12 @@ export const saveDraftTimesheet = async (userId, data) => {
       client: e.client,
       project: e.project,
     })),
-    totalHours,
+    totalHours: weekTotalHours,
   };
 };
 
 export const submitTimesheet = async (userId, data) => {
-  const { weekStartDate } = data;
+  const { weekStartDate, projectId } = data;
 
   if (!weekStartDate) {
     throw new Error("weekStartDate is required");
@@ -326,42 +342,51 @@ export const submitTimesheet = async (userId, data) => {
     throw new Error("No timesheet found for this week. Please save a draft first.");
   }
 
-  if (timesheet.status === "SUBMITTED") {
-    throw new Error("Timesheet is already submitted");
-  }
+  // Submitting is scoped to ONE project's entries — every project has its
+  // own independent Draft → Submitted → Rejected/Approved lifecycle, so this
+  // must never touch another project's entries or their status.
+  const pId = projectId !== undefined && projectId !== null && projectId !== "null"
+    ? parseInt(projectId)
+    : null;
+  const projectWhere = pId !== null ? pId : { [Op.is]: null };
 
-  if (timesheet.status === "APPROVED") {
-    throw new Error("Cannot submit an approved timesheet");
-  }
-
-  const entries = await TimeEntry.findAll({
+  const projectEntries = await TimeEntry.findAll({
     where: {
       userId,
       entryDate: { [Op.between]: [ws, we] },
+      projectId: projectWhere,
     },
   });
 
-  const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+  const projectTotalHours = projectEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
 
-  if (totalHours <= 0) {
-    throw new Error("Cannot submit an empty timesheet. Add at least some hours.");
+  if (projectTotalHours <= 0) {
+    throw new Error("Cannot submit an empty project. Add at least some hours.");
   }
 
-  if (!entries.some((e) => e.clientId && e.projectId)) {
+  if (!projectEntries.some((e) => e.clientId)) {
     throw new Error("Please assign a client and project before submitting.");
   }
 
+  if (projectEntries.every((e) => e.status === "APPROVED")) {
+    throw new Error("This project has already been approved.");
+  }
+
+  if (projectEntries.every((e) => e.status === "SUBMITTED")) {
+    throw new Error("This project has already been submitted.");
+  }
+
+  let weekTotalHours = 0;
+  let aggregateStatus;
   const t = await sequelize.transaction();
 
   try {
-    await timesheet.update({ totalHours, status: "SUBMITTED" }, { transaction: t });
-
     const updatePromises = [];
 
-    for (const entry of entries) {
+    for (const entry of projectEntries) {
       if (entry.status !== "APPROVED") {
         const dailyEntry = (data.dailyEntries || []).find(
-          (de) => de.entryDate === entry.entryDate && Number(de.projectId) === Number(entry.projectId)
+          (de) => de.entryDate === entry.entryDate && Number(de.projectId || 0) === Number(entry.projectId || 0)
         );
         const updateFields = { status: "SUBMITTED" };
         if (dailyEntry?.managerId) {
@@ -379,6 +404,32 @@ export const submitTimesheet = async (userId, data) => {
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
     }
+
+    // The parent Timesheet's totalHours/status is a week-level aggregate
+    // (used by manager/admin dashboards, the Team Timesheets list, and
+    // reminder cron jobs) — derive the aggregate status from ALL entries'
+    // individual statuses so that submitting one project never overwrites
+    // a sibling project's Approved/Rejected state.
+    const allWeekEntries = await TimeEntry.findAll({
+      where: { userId, entryDate: { [Op.between]: [ws, we] } },
+      transaction: t,
+    });
+    weekTotalHours = allWeekEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+
+    const allStatuses = [...new Set(allWeekEntries.map((e) => e.status))];
+    if (allStatuses.length === 0 || allStatuses.every((s) => s === "DRAFT")) {
+      aggregateStatus = "DRAFT";
+    } else if (allStatuses.every((s) => s === "APPROVED")) {
+      aggregateStatus = "APPROVED";
+    } else if (allStatuses.some((s) => s === "SUBMITTED")) {
+      aggregateStatus = "SUBMITTED";
+    } else if (allStatuses.some((s) => s === "REJECTED")) {
+      aggregateStatus = "REJECTED";
+    } else {
+      aggregateStatus = "SUBMITTED";
+    }
+
+    await timesheet.update({ totalHours: weekTotalHours, status: aggregateStatus }, { transaction: t });
 
     await t.commit();
   } catch (error) {
@@ -400,7 +451,7 @@ export const submitTimesheet = async (userId, data) => {
   }
 
   try {
-    const managerEntry = entries.find((e) => e.managerId);
+    const managerEntry = projectEntries.find((e) => e.managerId);
     const managerId = managerEntry?.managerId || null;
     const employeeUser = await User.findByPk(userId, { attributes: ["id", "name", "managerId"] });
     const record = {
@@ -411,16 +462,31 @@ export const submitTimesheet = async (userId, data) => {
       weekEndDate: we,
       User: employeeUser ? { name: employeeUser.name, managerId: employeeUser.managerId } : null,
     };
-    await notificationService.notifyTimesheetSubmitted(record);
+
+    // Check if this is a re-submission (any project entry was previously rejected)
+    const projectEntryIds = projectEntries.map((e) => e.id);
+    const priorRejection = projectEntryIds.length > 0
+      ? await ApprovalHistory.findOne({
+          where: { timeEntryId: { [Op.in]: projectEntryIds }, action: "REJECTED" },
+          attributes: ["id"],
+          limit: 1,
+        })
+      : null;
+
+    if (priorRejection) {
+      await notificationService.notifyTimesheetResubmitted(record);
+    } else {
+      await notificationService.notifyTimesheetSubmitted(record);
+    }
   } catch (e) {
     console.error("Failed to send submission notifications (non-blocking):", e.message);
   }
 
-  return { timesheet: { id: timesheet.id, status: timesheet.status, totalHours }, totalHours };
+  return { timesheet: { id: timesheet.id, status: aggregateStatus, totalHours: weekTotalHours }, totalHours: weekTotalHours };
 };
 
 export const updateTimesheet = async (userId, data) => {
-  const { weekStartDate } = data;
+  const { weekStartDate, projectId } = data;
 
   if (!weekStartDate) {
     throw new Error("weekStartDate is required");
@@ -436,26 +502,51 @@ export const updateTimesheet = async (userId, data) => {
     throw new Error("No timesheet found for this week.");
   }
 
-  if (timesheet.status !== "SUBMITTED" && timesheet.status !== "REJECTED") {
-    throw new Error("Only submitted or rejected timesheets can be updated via this endpoint.");
+  // Update (revert-to-draft) is scoped to ONE project — every project has
+  // its own independent lifecycle, so this must never touch another
+  // project's entries or status.
+  const hasProjectScope = projectId !== undefined && projectId !== null && projectId !== "null";
+  const pId = hasProjectScope ? parseInt(projectId) : null;
+  const projectWhere = pId !== null ? pId : { [Op.is]: null };
+
+  const scopeWhere = hasProjectScope
+    ? { userId, entryDate: { [Op.between]: [ws, timesheet.weekEndDate] }, projectId: projectWhere }
+    : { userId, entryDate: { [Op.between]: [ws, timesheet.weekEndDate] } };
+
+  const scopedEntries = await TimeEntry.findAll({ where: scopeWhere });
+  const revertableEntries = scopedEntries.filter(
+    (e) => e.status === "SUBMITTED" || e.status === "REJECTED" || e.status === "APPROVED"
+  );
+
+  if (revertableEntries.length === 0) {
+    throw new Error("Nothing to update: this project has no submitted or rejected entries.");
   }
 
-  await timesheet.update({ status: "DRAFT" });
+  for (const entry of revertableEntries) {
+    await entry.update({ status: "DRAFT" });
+  }
 
-  const entries = await TimeEntry.findAll({
-    where: {
-      userId,
-      entryDate: { [Op.between]: [ws, timesheet.weekEndDate] },
-    },
+  // Reconcile the week-level aggregate from everything else in the week —
+  // another project may still be legitimately Submitted or Approved, but
+  // never lock the timesheet as APPROVED when entries were just reverted
+  // to DRAFT — that would block the employee from editing and resubmitting.
+  const allEntries = await TimeEntry.findAll({
+    where: { userId, entryDate: { [Op.between]: [ws, timesheet.weekEndDate] } },
   });
-
-  for (const entry of entries) {
-    if (entry.status === "SUBMITTED" || entry.status === "REJECTED") {
-      await entry.update({ status: "DRAFT" });
-    }
+  let newStatus;
+  const hasDraft = allEntries.some((e) => e.status === "DRAFT");
+  const hasSubmitted = allEntries.some((e) => e.status === "SUBMITTED");
+  const hasApproved = allEntries.some((e) => e.status === "APPROVED");
+  if (hasSubmitted) {
+    newStatus = "SUBMITTED";
+  } else if (hasApproved && !hasDraft) {
+    newStatus = "APPROVED";
+  } else {
+    newStatus = "DRAFT";
   }
+  await timesheet.update({ status: newStatus });
 
-  return { timesheet: { id: timesheet.id, status: "DRAFT" }, message: "Timesheet reverted to draft." };
+  return { timesheet: { id: timesheet.id, status: newStatus }, message: "Project reverted to draft." };
 };
 
 // A timesheet week can hold several projects, each routed to its own manager.
@@ -522,7 +613,7 @@ export const getManagerAction = async (timesheetId) => {
   return actions;
 };
 
-export const cancelTimesheet = async (userId, weekStartDate) => {
+export const cancelTimesheet = async (userId, weekStartDate, projectId) => {
   const ws = weekStartDate;
   const we = getWeekEnd(ws);
 
@@ -542,34 +633,89 @@ export const cancelTimesheet = async (userId, weekStartDate) => {
     throw new Error("Cannot cancel an approved timesheet");
   }
 
+  const hasProjectScope = projectId !== undefined && projectId !== null && projectId !== "null";
+  const pId = hasProjectScope ? parseInt(projectId) : null;
+  const projectWhere = pId !== null ? pId : { [Op.is]: null };
+
   if (timesheet.status === "SUBMITTED") {
-    const approvedCount = await TimeEntry.count({
-      where: {
-        userId,
-        entryDate: { [Op.between]: [ws, we] },
-        status: "APPROVED",
-      },
-    });
-    if (approvedCount > 0) {
-      throw new Error("Cannot cancel: some entries for this week have already been approved.");
+    // Cancel is scoped to ONE project — every project has its own
+    // independent lifecycle, so cancelling one must never remove or affect
+    // another project's entries or status.
+    const scopeWhere = hasProjectScope
+      ? { userId, entryDate: { [Op.between]: [ws, we] }, projectId: projectWhere }
+      : { userId, entryDate: { [Op.between]: [ws, we] } };
+
+    const scopedEntries = await TimeEntry.findAll({ where: scopeWhere });
+    // Manager-approved entries are never touched by Cancel — only the
+    // still-pending (non-approved) entries for this project get removed.
+    const cancelableEntries = scopedEntries.filter((e) => e.status !== "APPROVED");
+
+    if (cancelableEntries.length === 0) {
+      throw new Error("Nothing to cancel: this project has already been approved.");
     }
 
-    await TimeEntry.destroy({
-      where: {
-        userId,
-        entryDate: { [Op.between]: [ws, we] },
-      },
+    const cancelableIds = cancelableEntries.map((e) => e.id);
+
+    await TimeEntry.destroy({ where: { id: { [Op.in]: cancelableIds } } });
+
+    // Remove ApprovalHistory tied to the entries we just deleted so it
+    // doesn't dangle-reference removed TimeEntry rows.
+    await ApprovalHistory.destroy({
+      where: { timeEntryId: { [Op.in]: cancelableIds } },
     });
 
-    // Fully remove the timesheet record itself (not just its entries) so a
-    // cancelled submission leaves no trace in Reports, Approvals, Team
-    // Timesheets, or the Dashboard — it's as if the week was never touched.
-    await timesheet.destroy();
+    // Recompute the week-level aggregate from whatever's left across ALL
+    // projects — another project may still be legitimately Submitted or
+    // Approved even though this one was just cancelled.
+    const remainingEntries = await TimeEntry.findAll({
+      where: { userId, entryDate: { [Op.between]: [ws, we] } },
+    });
+
+    if (remainingEntries.length === 0) {
+      // Nothing left anywhere in the week — fully remove the timesheet and
+      // its submission trail so it leaves no trace in Reports, Approvals,
+      // Team Timesheets, the Dashboard, or anyone's notifications.
+      await ApprovalHistory.destroy({ where: { timesheetId: timesheet.id } });
+      await Notification.destroy({ where: { type: "SUBMITTED", relatedId: timesheet.id } });
+      await timesheet.destroy();
+
+      return {
+        timesheet: null,
+        entries: [],
+        totalHours: 0,
+      };
+    }
+
+    const remainingTotal = remainingEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+    let newStatus;
+    if (remainingEntries.some((e) => e.status === "SUBMITTED")) {
+      newStatus = "SUBMITTED";
+    } else if (remainingEntries.some((e) => e.status === "APPROVED")) {
+      newStatus = "APPROVED";
+    } else {
+      newStatus = "DRAFT";
+    }
+
+    // Only clear the week's submission trail once nothing is pending or
+    // approved anywhere else — another project's own submission may still
+    // be legitimately in flight and must keep its history intact.
+    if (newStatus === "DRAFT") {
+      await ApprovalHistory.destroy({ where: { timesheetId: timesheet.id } });
+      await Notification.destroy({ where: { type: "SUBMITTED", relatedId: timesheet.id } });
+    }
+
+    await timesheet.update({ totalHours: remainingTotal, status: newStatus });
 
     return {
-      timesheet: null,
+      timesheet: {
+        id: timesheet.id,
+        weekStartDate: timesheet.weekStartDate,
+        weekEndDate: timesheet.weekEndDate,
+        status: newStatus,
+        totalHours: remainingTotal,
+      },
       entries: [],
-      totalHours: 0,
+      totalHours: remainingTotal,
     };
   }
 

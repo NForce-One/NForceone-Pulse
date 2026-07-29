@@ -1,5 +1,6 @@
 import * as timeEntryService from "../services/timeEntry.service.js";
 import * as reportService from "../services/report.service.js";
+import * as notificationService from "../services/notification.service.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
 import User from "../models/user.model.js";
 import { sendEmail } from "../services/email.service.js";
@@ -311,11 +312,16 @@ export const approveTimeEntry = async (req, res) => {
       const weekEndStr = toDateOnlyString(weekEnd);
       console.log("[TIME-ENTRY-APPROVE] Week range:", weekStartStr, "to", weekEndStr);
 
+      const approveWhere = {
+        userId: entry.userId,
+        entryDate: { [Op.gte]: weekStartStr, [Op.lte]: weekEndStr },
+        status: { [Op.ne]: "DRAFT" },
+      };
+      if (user.role !== "ADMIN") {
+        approveWhere.managerId = user.id;
+      }
       const allWeekEntries = await TimeEntryModel.findAll({
-        where: {
-          userId: entry.userId,
-          entryDate: { [Op.gte]: weekStartStr, [Op.lte]: weekEndStr },
-        },
+        where: approveWhere,
         attributes: ["id", "project", "entryDate", "hours", "status"],
       });
       console.log("[TIME-ENTRY-APPROVE] All entries in week:", allWeekEntries.length);
@@ -340,48 +346,68 @@ export const approveTimeEntry = async (req, res) => {
         );
         console.log("[TIME-ENTRY-APPROVE] Timesheet update affected rows:", updatedCount);
 
+        // Wrap email + notification block so they only run once
         if (updatedCount > 0) {
-          const timesheet = await Timesheet.findOne({
-            where: { userId: entry.userId, weekStartDate: weekStartStr },
-            include: [{ model: User, attributes: ["id", "name", "email"] }],
-          });
-          console.log("[TIME-ENTRY-APPROVE] Timesheet found:", !!timesheet);
-          console.log("[TIME-ENTRY-APPROVE] Timesheet user:", JSON.stringify({ id: timesheet?.User?.id, name: timesheet?.User?.name, email: timesheet?.User?.email }));
-          console.log("[TIME-ENTRY-APPROVE] Timesheet status updated to APPROVED");
+          try {
+            const emailTs = await Timesheet.findOne({
+              where: { userId: entry.userId, weekStartDate: weekStartStr },
+              include: [{ model: User, attributes: ["id", "name", "email"] }],
+            });
+            if (emailTs) {
+              const managerName = (await User.findByPk(user.id, { attributes: ["name"] }))?.name || "Manager";
+              const approvedEntries = allWeekEntries.map(e => ({
+                project: e.project,
+                entryDate: String(e.entryDate || ""),
+                hours: e.hours,
+              }));
+              const totalHours = allWeekEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+              const html = approvedTimesheetTemplate({
+                employeeName: emailTs.User?.name || "Employee",
+                weekStart: weekStartStr,
+                weekEnd: weekEndStr,
+                totalHours,
+                managerName,
+                comment: comment || null,
+                approvalDate: toDateOnlyString(new Date()),
+                entries: approvedEntries,
+              });
+              const recipientEmail = emailTs.User?.email;
+              console.log("[TIME-ENTRY-APPROVE] Calling sendEmail to", recipientEmail);
+              try {
+                const emailResult = await sendEmail({
+                  to: recipientEmail,
+                  subject: "Your Weekly Timesheet Has Been APPROVED",
+                  html,
+                });
+                console.log("[TIME-ENTRY-APPROVE] Weekly email sent. Response:", JSON.stringify(emailResult));
+              } catch (sendErr) {
+                console.error("[TIME-ENTRY-APPROVE] Email send failed (notification will still be created):", sendErr.message);
+              }
+            }
+          } catch (emailBlockErr) {
+            console.error("[TIME-ENTRY-APPROVE] Email block error (notification will still be created):", emailBlockErr.message);
+          }
 
-          const manager = await User.findByPk(user.id, { attributes: ["name"] });
-          const approvedEntries = allWeekEntries.map(e => ({
-            project: e.project,
-            entryDate: String(e.entryDate || ""),
-            hours: e.hours,
-          }));
-          const totalHours = allWeekEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
-
-          const html = approvedTimesheetTemplate({
-            employeeName: timesheet.User?.name || "Employee",
-            weekStart: weekStartStr,
-            weekEnd: weekEndStr,
-            totalHours: totalHours,
-            managerName: manager?.name || "Manager",
-            comment: comment || null,
-            approvalDate: toDateOnlyString(new Date()),
-            entries: approvedEntries,
-          });
-          console.log("[TIME-ENTRY-APPROVE] Weekly template generated, HTML length:", html.length);
-
-          const recipientEmail = timesheet.User?.email;
-          console.log("[TIME-ENTRY-APPROVE] Recipient email:", recipientEmail);
-          console.log("[TIME-ENTRY-APPROVE] Subject: Your Weekly Timesheet Has Been APPROVED");
-          console.log("[TIME-ENTRY-APPROVE] Calling sendEmail...");
-
-          const emailResult = await sendEmail({
-            to: recipientEmail,
-            subject: "Your Weekly Timesheet Has Been APPROVED",
-            html,
-          });
-          console.log("[TIME-ENTRY-APPROVE] Weekly email sent. Resend response:", JSON.stringify(emailResult));
+          // 🔔 IN-APP NOTIFICATION: Only when we actually transitioned the timesheet
+          try {
+            const notifTimesheet = await Timesheet.findOne({
+              where: { userId: entry.userId, weekStartDate: weekStartStr },
+            });
+            if (notifTimesheet) {
+              await notificationService.notifyTimesheetApproved({
+                ...notifTimesheet.toJSON(),
+                User: notifTimesheet.User || (await User.findByPk(notifTimesheet.userId, { attributes: ["id", "name", "email"] })),
+                actorId: req.user.id,
+              });
+              console.log("[TIME-ENTRY-APPROVE] In-app notification created for employee");
+            } else {
+              console.log("[TIME-ENTRY-APPROVE] notifTimesheet was null, skipping notification");
+            }
+          } catch (notifError) {
+            console.error("[TIME-ENTRY-APPROVE] Failed to create in-app notification:", notifError.message);
+          }
         } else {
-          console.log("[TIME-ENTRY-APPROVE] Timesheet already approved by another request, skipping email");
+          console.log("[TIME-ENTRY-APPROVE] Timesheet already approved by another request, skipping email and notification");
         }
       } else {
         console.log("[TIME-ENTRY-APPROVE] Not all entries approved yet, skipping weekly email");
@@ -496,11 +522,16 @@ export const rejectTimeEntry = async (req, res) => {
       const weekEndStr = toDateOnlyString(weekEnd);
       console.log("[TIME-ENTRY-REJECT] Week range:", weekStartStr, "to", weekEndStr);
 
+      const rejectWhere = {
+        userId: entry.userId,
+        entryDate: { [Op.gte]: weekStartStr, [Op.lte]: weekEndStr },
+        status: { [Op.ne]: "DRAFT" },
+      };
+      if (user.role !== "ADMIN") {
+        rejectWhere.managerId = user.id;
+      }
       const allWeekEntries = await TimeEntryModel.findAll({
-        where: {
-          userId: entry.userId,
-          entryDate: { [Op.gte]: weekStartStr, [Op.lte]: weekEndStr },
-        },
+        where: rejectWhere,
         attributes: ["id", "project", "entryDate", "hours", "status"],
       });
       console.log("[TIME-ENTRY-REJECT] All entries in week:", allWeekEntries.length);
@@ -525,48 +556,68 @@ export const rejectTimeEntry = async (req, res) => {
         );
         console.log("[TIME-ENTRY-REJECT] Timesheet update affected rows:", updatedCount);
 
+        // Wrap email + notification block so they only run once
         if (updatedCount > 0) {
-          const timesheet = await Timesheet.findOne({
-            where: { userId: entry.userId, weekStartDate: weekStartStr },
-            include: [{ model: User, attributes: ["id", "name", "email"] }],
-          });
-          console.log("[TIME-ENTRY-REJECT] Timesheet found:", !!timesheet);
-          console.log("[TIME-ENTRY-REJECT] Timesheet user:", JSON.stringify({ id: timesheet?.User?.id, name: timesheet?.User?.name, email: timesheet?.User?.email }));
-          console.log("[TIME-ENTRY-REJECT] Timesheet status updated to REJECTED");
+          try {
+            const emailTs = await Timesheet.findOne({
+              where: { userId: entry.userId, weekStartDate: weekStartStr },
+              include: [{ model: User, attributes: ["id", "name", "email"] }],
+            });
+            if (emailTs) {
+              const managerName = (await User.findByPk(user.id, { attributes: ["name"] }))?.name || "Manager";
+              const rejectedEntries = allWeekEntries.map(e => ({
+                project: e.project,
+                entryDate: String(e.entryDate || ""),
+                hours: e.hours,
+              }));
+              const totalHours = allWeekEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+              const html = rejectedTimesheetTemplate({
+                employeeName: emailTs.User?.name || "Employee",
+                weekStart: weekStartStr,
+                weekEnd: weekEndStr,
+                totalHours,
+                managerName,
+                comment: comment || null,
+                rejectionDate: toDateOnlyString(new Date()),
+                entries: rejectedEntries,
+              });
+              const recipientEmail = emailTs.User?.email;
+              console.log("[TIME-ENTRY-REJECT] Calling sendEmail to", recipientEmail);
+              try {
+                const emailResult = await sendEmail({
+                  to: recipientEmail,
+                  subject: "Your Weekly Timesheet Has Been REJECTED",
+                  html,
+                });
+                console.log("[TIME-ENTRY-REJECT] Weekly email sent. Response:", JSON.stringify(emailResult));
+              } catch (sendErr) {
+                console.error("[TIME-ENTRY-REJECT] Email send failed (notification will still be created):", sendErr.message);
+              }
+            }
+          } catch (emailBlockErr) {
+            console.error("[TIME-ENTRY-REJECT] Email block error (notification will still be created):", emailBlockErr.message);
+          }
 
-          const manager = await User.findByPk(user.id, { attributes: ["name"] });
-          const rejectedEntries = allWeekEntries.map(e => ({
-            project: e.project,
-            entryDate: String(e.entryDate || ""),
-            hours: e.hours,
-          }));
-          const totalHours = allWeekEntries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
-
-          const html = rejectedTimesheetTemplate({
-            employeeName: timesheet.User?.name || "Employee",
-            weekStart: weekStartStr,
-            weekEnd: weekEndStr,
-            totalHours: totalHours,
-            managerName: manager?.name || "Manager",
-            comment: comment || null,
-            rejectionDate: toDateOnlyString(new Date()),
-            entries: rejectedEntries,
-          });
-          console.log("[TIME-ENTRY-REJECT] Weekly template generated, HTML length:", html.length);
-
-          const recipientEmail = timesheet.User?.email;
-          console.log("[TIME-ENTRY-REJECT] Recipient email:", recipientEmail);
-          console.log("[TIME-ENTRY-REJECT] Subject: Your Weekly Timesheet Has Been REJECTED");
-          console.log("[TIME-ENTRY-REJECT] Calling sendEmail...");
-
-          const emailResult = await sendEmail({
-            to: recipientEmail,
-            subject: "Your Weekly Timesheet Has Been REJECTED",
-            html,
-          });
-          console.log("[TIME-ENTRY-REJECT] Weekly email sent. Resend response:", JSON.stringify(emailResult));
+          // 🔔 IN-APP NOTIFICATION: Only when we actually transitioned the timesheet
+          try {
+            const notifTimesheet = await Timesheet.findOne({
+              where: { userId: entry.userId, weekStartDate: weekStartStr },
+            });
+            if (notifTimesheet) {
+              await notificationService.notifyTimesheetRejected({
+                ...notifTimesheet.toJSON(),
+                User: notifTimesheet.User || (await User.findByPk(notifTimesheet.userId, { attributes: ["id", "name", "email"] })),
+                actorId: req.user.id,
+              });
+              console.log("[TIME-ENTRY-REJECT] In-app notification created for employee");
+            } else {
+              console.log("[TIME-ENTRY-REJECT] notifTimesheet was null, skipping notification");
+            }
+          } catch (notifError) {
+            console.error("[TIME-ENTRY-REJECT] Failed to create in-app notification:", notifError.message);
+          }
         } else {
-          console.log("[TIME-ENTRY-REJECT] Timesheet already rejected by another request, skipping email");
+          console.log("[TIME-ENTRY-REJECT] Timesheet already rejected by another request, skipping email and notification");
         }
       } else {
         console.log("[TIME-ENTRY-REJECT] Not all entries rejected yet, skipping weekly email");
