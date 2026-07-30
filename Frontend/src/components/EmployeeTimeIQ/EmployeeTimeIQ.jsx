@@ -569,7 +569,7 @@ export const EmployeeTimeIQ = () => {
     const errors = {};
     if (!selectedClient) errors.client = "Please select a Client.";
     if (!selectedProject) errors.project = "Please select a Project.";
-    if (!selectedManager) errors.manager = user?.role === "MANAGER" ? "Please select an Admin." : "Please select a Manager.";
+    if (!selectedManager) errors.manager = "Please select a Manager.";
     if (Object.keys(errors).length > 0) {
       setFieldErrors((prev) => ({ ...prev, ...errors }));
       return;
@@ -1093,10 +1093,6 @@ export const EmployeeTimeIQ = () => {
                 // Each project has its own independent lifecycle — a row's own
                 // status (not the week's aggregate) decides whether it's editable.
                 const rowEditable = rowStatus === "DRAFT" || rowStatus === "REJECTED";
-                // Comments may only be added/edited while the row is still an editable
-                // draft. Once submitted/approved/rejected, "Update" (which reverts the
-                // timesheet to DRAFT) is required before the comment can change again.
-                const commentLocked = isReadOnly || row.isPending || rowApproved;
                 return (
                   <tr key={row.rowId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50 transition-colors">
                     <td className="px-3 py-2 align-top border-r border-[#E2E8F0]">
@@ -1214,23 +1210,11 @@ export const EmployeeTimeIQ = () => {
                     <td className="px-1.5 py-2 align-top text-center border-l border-[#E2E8F0] w-14">
                       <button
                         onClick={() => {
-                          if (commentLocked) return;
                           setCommentModalRowId(row.rowId);
                           setCommentValue(row.comment || "");
                         }}
-                        disabled={commentLocked}
-                        className={`p-1.5 rounded-lg mx-auto transition-colors ${
-                          commentLocked
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-[#F1F5F9]"
-                        }`}
-                        title={
-                          commentLocked
-                            ? "Comment locked. Click Update to edit."
-                            : row.comment
-                            ? "Edit comment"
-                            : "Add comment"
-                        }
+                        className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors mx-auto"
+                        title={row.comment ? "Edit comment" : "Add comment"}
                       >
                         {row.comment ? (
                           <FileText className="w-4 h-4 text-[#B33A2F]" />

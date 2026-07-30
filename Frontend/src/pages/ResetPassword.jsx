@@ -17,22 +17,11 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*]).{6,}$/;
-  const passwordRequirementsHint =
-    "At least 6 characters, with 1 uppercase letter and 1 special character (!@#$%^&*)";
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
     setMessage("");
-
-    if (!passwordRegex.test(password)) {
-      setError(
-        `Password does not meet requirements: ${passwordRequirementsHint}`
-      );
-      return;
-    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -139,9 +128,6 @@ const ResetPassword = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <p className="mt-1.5 text-xs text-[#94A3B8]">
-                {passwordRequirementsHint}
-              </p>
             </div>
 
             {/* Confirm Password */}
