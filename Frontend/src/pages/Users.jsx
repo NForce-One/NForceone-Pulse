@@ -19,6 +19,7 @@ export const Users = () => {
   const [editingId, setEditingId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [employeeIdError, setEmployeeIdError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -61,6 +62,13 @@ export const Users = () => {
       }
       return;
     }
+    if (name === "employeeId") {
+      const hasInvalid = /[^A-Za-z0-9]/.test(value);
+      const filtered = value.replace(/[^A-Za-z0-9]/g, "");
+      setFormData((prev) => ({ ...prev, employeeId: filtered }));
+      setEmployeeIdError(hasInvalid ? "Only letters and numbers are allowed (no spaces or symbols)." : "");
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -70,12 +78,12 @@ export const Users = () => {
       setNameError("Only alphabetic characters (A-Z) and spaces are allowed.");
       return;
     }
+    setEmployeeIdError("");
     try {
       const payload = { ...formData };
       if (editingId) {
-        // employeeId is server-generated and immutable; name is editable by the admin
-        const { employeeId, ...updatePayload } = payload;
-        await updateUser(editingId, updatePayload);
+        // employeeId is editable by the admin, same as at creation; name is editable too
+        await updateUser(editingId, payload);
       } else {
         await createUser(payload);
       }
@@ -85,7 +93,12 @@ export const Users = () => {
       setShowPassword(false);
       await loadData();
     } catch (error) {
-      alert(error.response?.data?.message || "Operation failed");
+      const message = error.response?.data?.message || "Operation failed";
+      if (message.toLowerCase().includes("employee id")) {
+        setEmployeeIdError(message);
+      } else {
+        alert(message);
+      }
     }
   };
 
@@ -99,6 +112,8 @@ export const Users = () => {
     });
     setEditingId(user.id);
     setShowPassword(false);
+    setNameError("");
+    setEmployeeIdError("");
     setShowForm(true);
   };
 
@@ -106,6 +121,8 @@ export const Users = () => {
     setEditingId(null);
     setShowPassword(false);
     setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", employeeId: "" });
+    setNameError("");
+    setEmployeeIdError("");
     setShowForm(true);
   };
 
@@ -169,13 +186,17 @@ export const Users = () => {
                  <option value="MANAGER" className="bg-white">Manager</option>
                  <option value="ADMIN" className="bg-white">Admin</option>
                </select>
-               <Input
-                 name="employeeId"
-                 value={formData.employeeId}
-                 onChange={handleInputChange}
-                 placeholder="Enter Employee ID"
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
-               />
+               <div>
+                 <Input
+                   name="employeeId"
+                   value={formData.employeeId}
+                   onChange={handleInputChange}
+                   placeholder="Employee ID (optional)"
+                   maxLength={50}
+                   className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200"
+                 />
+                 {employeeIdError && <p className="text-red-500 text-xs mt-1">{employeeIdError}</p>}
+               </div>
               <div className="flex gap-2">
                 <Button type="submit">{editingId ? "Update" : "Create"}</Button>
                 <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setShowPassword(false); }}>Cancel</Button>

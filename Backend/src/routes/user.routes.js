@@ -10,7 +10,6 @@ import {
   updateProfile,
   changePassword,
   getTeamMembers,
-  getNextEmployeeId,
 } from "../controllers/user.controller.js";
 
 import { protect, authorizeRoles } from "../middleware/auth.middleware.js";
@@ -30,12 +29,6 @@ router.get(
   getTeamMembers
 );
 
-router.get(
-  "/next-employee-id",
-  protect,
-  authorizeRoles("ADMIN"),
-  getNextEmployeeId
-);
 router.get("/", protect, authorizeRoles("ADMIN"), getAllUsers);
 router.get("/:id", protect, authorizeRoles("ADMIN"), getUser);
 router.post("/", protect, authorizeRoles("ADMIN"), createUser);

@@ -72,6 +72,15 @@ export const updateTimesheet = async (req, res) => {
   }
 };
 
+export const updateProjectDetails = async (req, res) => {
+  try {
+    const result = await employeeTimesheetService.updateProjectDetails(req.user.id, req.body);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const getManagerAction = async (req, res) => {
   try {
     const { timesheetId } = req.params;

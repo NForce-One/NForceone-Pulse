@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { format } from "date-fns";
 import { Button } from "../ui/Button";
 import {
@@ -6,6 +7,7 @@ import {
   saveETDraft,
   submitETTimesheet,
   updateETTimesheet,
+  updateETProjectDetails,
   cancelETTimesheet,
   deleteETProjectEntries,
   fetchETManagerAction,
@@ -28,6 +30,7 @@ import {
   FileText,
   AlertTriangle,
   ChevronDown,
+  Pencil,
 } from "lucide-react";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -108,7 +111,7 @@ const getSnackbarStyles = (type) => {
   return "bg-[#1E293B] text-white";
 };
 
-const deriveRowStatus = (row, managerActionsByRow, previouslyRejectedSet, previouslyApprovedSet) => {
+const deriveRowStatus = (row, managerActionsByRow) => {
   const rowAction = managerActionsByRow[row.rowId];
   if (rowAction) {
     if (rowAction.status === "APPROVED") return "APPROVED";
@@ -122,8 +125,13 @@ const deriveRowStatus = (row, managerActionsByRow, previouslyRejectedSet, previo
   if (anyRejected) return "REJECTED";
   const anySubmitted = statuses.some((s) => s === "SUBMITTED");
   if (anySubmitted) {
-    if (previouslyRejectedSet.has(row.rowId)) return "RE-SUBMITTED";
-    if (previouslyApprovedSet.has(row.rowId)) return "RE-SUBMITTED";
+    // Only a genuine resubmission to the SAME manager who last decided this
+    // row counts as Re-Submitted — if the employee reassigned it to a
+    // different manager (via the Project Details edit), that manager is
+    // seeing it for the first time, so it must read as Pending.
+    if (rowAction?.priorActorId && Number(rowAction.priorActorId) === Number(row.managerId)) {
+      return "RE-SUBMITTED";
+    }
     return "SUBMITTED";
   }
   return "DRAFT";
@@ -171,8 +179,6 @@ export const EmployeeTimeIQ = () => {
   const [managerActionModal, setManagerActionModal] = useState(null);
   const [managerCommentExpanded, setManagerCommentExpanded] = useState(false);
   useEffect(() => { setManagerCommentExpanded(false); }, [managerActionModal]);
-  const previouslyRejectedRef = useRef(new Set());
-  const previouslyApprovedRef = useRef(new Set());
   const pollingRef = useRef(null);
 
   const refreshManagerActions = useCallback(async () => {
@@ -181,20 +187,6 @@ export const EmployeeTimeIQ = () => {
       const res = await fetchETManagerAction(timesheetId);
       const actions = Array.isArray(res?.data) ? res.data : [];
       const actionsMap = Object.fromEntries(actions.map((a) => [a.rowId, a]));
-      previouslyRejectedRef.current.forEach((rowId) => {
-        if (actionsMap[rowId] && actionsMap[rowId].status !== "REJECTED") {
-          previouslyRejectedRef.current.delete(rowId);
-        }
-      });
-      previouslyApprovedRef.current.forEach((rowId) => {
-        if (actionsMap[rowId] && actionsMap[rowId].status !== "APPROVED") {
-          previouslyApprovedRef.current.delete(rowId);
-        }
-      });
-      actions.forEach((a) => {
-        if (a.status === "REJECTED") previouslyRejectedRef.current.add(a.rowId);
-        if (a.status === "APPROVED") previouslyApprovedRef.current.add(a.rowId);
-      });
       setManagerActionsByRow(actionsMap);
     } catch (e) {
       console.error("Failed to refresh manager actions:", e);
@@ -223,18 +215,37 @@ export const EmployeeTimeIQ = () => {
   const [commentValue, setCommentValue] = useState("");
 
   const [openActionsRowId, setOpenActionsRowId] = useState(null);
+  // Menu renders in a portal (see below) so it escapes the grid's
+  // overflow-x-auto clipping; position is computed from the trigger
+  // button's rect at open time.
+  const [actionsMenuPos, setActionsMenuPos] = useState(null);
   const actionsMenuRefs = useRef({});
+  const actionsPortalRefs = useRef({});
+  const gridScrollRef = useRef(null);
+
+  // Per-row inline edit for the PROJECT DETAILS cell (pencil toggle).
+  // Keyed by rowId so multiple rows can be edited independently; presence
+  // of a key means that row is currently in edit mode.
+  const [detailsEditByRow, setDetailsEditByRow] = useState({});
+
+  const closeActionsMenu = useCallback(() => {
+    setOpenActionsRowId(null);
+    setActionsMenuPos(null);
+  }, []);
 
   useEffect(() => {
     if (!openActionsRowId) return;
     const handleClickOutside = (e) => {
-      const el = actionsMenuRefs.current[openActionsRowId];
-      if (el && !el.contains(e.target)) {
-        setOpenActionsRowId(null);
+      const triggerEl = actionsMenuRefs.current[openActionsRowId];
+      const portalEl = actionsPortalRefs.current[openActionsRowId];
+      const insideTrigger = triggerEl && triggerEl.contains(e.target);
+      const insidePortal = portalEl && portalEl.contains(e.target);
+      if (!insideTrigger && !insidePortal) {
+        closeActionsMenu();
       }
     };
     const handleEscape = (e) => {
-      if (e.key === "Escape") setOpenActionsRowId(null);
+      if (e.key === "Escape") closeActionsMenu();
     };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
@@ -242,7 +253,7 @@ export const EmployeeTimeIQ = () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [openActionsRowId]);
+  }, [openActionsRowId, closeActionsMenu]);
 
   const filteredProjects = useMemo(() => {
     if (!selectedClient) return [];
@@ -460,37 +471,105 @@ export const EmployeeTimeIQ = () => {
     };
   }, []);
 
-  const handleRejectedClientChange = useCallback((rowId, newClientId) => {
-    const client = clients.find((c) => Number(c.id) === Number(newClientId));
-    setProjectRows((prev) =>
-      prev.map((r) =>
-        r.rowId === rowId
-          ? { ...r, clientId: newClientId ? Number(newClientId) : null, clientName: client?.name || "", projectId: null, projectName: "" }
-          : r
-      )
-    );
-  }, [clients]);
-
-  const handleRejectedProjectChange = useCallback((rowId, newProjectId) => {
-    const project = allProjects.find((p) => Number(p.id) === Number(newProjectId));
-    setProjectRows((prev) =>
-      prev.map((r) =>
-        r.rowId === rowId
-          ? { ...r, projectId: newProjectId ? Number(newProjectId) : null, projectName: project?.name || "" }
-          : r
-      )
-    );
-  }, [allProjects]);
-
-  const handleRejectedManagerChange = useCallback((rowId, newManagerId) => {
-    setProjectRows((prev) =>
-      prev.map((r) =>
-        r.rowId === rowId
-          ? { ...r, managerId: newManagerId ? Number(newManagerId) : null }
-          : r
-      )
-    );
+  const handleOpenDetailsEdit = useCallback((row) => {
+    setDetailsEditByRow((prev) => ({
+      ...prev,
+      [row.rowId]: {
+        clientId: row.clientId || "",
+        projectId: row.projectId || "",
+        managerId: row.managerId || "",
+      },
+    }));
   }, []);
+
+  const handleCancelDetailsEdit = useCallback((rowId) => {
+    setDetailsEditByRow((prev) => {
+      const next = { ...prev };
+      delete next[rowId];
+      return next;
+    });
+  }, []);
+
+  const handleDetailsDraftChange = useCallback((rowId, field, value) => {
+    setDetailsEditByRow((prev) => {
+      const draft = prev[rowId];
+      if (!draft) return prev;
+      const updated = { ...draft, [field]: value };
+      if (field === "clientId") updated.projectId = "";
+      return { ...prev, [rowId]: updated };
+    });
+  }, []);
+
+  // The pencil icon only ever renders on a Draft row (native Draft, or a
+  // Pending/Rejected/Approved row the employee reverted to Draft via Update),
+  // but reassignment itself must never touch hours, comments, or status —
+  // this only changes which project the existing entries belong to.
+  const handleSaveDetailsEdit = useCallback(async (row) => {
+    const draft = detailsEditByRow[row.rowId];
+    if (!draft) return;
+    if (!draft.clientId || !draft.projectId) {
+      showSnackbar("Please select a Client and Project.", "error");
+      return;
+    }
+    const newProjectId = Number(draft.projectId);
+    if (
+      newProjectId !== Number(row.projectId) &&
+      projectRows.some((r) => r.rowId !== row.rowId && Number(r.projectId) === newProjectId)
+    ) {
+      showSnackbar("This project is already added for this week", "error");
+      return;
+    }
+    const client = clients.find((c) => Number(c.id) === Number(draft.clientId));
+    const project = allProjects.find((p) => Number(p.id) === newProjectId);
+    const updatedRow = {
+      ...row,
+      rowId: `proj-${newProjectId}`,
+      clientId: Number(draft.clientId),
+      clientName: client?.name || "",
+      projectId: newProjectId,
+      projectName: project?.name || "",
+      managerId: draft.managerId ? Number(draft.managerId) : null,
+    };
+    setDetailsEditByRow((prev) => {
+      const next = { ...prev };
+      delete next[row.rowId];
+      return next;
+    });
+
+    if (!row.savedOnServer) {
+      // Nothing persisted yet for this row — just update local state, the
+      // same as adding the project with the corrected details from the start.
+      setProjectRows((prev) => prev.map((r) => (r.rowId === row.rowId ? updatedRow : r)));
+      return;
+    }
+    try {
+      const res = await updateETProjectDetails({
+        weekStartDate: currentWeekStart,
+        oldProjectId: row.projectId,
+        clientId: updatedRow.clientId,
+        projectId: updatedRow.projectId,
+        managerId: updatedRow.managerId,
+      });
+      if (res?.success) {
+        setProjectRows((prev) => prev.map((r) => (r.rowId === row.rowId ? updatedRow : r)));
+        if (row.rowId !== updatedRow.rowId) {
+          setManagerActionsByRow((prev) => {
+            if (!prev[row.rowId]) return prev;
+            const next = { ...prev };
+            next[updatedRow.rowId] = next[row.rowId];
+            delete next[row.rowId];
+            return next;
+          });
+        }
+        showSnackbar("Project details updated", "success");
+      } else {
+        showSnackbar(res?.message || "Failed to save project details", "error");
+      }
+    } catch (err) {
+      console.error("Failed to save project details:", err);
+      showSnackbar(err.response?.data?.message || err.message || "Failed to save project details", "error");
+    }
+  }, [detailsEditByRow, clients, allProjects, projectRows, currentWeekStart, showSnackbar]);
 
   const handleCellChange = useCallback((rowId, date, value) => {
     if (value !== "" && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) return;
@@ -540,7 +619,7 @@ export const EmployeeTimeIQ = () => {
       if (curRows.length === 0) return;
       const row = curRows.find((r) => r.rowId === rowId);
       if (!row || row.isPending) return;
-      const rStatus = deriveRowStatus(row, mabr, previouslyRejectedRef.current, previouslyApprovedRef.current);
+      const rStatus = deriveRowStatus(row, mabr);
       if (rStatus !== "DRAFT" && rStatus !== "REJECTED") return;
       console.log("[autoSave] timer fired for rowId:", rowId, "comment:", row.comment, "date:", new Date().toISOString());
       const data = {
@@ -701,7 +780,7 @@ export const EmployeeTimeIQ = () => {
     // Submitted/Re-Submitted/Approved.
     dailyEntries: projectRows.filter((r) => {
       if (r.isPending) return false;
-      const status = deriveRowStatus(r, managerActionsByRow, previouslyRejectedRef.current, previouslyApprovedRef.current);
+      const status = deriveRowStatus(r, managerActionsByRow);
       return status === "DRAFT" || status === "REJECTED";
     }).flatMap((row) =>
       weekDates.map((wd, idx) => {
@@ -860,12 +939,14 @@ export const EmployeeTimeIQ = () => {
               : r
           )
         );
-        previouslyRejectedRef.current.delete(row.rowId);
-        previouslyApprovedRef.current.delete(row.rowId);
+        // Clear the CURRENT decision optimistically but keep priorActorId —
+        // that's what tells a later resubmission apart as "same manager"
+        // (Re-Submitted) vs "newly assigned manager" (Pending) — the async
+        // refreshManagerActions() call below reconciles with the server.
         setManagerActionsByRow((prev) => {
-          const next = { ...prev };
-          delete next[row.rowId];
-          return next;
+          const existing = prev[row.rowId];
+          if (!existing) return prev;
+          return { ...prev, [row.rowId]: { ...existing, status: null } };
         });
         showSnackbar(`"${row.projectName}" reverted to draft. Edit and re-submit.`, "success");
         refreshManagerActions();
@@ -889,8 +970,6 @@ export const EmployeeTimeIQ = () => {
       const res = await cancelETTimesheet(currentWeekStart, row.projectId);
       if (res?.success) {
         setProjectRows((prev) => prev.filter((r) => r.rowId !== row.rowId));
-        previouslyRejectedRef.current.delete(row.rowId);
-        previouslyApprovedRef.current.delete(row.rowId);
         setManagerActionsByRow((prev) => {
           const next = { ...prev };
           delete next[row.rowId];
@@ -1049,30 +1128,34 @@ export const EmployeeTimeIQ = () => {
       </button>
 
       {/* ===== SECTION 3: Multi-Project Weekly Table ===== */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-x-auto">
-        <table className="w-full min-w-[900px]">
+      <div
+        ref={gridScrollRef}
+        onScroll={closeActionsMenu}
+        className="bg-white rounded-xl border border-[#E2E8F0] overflow-x-auto"
+      >
+        <table className="w-full min-w-[1002px]">
           <thead>
             <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-              <th className="px-3 py-2 text-left text-[10px] font-bold text-[#64748B] uppercase tracking-wider min-w-[150px]">
+              <th className="px-3 pt-2 pb-1 text-left text-[10px] font-bold text-[#64748B] uppercase tracking-wider w-[190px] min-w-[190px]">
                 Project Details
               </th>
               {weekDates.map((wd) => (
-                <th key={wd.date} className={`px-1.5 py-2 text-center border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/5" : ""}`}>
+                <th key={wd.date} className={`px-1 py-2 text-center border-l border-[#E2E8F0] w-[76px] min-w-[76px] ${wd.isToday ? "bg-[#B33A2F]/5" : ""}`}>
                   <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{wd.dayName}</p>
                   <p className={`text-xs font-bold ${wd.isToday ? "text-[#B33A2F]" : "text-[#1E293B]"}`}>{wd.dateNum}</p>
                 </th>
               ))}
-              <th className="px-2 py-2 text-center border-l border-[#E2E8F0] w-14">
+              <th className="px-1 py-2 text-center border-l border-[#E2E8F0] w-[62px] min-w-[62px]">
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">COMMENT</p>
               </th>
-              <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[75px]">
+              <th className="px-1 py-2 text-center border-l border-[#E2E8F0] w-[70px] min-w-[70px]">
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">WEEK</p>
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">TOTAL</p>
               </th>
-              <th className="px-2 py-2 text-center border-l border-[#E2E8F0] min-w-[90px]">
+              <th className="px-1 py-2 text-center border-l border-[#E2E8F0] w-[62px] min-w-[62px]">
                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">STATUS</p>
               </th>
-              <th className="px-2 py-2 text-center border-l border-[#E2E8F0] w-10"></th>
+              <th className="px-1 py-2 text-center border-l border-[#E2E8F0] w-[86px] min-w-[86px]"></th>
             </tr>
           </thead>
           <tbody>
@@ -1089,86 +1172,130 @@ export const EmployeeTimeIQ = () => {
                 );
                 const rowAction = managerActionsByRow[row.rowId];
                 const rowApproved = rowAction?.status === "APPROVED";
-                const rowStatus = deriveRowStatus(row, managerActionsByRow, previouslyRejectedRef.current, previouslyApprovedRef.current);
+                const rowStatus = deriveRowStatus(row, managerActionsByRow);
                 // Each project has its own independent lifecycle — a row's own
                 // status (not the week's aggregate) decides whether it's editable.
-                const rowEditable = rowStatus === "DRAFT" || rowStatus === "REJECTED";
+                // Rejected/Pending/Approved stay fully read-only (including the
+                // Project Details edit icon) until the employee explicitly clicks
+                // Update, which reverts the row to Draft (see handleUpdateRow) —
+                // only then can hours, comments, and project details be changed
+                // and re-submitted.
+                const rowEditable = rowStatus === "DRAFT";
                 return (
                   <tr key={row.rowId} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]/50 transition-colors">
-                    <td className="px-3 py-2 align-top border-r border-[#E2E8F0]">
-                      {rowStatus === "REJECTED" ? (
-                        <div className="flex flex-col gap-1.5 min-w-[150px]">
-                          <div>
-                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide">Client</p>
-                            <select
-                              value={row.clientId || ""}
-                              onChange={(e) => handleRejectedClientChange(row.rowId, e.target.value)}
-                              className="mt-0.5 h-7 w-full rounded border border-[#E2E8F0] bg-white px-1.5 py-0.5 text-[11px] text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
-                            >
-                              <option value="">Select Client</option>
-                              {clients.filter((c) => c.status === "ACTIVE").map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide">Project</p>
-                            <select
-                              value={row.projectId || ""}
-                              onChange={(e) => handleRejectedProjectChange(row.rowId, e.target.value)}
-                              disabled={!row.clientId}
-                              className="mt-0.5 h-7 w-full rounded border border-[#E2E8F0] bg-white px-1.5 py-0.5 text-[11px] text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <option value="">{!row.clientId ? "Select client first" : "Select Project"}</option>
-                              {allProjects.filter((p) => Number(p.clientId) === Number(row.clientId) && p.status === "ACTIVE").map((p) => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide">{user?.role === "MANAGER" ? "Admin" : "Manager"}</p>
-                            <select
-                              value={row.managerId || ""}
-                              onChange={(e) => handleRejectedManagerChange(row.rowId, e.target.value)}
-                              className="mt-0.5 h-7 w-full rounded border border-[#E2E8F0] bg-white px-1.5 py-0.5 text-[11px] text-[#1E293B] focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
-                            >
-                              <option value="">Select {user?.role === "MANAGER" ? "Admin" : "Manager"}</option>
-                              {allManagers.map((m) => (
-                                <option key={m.id} value={m.id}>{m.name}</option>
-                              ))}
-                            </select>
-                          </div>
+                    <td className="px-[10px] py-1.5 relative align-middle border-r border-[#E2E8F0] w-[190px] min-w-[190px]">
+                      {detailsEditByRow[row.rowId] ? (
+                        <div>
+                          <dl className="grid grid-cols-[auto_1fr] gap-x-1 gap-y-[2px] items-center pr-[28px]">
+                            <dt className="flex justify-between min-w-[48px] text-[11px] font-semibold text-[#8B8C92]">
+                              <span>Client</span><span>:</span>
+                            </dt>
+                            <dd className="m-0 min-w-0">
+                              <select
+                                value={detailsEditByRow[row.rowId].clientId}
+                                onChange={(e) => handleDetailsDraftChange(row.rowId, "clientId", e.target.value)}
+                                className="h-[24px] w-full min-w-[90px] rounded-[3px] border border-[#DDDEE2] bg-white px-[6px] text-[11.5px] font-semibold text-[#0A0A0B] truncate focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
+                              >
+                                <option value="">Select Client</option>
+                                {clients.filter((c) => c.status === "ACTIVE").map((c) => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                              </select>
+                            </dd>
+                            <dt className="flex justify-between min-w-[48px] text-[11px] font-semibold text-[#8B8C92]">
+                              <span>Project</span><span>:</span>
+                            </dt>
+                            <dd className="m-0 min-w-0">
+                              <select
+                                value={detailsEditByRow[row.rowId].projectId}
+                                onChange={(e) => handleDetailsDraftChange(row.rowId, "projectId", e.target.value)}
+                                disabled={!detailsEditByRow[row.rowId].clientId}
+                                className="h-[24px] w-full min-w-[90px] rounded-[3px] border border-[#DDDEE2] bg-white px-[6px] text-[11.5px] font-semibold text-[#0A0A0B] truncate focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <option value="">{!detailsEditByRow[row.rowId].clientId ? "Select client first" : "Select Project"}</option>
+                                {allProjects.filter((p) => Number(p.clientId) === Number(detailsEditByRow[row.rowId].clientId) && p.status === "ACTIVE").map((p) => (
+                                  <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                              </select>
+                            </dd>
+                            <dt className="flex justify-between min-w-[48px] text-[11px] font-semibold text-[#8B8C92]">
+                              <span>{user?.role === "MANAGER" ? "Admin" : "Manager"}</span><span>:</span>
+                            </dt>
+                            <dd className="m-0 min-w-0">
+                              <select
+                                value={detailsEditByRow[row.rowId].managerId}
+                                onChange={(e) => handleDetailsDraftChange(row.rowId, "managerId", e.target.value)}
+                                className="h-[24px] w-full min-w-[90px] rounded-[3px] border border-[#DDDEE2] bg-white px-[6px] text-[11.5px] font-semibold text-[#0A0A0B] truncate focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent"
+                              >
+                                <option value="">Select {user?.role === "MANAGER" ? "Admin" : "Manager"}</option>
+                                {allManagers.map((m) => (
+                                  <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                              </select>
+                            </dd>
+                            <dt aria-hidden="true"></dt>
+                            <dd className="m-0 min-w-0">
+                              <div className="flex gap-1 mt-[4px]">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveDetailsEdit(row)}
+                                  className="flex-1 py-[3px] rounded-[3px] text-center text-[9.5px] font-bold leading-[1.3] bg-[#E01F26] border border-[#E01F26] text-white hover:bg-[#B3161C] transition-colors"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelDetailsEdit(row.rowId)}
+                                  className="flex-1 py-[3px] rounded-[3px] text-center text-[9.5px] font-bold leading-[1.3] bg-white border border-[#DDDEE2] text-[#6B6C72] hover:bg-[#F8FAFC] transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </dd>
+                          </dl>
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-1 min-w-[150px]">
-                          <div className="leading-none">
-                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide leading-none">Client</p>
-                            <p className="text-[11px] text-[#1E293B] leading-tight truncate max-w-[150px] mt-0.5">{row.clientName || "-"}</p>
-                          </div>
-                          <div className="leading-none">
-                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide leading-none">Project</p>
-                            <p className="text-[12px] font-semibold text-[#1E293B] leading-tight truncate max-w-[150px] mt-0.5">{row.projectName || "-"}</p>
-                          </div>
-                          <div className="leading-none">
-                            <p className="text-[9px] font-semibold text-[#94A3B8] uppercase tracking-wide leading-none">{user?.role === "MANAGER" ? "Admin" : "Manager"}</p>
-                            <p className="text-[11px] text-[#64748B] leading-tight truncate max-w-[150px] mt-0.5">
+                        <>
+                          {rowEditable && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetailsEdit(row)}
+                              title="Edit project details"
+                              className="absolute top-[6px] right-[6px] w-[22px] h-[22px] flex items-center justify-center rounded-[4px] border border-[#E6E7EA] bg-white text-[#8B8C92] hover:border-[#E01F26] hover:text-[#E01F26] transition-colors"
+                            >
+                              <Pencil className="w-[13px] h-[13px]" strokeWidth={1.75} />
+                            </button>
+                          )}
+                          <dl className="grid grid-cols-[auto_1fr] gap-x-1 gap-y-[2px] items-baseline pr-[26px]">
+                            <dt className="flex justify-between min-w-[48px] text-[11px] font-semibold text-[#8B8C92]">
+                              <span>Client</span><span>:</span>
+                            </dt>
+                            <dd className="m-0 text-[12.5px] font-bold text-[#1E293B] truncate">{row.clientName || "-"}</dd>
+                            <dt className="flex justify-between min-w-[48px] text-[11px] font-semibold text-[#8B8C92]">
+                              <span>Project</span><span>:</span>
+                            </dt>
+                            <dd className="m-0 text-[12.5px] font-bold text-[#1E293B] truncate">{row.projectName || "-"}</dd>
+                            <dt className="flex justify-between min-w-[48px] text-[11px] font-semibold text-[#8B8C92]">
+                              <span>{user?.role === "MANAGER" ? "Admin" : "Manager"}</span><span>:</span>
+                            </dt>
+                            <dd className="m-0 text-[12.5px] font-bold text-[#1E293B] truncate">
                               {(() => {
                                 const mgr = allManagers.find((m) => Number(m.id) === Number(row.managerId));
                                 return mgr ? mgr.name : "-";
                               })()}
-                            </p>
-                          </div>
-                        </div>
+                            </dd>
+                          </dl>
+                        </>
                       )}
                     </td>
                     {weekDates.map((wd) => {
                       const dayData = row.days[wd.date] || { hours: "", description: "" };
                       const parts = parseHHMMToParts(dayData.hours);
                       const cellDisabled = !rowEditable || row.isPending || rowApproved || !row.projectId;
-                      const cellInputClass = "h-6 rounded border border-[#E2E8F0] bg-white text-[10px] text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]";
+                      const cellInputClass = "h-[26px] rounded border border-[#E2E8F0] bg-white text-[10px] text-[#1E293B] font-medium text-center focus:outline-none focus:ring-1 focus:ring-[#B33A2F] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]";
                       return (
-                        <td key={wd.date} className={`px-1 py-1.5 align-top border-l border-[#E2E8F0] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
-                          <div className="flex items-center justify-center gap-0.5">
+                        <td key={wd.date} className={`px-0.5 py-1.5 align-middle text-center border-l border-[#E2E8F0] w-[76px] min-w-[76px] ${wd.isToday ? "bg-[#B33A2F]/[0.02]" : ""}`}>
+                          <div className="flex items-center justify-center gap-px">
                             <input
                               type="number"
                               min="0"
@@ -1182,7 +1309,7 @@ export const EmployeeTimeIQ = () => {
                                 handleCellChange(row.rowId, wd.date, hhmmPartsToString(v, parts.m));
                               }}
                               disabled={cellDisabled}
-                              className={`${cellInputClass} w-[28px]`}
+                              className={`${cellInputClass} w-[18px]`}
                               placeholder="0"
                             />
                             <span className="text-[9px] text-[#94A3B8] font-medium select-none">hrs</span>
@@ -1199,7 +1326,7 @@ export const EmployeeTimeIQ = () => {
                                 handleCellChange(row.rowId, wd.date, hhmmPartsToString(parts.h, v));
                               }}
                               disabled={cellDisabled}
-                              className={`${cellInputClass} w-[28px]`}
+                              className={`${cellInputClass} w-[20px]`}
                               placeholder="00"
                             />
                             <span className="text-[9px] text-[#94A3B8] font-medium select-none">min</span>
@@ -1207,7 +1334,7 @@ export const EmployeeTimeIQ = () => {
                         </td>
                       );
                     })}
-                    <td className="px-1.5 py-2 align-top text-center border-l border-[#E2E8F0] w-14">
+                    <td className="px-1 py-2 align-middle text-center border-l border-[#E2E8F0] w-[62px] min-w-[62px]">
                       <button
                         onClick={() => {
                           setCommentModalRowId(row.rowId);
@@ -1223,10 +1350,10 @@ export const EmployeeTimeIQ = () => {
                         )}
                       </button>
                     </td>
-                    <td className="px-2 py-2 align-top text-center border-l border-[#E2E8F0]">
+                    <td className="px-1 py-2 align-middle text-center border-l border-[#E2E8F0] w-[70px] min-w-[70px]">
                       <span className="text-sm font-bold text-[#1E293B]">{formatHoursToHHMM(rowTotal)}</span>
                     </td>
-                    <td className="px-2 py-2 align-top text-center border-l border-[#E2E8F0]">
+                    <td className="px-1 py-2 align-middle text-center border-l border-[#E2E8F0] w-[62px] min-w-[62px]">
                       {(() => {
                         if (rowStatus === "APPROVED") {
                           return (
@@ -1276,7 +1403,7 @@ export const EmployeeTimeIQ = () => {
                         return <span className="text-[#94A3B8]">-</span>;
                       })()}
                     </td>
-                    <td className="px-2 py-2 align-top text-center border-l border-[#E2E8F0]">
+                    <td className="px-1 py-2 align-middle text-center border-l border-[#E2E8F0] w-[86px] min-w-[86px]">
                       {(() => {
                         let actionItems = [];
                         if (rowStatus === "DRAFT") {
@@ -1286,23 +1413,32 @@ export const EmployeeTimeIQ = () => {
                             { key: "submit", label: "Submit", icon: Send, disabled: isBusy || rowTotal <= 0, onClick: () => handleSubmitRow(row) },
                           ];
                         } else if (rowStatus === "SUBMITTED" || rowStatus === "RE-SUBMITTED") {
+                          // Update reverts this project to Draft (without touching any
+                          // sibling project) so it can be corrected and re-submitted —
+                          // Cancel remains available to withdraw it entirely instead.
                           actionItems = [
+                            { key: "update", label: "Update", icon: RotateCcw, disabled: isBusy, onClick: () => handleUpdateRow(row) },
                             { key: "cancel", label: "Cancel", icon: XCircle, disabled: isBusy, onClick: () => handleCancelRow(row) },
                           ];
                         } else if (rowStatus === "REJECTED") {
+                          // Only Update — Cancel permanently deletes the entries, and
+                          // this project has already been through manager review once;
+                          // Update reverts it to Draft so it can be corrected and
+                          // re-submitted (Save Draft/Submit reappear naturally there).
                           actionItems = [
                             { key: "update", label: "Update", icon: RotateCcw, disabled: isBusy, onClick: () => handleUpdateRow(row) },
-                            { key: "save", label: "Save Draft", icon: Save, disabled: isBusy, onClick: () => handleSaveDraftRow(row) },
-                            { key: "submit", label: "Submit", icon: Send, disabled: isBusy || rowTotal <= 0, onClick: () => handleSubmitRow(row) },
                           ];
                         } else if (rowStatus === "APPROVED") {
+                          // Only Update — it reverts the row to Draft so it can be
+                          // corrected and re-submitted; Submit isn't offered directly
+                          // since there's nothing pending to (re-)submit until then.
                           actionItems = [
                             { key: "update", label: "Update", icon: RotateCcw, disabled: isBusy, onClick: () => handleUpdateRow(row) },
-                            { key: "submit", label: "Submit", icon: Send, disabled: isBusy || rowTotal <= 0, onClick: () => handleSubmitRow(row) },
                           ];
                         }
                         const isOpen = openActionsRowId === row.rowId;
                         const hasItems = actionItems.length > 0;
+                        const menuWidth = 144; // matches w-36
                         return (
                           <div
                             className="relative inline-block text-left"
@@ -1310,22 +1446,40 @@ export const EmployeeTimeIQ = () => {
                           >
                             <button
                               type="button"
-                              onClick={() => hasItems && setOpenActionsRowId(isOpen ? null : row.rowId)}
+                              onClick={(e) => {
+                                if (!hasItems) return;
+                                if (isOpen) {
+                                  closeActionsMenu();
+                                  return;
+                                }
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const estMenuHeight = actionItems.length * 30 + 8;
+                                const openUpward = window.innerHeight - rect.bottom < estMenuHeight + 8;
+                                setActionsMenuPos({
+                                  left: Math.max(8, rect.right - menuWidth),
+                                  top: openUpward ? rect.top - estMenuHeight - 4 : rect.bottom + 4,
+                                });
+                                setOpenActionsRowId(row.rowId);
+                              }}
                               disabled={!hasItems}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#64748B] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] hover:border-[#B33A2F]/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               Actions
                               <ChevronDown className="w-3 h-3" />
                             </button>
-                            {isOpen && hasItems && (
-                              <div className="absolute right-0 z-20 mt-1 w-36 bg-white border border-[#E2E8F0] rounded-lg shadow-lg py-1">
+                            {isOpen && hasItems && actionsMenuPos && createPortal(
+                              <div
+                                ref={(el) => { actionsPortalRefs.current[row.rowId] = el; }}
+                                style={{ position: "fixed", top: actionsMenuPos.top, left: actionsMenuPos.left, width: menuWidth }}
+                                className="z-50 bg-white border border-[#E2E8F0] rounded-lg shadow-lg py-1"
+                              >
                                 {actionItems.map((item) => (
                                   <button
                                     key={item.key}
                                     type="button"
                                     disabled={item.disabled}
                                     onClick={() => {
-                                      setOpenActionsRowId(null);
+                                      closeActionsMenu();
                                       item.onClick();
                                     }}
                                     className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
@@ -1336,7 +1490,8 @@ export const EmployeeTimeIQ = () => {
                                     {item.label}
                                   </button>
                                 ))}
-                              </div>
+                              </div>,
+                              document.body
                             )}
                           </div>
                         );
@@ -1381,24 +1536,31 @@ export const EmployeeTimeIQ = () => {
 
       {/* ===== SECTION 4: Buttons (moved to per-row in table) ===== */}
 
-      {commentModalRowId && (
-        <CommentModal
-          isOpen={!!commentModalRowId}
-          rowId={commentModalRowId}
-          date={weekDates[0]?.date || ""}
-          dayName={format(new Date(selectedDate + "T00:00:00"), "EEEE")}
-          fullDate={format(new Date(selectedDate + "T00:00:00"), "MMMM d, yyyy")}
-          hoursLogged={projectRows.find((r) => r.rowId === commentModalRowId)?.comment ? 0 : 0}
-          value={commentValue}
-          onChange={setCommentValue}
-          onSave={handleCommentSave}
-          onDelete={handleCommentDelete}
-          onClose={() => {
-            setCommentModalRowId(null);
-            setCommentValue("");
-          }}
-        />
-      )}
+      {commentModalRowId && (() => {
+        const cmRow = projectRows.find((r) => r.rowId === commentModalRowId);
+        const cmReadOnly = cmRow
+          ? deriveRowStatus(cmRow, managerActionsByRow) !== "DRAFT"
+          : false;
+        return (
+          <CommentModal
+            isOpen={!!commentModalRowId}
+            rowId={commentModalRowId}
+            date={weekDates[0]?.date || ""}
+            dayName={format(new Date(selectedDate + "T00:00:00"), "EEEE")}
+            fullDate={format(new Date(selectedDate + "T00:00:00"), "MMMM d, yyyy")}
+            hoursLogged={projectRows.find((r) => r.rowId === commentModalRowId)?.comment ? 0 : 0}
+            value={commentValue}
+            onChange={setCommentValue}
+            onSave={handleCommentSave}
+            onDelete={handleCommentDelete}
+            readOnly={cmReadOnly}
+            onClose={() => {
+              setCommentModalRowId(null);
+              setCommentValue("");
+            }}
+          />
+        );
+      })()}
 
       {managerActionModal && (() => {
         const comment = managerActionModal.comment || "";

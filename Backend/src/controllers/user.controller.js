@@ -117,15 +117,6 @@ export const changePassword = async (req, res) => {
   }
 };
 
-export const getNextEmployeeId = async (req, res) => {
-  try {
-    const nextId = await userService.getNextEmployeeId();
-    res.json({ success: true, data: { employeeId: nextId } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 // ================= GET TEAM MEMBERS (MANAGER) =================
 export const getTeamMembers = async (req, res) => {
   try {

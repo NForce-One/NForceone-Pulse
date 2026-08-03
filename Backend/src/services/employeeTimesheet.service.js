@@ -451,29 +451,43 @@ export const submitTimesheet = async (userId, data) => {
   }
 
   try {
+    const dailyManagerId = (data.dailyEntries || []).find((de) => de.managerId)?.managerId;
     const managerEntry = projectEntries.find((e) => e.managerId);
-    const managerId = managerEntry?.managerId || null;
+    const effectiveManagerId = dailyManagerId ? Number(dailyManagerId) : (managerEntry?.managerId || null);
     const employeeUser = await User.findByPk(userId, { attributes: ["id", "name", "managerId"] });
     const record = {
       id: timesheet.id,
       userId,
-      managerId: managerId || employeeUser?.managerId,
+      managerId: effectiveManagerId || employeeUser?.managerId,
       weekStartDate: ws,
       weekEndDate: we,
       User: employeeUser ? { name: employeeUser.name, managerId: employeeUser.managerId } : null,
     };
 
-    // Check if this is a re-submission (any project entry was previously rejected)
+    // A resubmission only counts as such to the manager CURRENTLY assigned —
+    // if the employee reassigned this project to a different manager (e.g.
+    // via the Project Details edit), that manager is seeing it for the first
+    // time, so it's a fresh submission, not a resubmission. The (userId,
+    // projectId) branch is what still finds a prior decision after the
+    // project was Cancelled and re-added, since the original entries (and
+    // their ids) no longer exist.
     const projectEntryIds = projectEntries.map((e) => e.id);
-    const priorRejection = projectEntryIds.length > 0
+    const priorDecision = effectiveManagerId && (projectEntryIds.length > 0 || pId !== null)
       ? await ApprovalHistory.findOne({
-          where: { timeEntryId: { [Op.in]: projectEntryIds }, action: "REJECTED" },
+          where: {
+            action: { [Op.in]: ["APPROVED", "REJECTED"] },
+            actorId: effectiveManagerId,
+            [Op.or]: [
+              ...(projectEntryIds.length > 0 ? [{ timeEntryId: { [Op.in]: projectEntryIds } }] : []),
+              ...(pId !== null ? [{ userId, projectId: pId }] : []),
+            ],
+          },
           attributes: ["id"],
           limit: 1,
         })
       : null;
 
-    if (priorRejection) {
+    if (priorDecision) {
       await notificationService.notifyTimesheetResubmitted(record);
     } else {
       await notificationService.notifyTimesheetSubmitted(record);
@@ -549,6 +563,86 @@ export const updateTimesheet = async (userId, data) => {
   return { timesheet: { id: timesheet.id, status: newStatus }, message: "Project reverted to draft." };
 };
 
+// Correcting Client/Project/Manager on a row must never touch its hours,
+// comments, or approval status — this reassigns the existing entries to the
+// new project in place, independent of whether the row is Draft, Pending,
+// Approved, or Rejected.
+export const updateProjectDetails = async (userId, data) => {
+  const { weekStartDate, oldProjectId, clientId, projectId, managerId } = data;
+
+  if (!weekStartDate) {
+    throw new Error("weekStartDate is required");
+  }
+  if (!clientId || !projectId) {
+    throw new Error("Client and Project are required");
+  }
+
+  const ws = weekStartDate;
+
+  const timesheet = await Timesheet.findOne({ where: { userId, weekStartDate: ws } });
+  if (!timesheet) {
+    throw new Error("No timesheet found for this week.");
+  }
+
+  const cId = parseInt(clientId);
+  const pId = parseInt(projectId);
+  const mId = managerId !== undefined && managerId !== null && managerId !== "" ? parseInt(managerId) : null;
+
+  const client = await Client.findByPk(cId);
+  if (client && client.status === "INACTIVE") {
+    throw new Error(
+      "The selected client is inactive. You cannot proceed with creating a project for this client."
+    );
+  }
+
+  const hasOldScope = oldProjectId !== undefined && oldProjectId !== null && oldProjectId !== "null";
+  const oldPId = hasOldScope ? parseInt(oldProjectId) : null;
+  const oldProjectWhere = oldPId !== null ? oldPId : { [Op.is]: null };
+
+  const entries = await TimeEntry.findAll({
+    where: {
+      userId,
+      entryDate: { [Op.between]: [ws, timesheet.weekEndDate] },
+      projectId: oldProjectWhere,
+    },
+  });
+  if (entries.length === 0) {
+    throw new Error("No entries found for this project.");
+  }
+
+  if (oldPId !== pId) {
+    // The (userId, entryDate, projectId) uniqueness invariant means the new
+    // project must not already have its own separate row this week.
+    const conflict = await TimeEntry.findOne({
+      where: {
+        userId,
+        entryDate: { [Op.between]: [ws, timesheet.weekEndDate] },
+        projectId: pId,
+      },
+    });
+    if (conflict) {
+      throw new Error("This project is already added for this week.");
+    }
+  }
+
+  const project = await Project.findByPk(pId);
+  const clientName = client?.name || "";
+  const projectName = project?.name || "";
+
+  for (const entry of entries) {
+    await entry.update({
+      clientId: cId,
+      projectId: pId,
+      managerId: mId,
+      client: clientName,
+      project: projectName,
+      task: projectName || entry.task,
+    });
+  }
+
+  return { message: "Project details updated." };
+};
+
 // A timesheet week can hold several projects, each routed to its own manager.
 // The result here is grouped per project (matching the frontend's own
 // per-project row grouping) so one manager's approve/reject doesn't get
@@ -569,10 +663,21 @@ export const getManagerAction = async (timesheetId) => {
   if (entries.length === 0) return [];
 
   const entryIds = entries.map((e) => e.id);
+  const projectIds = [...new Set(entries.map((e) => e.projectId).filter((p) => p !== null && p !== undefined))];
+
+  // Match history either by a still-alive entry (covers Update→resubmit,
+  // where the entries persist) or by (userId, projectId) — the latter is
+  // what survives a Cancel, which detaches the entries tied to it. Without
+  // this, a rejected project that's cancelled and re-added would lose all
+  // memory of ever having been decided, and read as a first-time Pending
+  // submission instead of a resubmission.
   const histories = await ApprovalHistory.findAll({
     where: {
-      timeEntryId: { [Op.in]: entryIds },
       action: { [Op.in]: ["APPROVED", "REJECTED"] },
+      [Op.or]: [
+        { timeEntryId: { [Op.in]: entryIds } },
+        ...(projectIds.length > 0 ? [{ userId: timesheet.userId, projectId: { [Op.in]: projectIds } }] : []),
+      ],
     },
     include: [{ model: User, as: "Actor", attributes: ["id", "name"] }],
     order: [["createdAt", "DESC"]],
@@ -591,22 +696,36 @@ export const getManagerAction = async (timesheetId) => {
 
   const actions = [];
   groups.forEach((groupEntries, rowId) => {
+    const groupEntryIds = new Set(groupEntries.map((e) => e.id));
+    const groupProjectId = groupEntries[0]?.projectId ?? null;
+    // histories is ordered newest-first, so the first match is this project's
+    // latest action — whether tied to a still-alive entry or to a project
+    // that was previously cancelled and re-added.
+    const latestHistory = histories.find(
+      (h) => groupEntryIds.has(h.timeEntryId) || (groupProjectId !== null && Number(h.projectId) === Number(groupProjectId))
+    );
+    if (!latestHistory) return; // never decided by any manager — nothing to report
+
+    // `status` reflects the LIVE decision only — once the employee reverts
+    // this row to Draft and resubmits, it goes back to null even though a
+    // past decision exists, so the frontend can tell "currently Approved/
+    // Rejected" apart from "was decided once, now Pending again".
     const statuses = groupEntries.map((e) => e.status);
     let status = null;
     if (statuses.every((s) => s === "APPROVED")) status = "APPROVED";
     else if (statuses.some((s) => s === "REJECTED")) status = "REJECTED";
-    if (!status) return; // this project is still pending/draft — nothing decided yet
-
-    const groupEntryIds = new Set(groupEntries.map((e) => e.id));
-    // histories is ordered newest-first, so the first match is this project's latest action
-    const latestHistory = histories.find((h) => groupEntryIds.has(h.timeEntryId));
 
     actions.push({
       rowId,
       status,
-      managerName: latestHistory?.Actor?.name || "Unknown",
-      comment: latestHistory?.comment || "",
-      date: latestHistory?.createdAt || null,
+      // Who made the most recent decision — the frontend compares this
+      // against the row's CURRENT managerId to tell a genuine resubmission
+      // to the same manager (Re-Submitted) apart from a first submission to
+      // a newly assigned one (Pending).
+      priorActorId: latestHistory.actorId,
+      managerName: latestHistory.Actor?.name || "Unknown",
+      comment: latestHistory.comment || "",
+      date: latestHistory.createdAt || null,
     });
   });
 
@@ -637,10 +756,12 @@ export const cancelTimesheet = async (userId, weekStartDate, projectId) => {
   const pId = hasProjectScope ? parseInt(projectId) : null;
   const projectWhere = pId !== null ? pId : { [Op.is]: null };
 
-  if (timesheet.status === "SUBMITTED") {
+  if (timesheet.status === "SUBMITTED" || timesheet.status === "REJECTED") {
     // Cancel is scoped to ONE project — every project has its own
     // independent lifecycle, so cancelling one must never remove or affect
-    // another project's entries or status.
+    // another project's entries or status. Without this, a week whose
+    // aggregate status is REJECTED (no sibling project still Submitted)
+    // would fall through to the whole-week wipe below.
     const scopeWhere = hasProjectScope
       ? { userId, entryDate: { [Op.between]: [ws, we] }, projectId: projectWhere }
       : { userId, entryDate: { [Op.between]: [ws, we] } };
@@ -658,11 +779,15 @@ export const cancelTimesheet = async (userId, weekStartDate, projectId) => {
 
     await TimeEntry.destroy({ where: { id: { [Op.in]: cancelableIds } } });
 
-    // Remove ApprovalHistory tied to the entries we just deleted so it
-    // doesn't dangle-reference removed TimeEntry rows.
-    await ApprovalHistory.destroy({
-      where: { timeEntryId: { [Op.in]: cancelableIds } },
-    });
+    // Detach (don't destroy) ApprovalHistory tied to the entries we just
+    // deleted — userId/projectId on these rows are what let a later
+    // resubmission of this same project still read as "previously decided
+    // by this manager" (Re-Submitted) even though the original entries and
+    // their ids are gone.
+    await ApprovalHistory.update(
+      { timeEntryId: null },
+      { where: { timeEntryId: { [Op.in]: cancelableIds } } }
+    );
 
     // Recompute the week-level aggregate from whatever's left across ALL
     // projects — another project may still be legitimately Submitted or

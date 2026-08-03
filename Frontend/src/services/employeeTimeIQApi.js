@@ -43,6 +43,11 @@ export const updateETTimesheet = async (data) => {
   return extractData(res.data);
 };
 
+export const updateETProjectDetails = async (data) => {
+  const res = await api.put("/employee-timesheet/project-details", data);
+  return extractData(res.data);
+};
+
 export const fetchETManagerAction = async (timesheetId) => {
   const res = await api.get(`/employee-timesheet/manager-action/${timesheetId}`);
   return extractData(res.data);

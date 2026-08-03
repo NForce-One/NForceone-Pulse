@@ -48,19 +48,51 @@ const getEntriesWithUser = async (whereClause = {}) => {
       }
     });
 
+    // Match history either by a still-alive entry (covers Update→resubmit,
+    // where the entries persist) or by (userId, projectId) — the latter is
+    // what survives a Cancel, which detaches the entries tied to it. Without
+    // this, a rejected project that's cancelled and re-added would lose all
+    // memory of ever having been decided, and read as first-time Pending.
+    const projectIds = [...new Set(entries.map((e) => e.projectId).filter((p) => p !== null && p !== undefined))];
     const approvalHistoryAll = await ApprovalHistory.findAll({
       where: {
-        timeEntryId: { [Op.in]: entryIds },
         action: { [Op.in]: ["APPROVED", "REJECTED"] },
+        [Op.or]: [
+          { timeEntryId: { [Op.in]: entryIds } },
+          ...(projectIds.length > 0 ? [{ projectId: { [Op.in]: projectIds } }] : []),
+        ],
       },
-      attributes: ["timeEntryId"],
+      attributes: ["timeEntryId", "actorId", "userId", "projectId"],
     });
-    const previouslyApprovedOrRejectedIds = new Set(approvalHistoryAll.map((h) => h.timeEntryId));
+    const priorActorsByEntry = new Map();
+    const priorActorsByUserProject = new Map();
+    approvalHistoryAll.forEach((h) => {
+      if (h.timeEntryId) {
+        if (!priorActorsByEntry.has(h.timeEntryId)) priorActorsByEntry.set(h.timeEntryId, []);
+        priorActorsByEntry.get(h.timeEntryId).push(h.actorId);
+      }
+      if (h.userId && h.projectId) {
+        const key = `${h.userId}:${h.projectId}`;
+        if (!priorActorsByUserProject.has(key)) priorActorsByUserProject.set(key, []);
+        priorActorsByUserProject.get(key).push(h.actorId);
+      }
+    });
 
     entries.forEach((entry) => {
       const approval = approvalMap[entry.id];
       entry.dataValues.managerComment = approval?.comment || null;
-      entry.dataValues.previouslyApproved = entry.status === "SUBMITTED" && previouslyApprovedOrRejectedIds.has(entry.id);
+      // Only a genuine resubmission to the SAME manager who previously
+      // approved/rejected this entry counts as "previously approved" (shown
+      // as Re-Submitted) — if the entry was reassigned to a different
+      // manager, that manager is seeing it for the first time (Pending).
+      const byEntry = priorActorsByEntry.get(entry.id) || [];
+      const byProject = entry.projectId
+        ? (priorActorsByUserProject.get(`${entry.userId}:${entry.projectId}`) || [])
+        : [];
+      const priorActors = [...byEntry, ...byProject];
+      entry.dataValues.previouslyApproved =
+        entry.status === "SUBMITTED" &&
+        priorActors.some((actorId) => Number(actorId) === Number(entry.managerId));
     });
   }
 

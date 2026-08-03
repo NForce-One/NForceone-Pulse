@@ -251,7 +251,7 @@ export const approveTimesheet = async (timesheetId, managerId, comment, actorRol
   // touched — entries already resolved by another manager are left alone.
   const entriesToApprove = await TimeEntry.findAll({
     where: { ...scopedWhere, status: "SUBMITTED" },
-    attributes: ["id", "project", "entryDate", "hours"],
+    attributes: ["id", "project", "projectId", "entryDate", "hours"],
   });
 
   if (entriesToApprove.length === 0) {
@@ -278,6 +278,8 @@ export const approveTimesheet = async (timesheetId, managerId, comment, actorRol
 
   const approvalHistories = entriesToApprove.map((entry) => ({
     timeEntryId: entry.id,
+    userId: timesheet.userId,
+    projectId: entry.projectId,
     actorId: managerId,
     action: "APPROVED",
     comment: comment || null,
@@ -409,7 +411,7 @@ export const rejectTimesheet = async (timesheetId, managerId, comment, actorRole
   // touched — entries already resolved by another manager are left alone.
   const entriesToReject = await TimeEntry.findAll({
     where: { ...scopedWhere, status: "SUBMITTED" },
-    attributes: ["id", "project", "entryDate", "hours"],
+    attributes: ["id", "project", "projectId", "entryDate", "hours"],
   });
 
   if (entriesToReject.length === 0) {
@@ -436,6 +438,8 @@ export const rejectTimesheet = async (timesheetId, managerId, comment, actorRole
 
   const approvalHistories = entriesToReject.map((entry) => ({
     timeEntryId: entry.id,
+    userId: timesheet.userId,
+    projectId: entry.projectId,
     actorId: managerId,
     action: "REJECTED",
     comment: comment || null,
@@ -675,7 +679,7 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
           userId: ts.userId,
           entryDate: { [Op.gte]: ts.weekStartDate, [Op.lte]: ts.weekEndDate },
         },
-        attributes: ["id", "hours", "isBillable", "status"],
+        attributes: ["id", "hours", "isBillable", "status", "projectId"],
       });
       const loggedHours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
       const billableHours = entries
@@ -697,9 +701,27 @@ export const getTeamTimesheets = async (managerId, filters = {}) => {
       let previouslyResubmitted = false;
       if (ts.status === "SUBMITTED") {
         const entryIds = entries.map((e) => e.id);
-        if (entryIds.length > 0) {
+        const projectIds = [...new Set(entries.map((e) => e.projectId).filter((p) => p !== null && p !== undefined))];
+        if (entryIds.length > 0 || projectIds.length > 0) {
+          const historyWhere = {
+            action: { [Op.in]: ["APPROVED", "REJECTED"] },
+            [Op.or]: [
+              ...(entryIds.length > 0 ? [{ timeEntryId: { [Op.in]: entryIds } }] : []),
+              // Survives a Cancel, which detaches the entries this history was
+              // originally tied to — otherwise a rejected project that's
+              // cancelled and re-added would lose all memory of the decision.
+              ...(projectIds.length > 0 ? [{ userId: ts.userId, projectId: { [Op.in]: projectIds } }] : []),
+            ],
+          };
+          // Scope to the manager currently viewing this list — a resubmission
+          // only reads as such to the manager who previously decided it; if
+          // the employee reassigned a project to a different manager, it's a
+          // fresh submission for that manager, not a resubmission.
+          if (managerId && managerId !== "all") {
+            historyWhere.actorId = managerId;
+          }
           const priorActionHistory = await ApprovalHistory.findAll({
-            where: { timeEntryId: { [Op.in]: entryIds }, action: { [Op.in]: ["APPROVED", "REJECTED"] } },
+            where: historyWhere,
             attributes: ["id"],
             limit: 1,
           });

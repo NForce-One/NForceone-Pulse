@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import { DataTypes } from "sequelize";
 import sequelize from "./config/db.js";
 
 // ✅ Load models (IMPORTANT for Sequelize - ORDER MATTERS!)
@@ -271,6 +272,16 @@ app.use((err, req, res, next) => {
       await sequelize.query(
         "ALTER TABLE notifications MODIFY COLUMN `type` ENUM('MISSING_ENTRY','PENDING_SUBMISSION','SUBMITTED','RESUBMITTED','APPROVED','REJECTED','MANAGER_REMINDER') NOT NULL;"
       );
+    } catch (e) { /* non-critical */ }
+    try {
+      const queryInterface = sequelize.getQueryInterface();
+      const tableDesc = await queryInterface.describeTable("approval_history");
+      if (!tableDesc.userId) {
+        await queryInterface.addColumn("approval_history", "userId", { type: DataTypes.INTEGER, allowNull: true });
+      }
+      if (!tableDesc.projectId) {
+        await queryInterface.addColumn("approval_history", "projectId", { type: DataTypes.INTEGER, allowNull: true });
+      }
     } catch (e) { /* non-critical */ }
     const { seedDefaultHolidays } = await import("./utils/holidayConfig.js");
     await seedDefaultHolidays();

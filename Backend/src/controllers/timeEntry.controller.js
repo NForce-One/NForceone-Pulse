@@ -288,6 +288,8 @@ export const approveTimeEntry = async (req, res) => {
 
     await ApprovalHistory.create({
       timeEntryId: entry.id,
+      userId: entry.userId,
+      projectId: entry.projectId,
       actorId: user.id,
       action: "APPROVED",
       comment: comment || null,
@@ -498,6 +500,8 @@ export const rejectTimeEntry = async (req, res) => {
 
     await ApprovalHistory.create({
       timeEntryId: entry.id,
+      userId: entry.userId,
+      projectId: entry.projectId,
       actorId: user.id,
       action: "REJECTED",
       comment: comment || null,

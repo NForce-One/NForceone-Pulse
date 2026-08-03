@@ -10,6 +10,7 @@ export const CommentModal = ({
   onSave,
   onDelete,
   onClose,
+  readOnly = false,
 }) => {
   const textareaRef = useRef(null);
   const [deleteError, setDeleteError] = useState(false);
@@ -60,7 +61,7 @@ export const CommentModal = ({
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E2E8F0]">
           <h2 className="text-sm font-bold text-[#1E293B]">
-            {value ? "Edit Comment" : "Add Comment"}
+            {readOnly ? "View Comment" : value ? "Edit Comment" : "Add Comment"}
           </h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-[#F8FAFC] transition-colors">
             <X className="w-4 h-4 text-[#64748B]" />
@@ -72,11 +73,14 @@ export const CommentModal = ({
             ref={textareaRef}
             value={value || ""}
             onChange={handleInput}
+            readOnly={readOnly}
             placeholder="Describe work completed for this day..."
             rows={7}
             maxLength={200}
             aria-invalid={deleteError}
-            className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent resize-none ${
+            className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#1E293B] focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:opacity-70 ${
+              readOnly ? "bg-[#F8FAFC] cursor-default" : ""
+            } ${
               deleteError
                 ? "border-red-300 focus:ring-red-400"
                 : "border-[#E2E8F0] focus:ring-[#B33A2F]"
@@ -92,26 +96,32 @@ export const CommentModal = ({
         </div>
 
         <div className="flex items-center justify-between px-5 py-3.5 border-t border-[#E2E8F0] bg-[#F8FAFC]">
-          <button
-            onClick={handleDelete}
-            className="flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete Comment
-          </button>
+          {readOnly ? (
+            <span className="text-[11px] text-[#94A3B8] font-medium">Click Update to edit this comment.</span>
+          ) : (
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Comment
+            </button>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
               className="h-8 px-4 text-xs font-semibold rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-white transition-colors"
             >
-              Cancel
+              {readOnly ? "Close" : "Cancel"}
             </button>
-            <button
-              onClick={handleSave}
-              className="h-8 px-4 text-xs font-semibold rounded-lg bg-[#B33A2F] text-white hover:bg-[#992E25] transition-colors"
-            >
-              Save Comment
-            </button>
+            {!readOnly && (
+              <button
+                onClick={handleSave}
+                className="h-8 px-4 text-xs font-semibold rounded-lg bg-[#B33A2F] text-white hover:bg-[#992E25] transition-colors"
+              >
+                Save Comment
+              </button>
+            )}
           </div>
         </div>
       </div>

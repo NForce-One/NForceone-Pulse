@@ -88,7 +88,7 @@ describe("Users page — Name field rules", () => {
     expect(nameInput).toHaveValue("Janet Doe");
   });
 
-  it("includes the updated name in the update payload but omits employeeId", async () => {
+  it("includes the updated name and the current employeeId in the update payload", async () => {
     const user = userEvent.setup();
     render(<Users />);
 
@@ -102,7 +102,7 @@ describe("Users page — Name field rules", () => {
     const [id, payload] = api.updateUser.mock.calls[0];
     expect(id).toBe(5);
     expect(payload.name).toBe("Janet Doe");
-    expect("employeeId" in payload).toBe(false);
+    expect(payload.employeeId).toBe(101);
     expect(payload.email).toBe("jane@example.com");
   });
 });

@@ -8,6 +8,7 @@ import {
   saveDraftTimesheet,
   submitTimesheet,
   updateTimesheet,
+  updateProjectDetails,
   cancelTimesheet,
   deleteProjectEntries,
   getManagerAction,
@@ -22,6 +23,7 @@ router.get("/weekly", protect, getWeeklyTimesheet);
 router.post("/save", protect, saveDraftTimesheet);
 router.post("/submit", protect, submitTimesheet);
 router.put("/update", protect, updateTimesheet);
+router.put("/project-details", protect, updateProjectDetails);
 router.post("/cancel", protect, cancelTimesheet);
 router.get("/manager-action/:timesheetId", protect, getManagerAction);
 router.delete("/project/:projectId/week/:weekStartDate", protect, deleteProjectEntries);

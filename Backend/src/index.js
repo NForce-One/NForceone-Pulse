@@ -342,14 +342,44 @@ const startServer = async () => {
       const tableDesc = await queryInterface.describeTable("users");
       if (!tableDesc.employeeId) {
         await queryInterface.addColumn("users", "employeeId", {
-          type: DataTypes.INTEGER,
+          type: DataTypes.STRING(50),
           unique: true,
           allowNull: true,
         });
         console.log("✅ Added employeeId column to users table");
+      } else if (/INT/i.test(tableDesc.employeeId.type)) {
+        // employeeId used to be an app-generated INTEGER (MAX+1); it's now a
+        // manually-entered alphanumeric ID, so widen the column to VARCHAR.
+        // A plain MODIFY COLUMN keeps the existing unique index intact.
+        await sequelize.query(
+          "ALTER TABLE users MODIFY COLUMN `employeeId` VARCHAR(50) NULL;"
+        );
+        console.log("✅ Converted employeeId column to VARCHAR for manual alphanumeric IDs");
       }
     } catch (migrationErr) {
-      console.log("⚠️ Could not add employeeId column:", migrationErr.message);
+      console.log("⚠️ Could not migrate employeeId column:", migrationErr.message);
+    }
+
+    // Safely add userId/projectId columns to approval_history table if missing
+    try {
+      const queryInterface = sequelize.getQueryInterface();
+      const tableDesc = await queryInterface.describeTable("approval_history");
+      if (!tableDesc.userId) {
+        await queryInterface.addColumn("approval_history", "userId", {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+        });
+        console.log("✅ Added userId column to approval_history table");
+      }
+      if (!tableDesc.projectId) {
+        await queryInterface.addColumn("approval_history", "projectId", {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+        });
+        console.log("✅ Added projectId column to approval_history table");
+      }
+    } catch (migrationErr) {
+      console.log("⚠️ Could not migrate approval_history columns:", migrationErr.message);
     }
 
     // ================= INIT HOLIDAYS FROM DATABASE =================

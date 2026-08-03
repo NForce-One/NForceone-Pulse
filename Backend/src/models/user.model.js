@@ -30,8 +30,10 @@ const User = sequelize.define(
       defaultValue: "EMPLOYEE",
     },
     // 🔥 NEW FIELDS (from spec)
+    // Manually entered by the admin on user creation (optional) — no longer
+    // auto-generated, so it's a free-form alphanumeric identifier, not a number.
     employeeId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(50),
       unique: true,
       allowNull: true,
     },

@@ -1,5 +1,5 @@
+import { UniqueConstraintError } from "sequelize";
 import User from "../models/user.model.js";
-import sequelize from "../config/db.js";
 import bcrypt from "bcrypt";
 
 export const getAllUsers = async (whereClause = {}) => {
@@ -50,20 +50,30 @@ const validateDepartment = (department) => {
   }
 };
 
-const generateEmployeeId = async () => {
-  const maxUser = await User.findOne({
-    attributes: [[sequelize.fn("MAX", sequelize.col("employeeId")), "maxEmployeeId"]],
-  });
-  return (maxUser?.dataValues?.maxEmployeeId || 0) + 1;
+// Employee ID is optional and manually entered by the admin — no longer
+// auto-generated. Blank/absent stays allowed; when present it must be
+// alphanumeric with no spaces, and unique across all users.
+const EMPLOYEE_ID_REGEX = /^[A-Za-z0-9]+$/;
+const normalizeEmployeeId = (employeeId) => {
+  if (employeeId === undefined || employeeId === null) return null;
+  const trimmed = String(employeeId).trim();
+  if (trimmed === "") return null;
+  if (!EMPLOYEE_ID_REGEX.test(trimmed)) {
+    throw new Error('"Employee ID" must contain only letters and numbers, with no spaces.');
+  }
+  return trimmed;
 };
 
-export const getNextEmployeeId = async () => {
-  const nextId = await generateEmployeeId();
-  return nextId;
+const assertEmployeeIdAvailable = async (employeeId, excludeUserId = null) => {
+  if (!employeeId) return;
+  const existing = await User.findOne({ where: { employeeId } });
+  if (existing && existing.id !== excludeUserId) {
+    throw new Error("An employee with this Employee ID already exists");
+  }
 };
 
 export const createUser = async (data) => {
-  const { name, email, password, role, department, managerId, defaultHours } = data;
+  const { name, email, password, role, department, managerId, employeeId, defaultHours } = data;
 
   const existingUser = await User.findOne({ where: { email } });
   if (existingUser) {
@@ -79,20 +89,29 @@ export const createUser = async (data) => {
 
   validateDepartment(department);
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const employeeId = await generateEmployeeId();
+  const normalizedEmployeeId = normalizeEmployeeId(employeeId);
+  await assertEmployeeIdAvailable(normalizedEmployeeId);
 
-  return await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    role: role || "EMPLOYEE",
-    department,
-    managerId,
-    employeeId,
-    defaultHours: defaultHours || 8.0,
-    isActive: true,
-  });
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  try {
+    return await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || "EMPLOYEE",
+      department,
+      managerId,
+      employeeId: normalizedEmployeeId,
+      defaultHours: defaultHours || 8.0,
+      isActive: true,
+    });
+  } catch (err) {
+    if (err instanceof UniqueConstraintError && err.fields?.employeeId) {
+      throw new Error("An employee with this Employee ID already exists");
+    }
+    throw err;
+  }
 };
 
 export const updateUser = async (id, data, { allowNameChange = false } = {}) => {
@@ -102,8 +121,12 @@ export const updateUser = async (id, data, { allowNameChange = false } = {}) => 
     throw new Error("User not found");
   }
 
-  // Employee ID must remain unchanged on edit
-  delete data.employeeId;
+  // Employee ID may be set, changed, or cleared by the admin, same as at creation
+  if (data.employeeId !== undefined) {
+    const normalizedEmployeeId = normalizeEmployeeId(data.employeeId);
+    await assertEmployeeIdAvailable(normalizedEmployeeId, user.id);
+    data.employeeId = normalizedEmployeeId;
+  }
 
   // Name may only be changed by the admin User Management flow
   // (allowNameChange: true). Every other caller — notably the self-service
@@ -131,7 +154,14 @@ export const updateUser = async (id, data, { allowNameChange = false } = {}) => 
     data.password = await bcrypt.hash(data.password, 10);
   }
 
-  await user.update(data);
+  try {
+    await user.update(data);
+  } catch (err) {
+    if (err instanceof UniqueConstraintError && err.fields?.employeeId) {
+      throw new Error("An employee with this Employee ID already exists");
+    }
+    throw err;
+  }
   return await getUserById(id);
 };
 
