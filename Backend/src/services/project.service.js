@@ -17,9 +17,25 @@ const validateProjectName = (name) => {
   }
 };
 
+const validateClient = async (clientId) => {
+  if (clientId === undefined || clientId === null || clientId === "") {
+    throw new Error("Please select a client.");
+  }
+  const client = await Client.findByPk(clientId);
+  if (!client) {
+    throw new Error("Selected client not found.");
+  }
+  if (client.status === "INACTIVE") {
+    throw new Error(
+      "The selected client is inactive. You cannot proceed with creating a project for this client."
+    );
+  }
+};
+
 // CREATE PROJECT
 export const createProject = async (data) => {
   validateProjectName(data.name);
+  await validateClient(data.clientId);
   return await Project.create(data);
 };
 
@@ -93,9 +109,18 @@ export const updateProject = async (id, data) => {
     validateProjectName(data.name);
   }
 
+  // clientId being present in the payload but empty means the admin cleared
+  // the Client field — a project must always keep a valid client.
+  if (data.clientId !== undefined && (data.clientId === null || data.clientId === "")) {
+    throw new Error("Please select a client.");
+  }
+
   if (data.clientId && Number(data.clientId) !== project.clientId) {
     const client = await Client.findByPk(data.clientId);
-    if (client && client.status === "INACTIVE") {
+    if (!client) {
+      throw new Error("Selected client not found.");
+    }
+    if (client.status === "INACTIVE") {
       throw new Error(
         "The selected client is inactive. You cannot proceed with creating a project for this client."
       );

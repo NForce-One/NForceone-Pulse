@@ -65,6 +65,11 @@ export const Projects = () => {
       return;
     }
 
+    if (!formData.clientId) {
+      setClientError("Please select a client.");
+      return;
+    }
+
     if (!editingId) {
       const selectedClient = clients.find(
         (c) => String(c.id) === String(formData.clientId)
@@ -96,7 +101,7 @@ export const Projects = () => {
       await loadData();
     } catch (error) {
       const message = error.response?.data?.message || "Operation failed";
-      if (message.toLowerCase().includes("inactive")) {
+      if (message.toLowerCase().includes("client")) {
         setClientError(message);
       } else {
         setFormErrors((prev) => ({ ...prev, name: message }));
@@ -156,6 +161,7 @@ export const Projects = () => {
                   name="clientId"
                   value={formData.clientId}
                   onChange={handleInputChange}
+                  required
                   className={`h-10 w-full rounded-lg border bg-white px-3 py-2 text-sm text-[#1E293B] focus:outline-none focus:ring-2 transition-all duration-200 ${
                     clientError
                       ? "border-red-400 focus:ring-red-200"

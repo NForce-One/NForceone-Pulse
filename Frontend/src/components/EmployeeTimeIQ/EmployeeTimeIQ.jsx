@@ -648,7 +648,7 @@ export const EmployeeTimeIQ = () => {
     const errors = {};
     if (!selectedClient) errors.client = "Please select a Client.";
     if (!selectedProject) errors.project = "Please select a Project.";
-    if (!selectedManager) errors.manager = "Please select a Manager.";
+    if (!selectedManager) errors.manager = user?.role === "MANAGER" ? "Please select an Admin." : "Please select a Manager.";
     if (Object.keys(errors).length > 0) {
       setFieldErrors((prev) => ({ ...prev, ...errors }));
       return;
@@ -683,7 +683,7 @@ export const EmployeeTimeIQ = () => {
     setSelectedProject("");
     setSelectedManager("");
     setFieldErrors({ client: "", project: "", manager: "" });
-  }, [selectedClient, selectedProject, selectedManager, allProjects, clients, weekDates, projectRows, showSnackbar]);
+  }, [selectedClient, selectedProject, selectedManager, allProjects, clients, weekDates, projectRows, showSnackbar, user]);
 
   const handleRemoveProject = useCallback(async (rowId) => {
     const row = projectRows.find((r) => r.rowId === rowId);
@@ -856,7 +856,10 @@ export const EmployeeTimeIQ = () => {
   // passed in, never any sibling project in the same week.
   const handleSubmitRow = useCallback(async (row) => {
     if (!row.managerId) {
-      showSnackbar("Please assign a manager before submitting.", "error");
+      showSnackbar(
+        user?.role === "MANAGER" ? "Please assign an admin before submitting." : "Please assign a manager before submitting.",
+        "error"
+      );
       return;
     }
     const rowTotal = Object.values(row.days).reduce(
@@ -920,7 +923,7 @@ export const EmployeeTimeIQ = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [weekDates, projectRows, currentWeekStart, showSnackbar, refreshManagerActions]);
+  }, [weekDates, projectRows, currentWeekStart, showSnackbar, refreshManagerActions, user]);
 
   // Reverting to draft is per-project — must never affect a sibling
   // project's own Submitted/Approved status.
