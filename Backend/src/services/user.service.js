@@ -51,16 +51,12 @@ const validateDepartment = (department) => {
 };
 
 // Employee ID is optional and manually entered by the admin — no longer
-// auto-generated. Blank/absent stays allowed; when present it must be
-// alphanumeric with no spaces, and unique across all users.
-const EMPLOYEE_ID_REGEX = /^[A-Za-z0-9]+$/;
+// auto-generated. Blank/absent stays allowed; any characters (including
+// symbols/punctuation) are permitted, but it must be unique across all users.
 const normalizeEmployeeId = (employeeId) => {
   if (employeeId === undefined || employeeId === null) return null;
   const trimmed = String(employeeId).trim();
   if (trimmed === "") return null;
-  if (!EMPLOYEE_ID_REGEX.test(trimmed)) {
-    throw new Error('"Employee ID" must contain only letters and numbers, with no spaces.');
-  }
   return trimmed;
 };
 

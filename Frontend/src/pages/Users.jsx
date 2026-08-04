@@ -71,10 +71,10 @@ export const Users = () => {
       return;
     }
     if (name === "employeeId") {
-      const hasInvalid = /[^A-Za-z0-9]/.test(value);
-      const filtered = value.replace(/[^A-Za-z0-9]/g, "");
+      const hasInvalid = /\s/.test(value);
+      const filtered = value.replace(/\s/g, "");
       setFormData((prev) => ({ ...prev, employeeId: filtered }));
-      setEmployeeIdError(hasInvalid ? "Only letters and numbers are allowed (no spaces or symbols)." : "");
+      setEmployeeIdError(hasInvalid ? "Spaces are not allowed." : "");
       return;
     }
     if (name === "email") {
