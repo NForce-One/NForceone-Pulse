@@ -190,20 +190,20 @@ export const Users = () => {
             <CardTitle>{editingId ? "Edit User" : "Create User"}</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form onSubmit={handleSubmit} autoComplete="off" className="grid grid-cols-1 md:grid-cols-3 gap-4">
                <div>
-                 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required maxLength={26}
+                 <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Full Name" required maxLength={26} autoComplete="off"
                    className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                  {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                </div>
                <div>
-                 <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
+                 <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required autoComplete="off"
                    ref={emailInputRef}
                    className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                </div>
                <div className="relative">
-                  <Input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"}
+                  <Input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"} autoComplete="new-password"
                     className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200 pr-10" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 flex items-center justify-center w-10 text-[#64748B] hover:text-[#1E293B] transition-colors duration-200">
