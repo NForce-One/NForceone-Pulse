@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../services/api";
+import { useEmailValidation } from "../utils/emailValidation";
 
 import { Input } from "../components/ui/Input";
 
@@ -18,6 +19,7 @@ const Register = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const email = useEmailValidation({ onError: setError });
 
   const [show, setShow] = useState(false);
 
@@ -39,10 +41,15 @@ const Register = () => {
 
     setError("");
     setSuccess("");
+
+    if (!email.validate()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await registerUser(form);
+      await registerUser({ ...form, email: email.value });
 
       setSuccess("Registration successful! Redirecting to login...");
 
@@ -138,8 +145,9 @@ const Register = () => {
               name="email"
               type="email"
               placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
+              value={email.value}
+              onChange={email.handleChange}
+              ref={email.inputRef}
               required
               className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-300 focus:scale-[1.02]"
             />

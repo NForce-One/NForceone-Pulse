@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   fetchUsers,
   createUser,
@@ -6,6 +6,12 @@ import {
   deleteUser,
   toggleUserStatus,
 } from "../services/api";
+import {
+  sanitizeEmailInput,
+  validateEmail,
+  EMAIL_INVALID_CHAR_MESSAGE,
+  MAX_EMAIL_LENGTH,
+} from "../utils/emailValidation";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -20,6 +26,8 @@ export const Users = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [nameError, setNameError] = useState("");
   const [employeeIdError, setEmployeeIdError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const emailInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -69,6 +77,15 @@ export const Users = () => {
       setEmployeeIdError(hasInvalid ? "Only letters and numbers are allowed (no spaces or symbols)." : "");
       return;
     }
+    if (name === "email") {
+      const filtered = sanitizeEmailInput(value);
+      setFormData((prev) => ({
+        ...prev,
+        email: filtered.length > MAX_EMAIL_LENGTH ? filtered.slice(0, MAX_EMAIL_LENGTH) : filtered,
+      }));
+      setEmailError(filtered !== value ? EMAIL_INVALID_CHAR_MESSAGE : "");
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -79,6 +96,12 @@ export const Users = () => {
       return;
     }
     setEmployeeIdError("");
+    const emailCheck = validateEmail(formData.email);
+    setEmailError(emailCheck.error);
+    if (!emailCheck.valid) {
+      emailInputRef.current?.focus();
+      return;
+    }
     try {
       const payload = { ...formData };
       if (editingId) {
@@ -91,6 +114,7 @@ export const Users = () => {
       setShowForm(false);
       setEditingId(null);
       setShowPassword(false);
+      setEmailError("");
       await loadData();
     } catch (error) {
       const message = error.response?.data?.message || "Operation failed";
@@ -114,6 +138,7 @@ export const Users = () => {
     setShowPassword(false);
     setNameError("");
     setEmployeeIdError("");
+    setEmailError("");
     setShowForm(true);
   };
 
@@ -123,6 +148,7 @@ export const Users = () => {
     setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", employeeId: "" });
     setNameError("");
     setEmployeeIdError("");
+    setEmailError("");
     setShowForm(true);
   };
 
@@ -170,8 +196,12 @@ export const Users = () => {
                    className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                  {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                </div>
-               <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
-                 className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
+               <div>
+                 <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required
+                   ref={emailInputRef}
+                   className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
+                 {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+               </div>
                <div className="relative">
                   <Input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange} placeholder={editingId ? "Leave blank" : "Password"}
                     className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200 pr-10" />

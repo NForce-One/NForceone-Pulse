@@ -39,7 +39,7 @@ const HeaderDropdown = () => {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((p) => !p)}
-        className="flex items-center gap-1.5 px-2 py-1 text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 rounded-md transition-all cursor-pointer"
+        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-200 hover:text-gray-100 bg-white/5 hover:bg-white/10 rounded-md transition-all cursor-pointer"
       >
         <ModeIcon className="w-3.5 h-3.5" />
         <span>Display Mode</span>
@@ -122,13 +122,13 @@ export const Header = () => {
 
           <HeaderDropdown />
 
-          <span className="text-white/70 capitalize bg-black/20 px-2 py-0.5 rounded text-xs border border-white/10">
+          <span className="text-gray-200 hover:text-gray-100 capitalize bg-black/20 px-2 py-0.5 rounded text-xs border border-white/10">
             {user?.role || 'employee'}
           </span>
         </div>
 
         <div className="w-px h-6 bg-white/20"></div>
-        <Button variant="ghost" size="sm" onClick={logout} className="text-white/70 hover:text-white gap-2 hover:bg-white/10">
+        <Button variant="ghost" size="sm" onClick={logout} className="text-gray-200 hover:text-gray-100 gap-2 hover:bg-white/10">
           <LogOut className="w-4 h-4" />
           Logout
         </Button>

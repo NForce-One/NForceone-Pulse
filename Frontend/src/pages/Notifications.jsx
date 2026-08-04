@@ -6,10 +6,11 @@ import {
   deleteNotification
 } from "../services/api";
 import { useCachedData, clearPageCache } from "../hooks/useCachedData";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
+import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
-import { Bell, CheckCheck, Trash2, Clock, AlertTriangle, Send, CheckCircle, XCircle, Timer } from "lucide-react";
+import { Bell, CheckCheck, Trash2, Clock, Check, X, Info, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function timeAgo(dateString) {
   const now = new Date();
@@ -41,48 +42,85 @@ function timeAgo(dateString) {
   return days === 1 ? "1 day ago" : `${days} days ago`;
 }
 
-function getNotificationIcon(type) {
+// Per-type visual theme used by the redesigned cards. Only presentation
+// styling lives here — the notification data itself is never modified.
+function getTypeTheme(type) {
   switch (type) {
-    case "MISSING_ENTRY":
-      return <AlertTriangle className="w-5 h-5 text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]" />;
-    case "PENDING_SUBMISSION":
-      return <Timer className="w-5 h-5 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />;
-    case "SUBMITTED":
-      return <Send className="w-5 h-5 text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />;
-    case "RESUBMITTED":
-      return <Send className="w-5 h-5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />;
     case "APPROVED":
-      return <CheckCircle className="w-5 h-5 text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]" />;
+      return {
+        circle: "bg-green-100 text-green-600",
+        dot: "bg-green-500",
+        link: "text-green-600 hover:underline underline-offset-2",
+      };
     case "REJECTED":
-      return <XCircle className="w-5 h-5 text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]" />;
+      return {
+        circle: "bg-red-100 text-red-600",
+        dot: "bg-red-500",
+        link: "text-red-600 hover:underline underline-offset-2",
+      };
+    case "SUBMITTED":
+    case "RESUBMITTED":
+      return {
+        circle: "bg-blue-100 text-blue-600",
+        dot: "bg-blue-500",
+        link: "text-blue-600 hover:underline underline-offset-2",
+      };
+    case "MISSING_ENTRY":
+    case "PENDING_SUBMISSION":
     case "MANAGER_REMINDER":
-      return <Bell className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.5)]" />;
+      return {
+        circle: "bg-orange-100 text-orange-600",
+        dot: "bg-orange-500",
+        link: "text-orange-600 hover:underline underline-offset-2",
+      };
     default:
-      return <Bell className="w-5 h-5 text-gray-400 drop-shadow-[0_0_8px_rgba(156,163,175,0.5)]" />;
+      return {
+        circle: "bg-slate-100 text-slate-600",
+        dot: "bg-slate-400",
+        link: "text-slate-600 hover:underline underline-offset-2",
+      };
+  }
+}
+
+function getCircleIcon(type) {
+  switch (type) {
+    case "APPROVED":
+      return <Check className="w-4 h-4" />;
+    case "REJECTED":
+      return <X className="w-4 h-4" />;
+    case "SUBMITTED":
+    case "RESUBMITTED":
+      return <Info className="w-4 h-4" />;
+    case "MISSING_ENTRY":
+    case "PENDING_SUBMISSION":
+    case "MANAGER_REMINDER":
+      return <Bell className="w-4 h-4" />;
+    default:
+      return <Bell className="w-4 h-4" />;
   }
 }
 
 function getNotificationBg(type, isRead) {
-   if (isRead) return "bg-[#F8FAFC] border-[#E2E8F0]";
-   switch (type) {
-     case "MISSING_ENTRY":
-       return "bg-orange-50 border-orange-200";
-     case "PENDING_SUBMISSION":
-       return "bg-yellow-50 border-yellow-200";
-      case "SUBMITTED":
-        return "bg-blue-50 border-blue-200";
-      case "RESUBMITTED":
-        return "bg-amber-50 border-amber-200";
-      case "APPROVED":
-       return "bg-green-50 border-green-200";
-     case "REJECTED":
-       return "bg-red-50 border-red-200";
-     case "MANAGER_REMINDER":
-       return "bg-purple-50 border-purple-200";
-     default:
-       return "bg-[#F8FAFC] border-[#E2E8F0]";
-   }
- }
+  if (isRead) return "bg-[#F8FAFC] border-[#E2E8F0]";
+  switch (type) {
+    case "MISSING_ENTRY":
+      return "bg-orange-50 border-orange-200";
+    case "PENDING_SUBMISSION":
+      return "bg-yellow-50 border-yellow-200";
+    case "SUBMITTED":
+      return "bg-blue-50 border-blue-200";
+    case "RESUBMITTED":
+      return "bg-amber-50 border-amber-200";
+    case "APPROVED":
+      return "bg-green-50 border-green-200";
+    case "REJECTED":
+      return "bg-red-50 border-red-200";
+    case "MANAGER_REMINDER":
+      return "bg-purple-50 border-purple-200";
+    default:
+      return "bg-[#F8FAFC] border-[#E2E8F0]";
+  }
+}
 
 function getTypeBadge(type) {
   switch (type) {
@@ -105,7 +143,73 @@ function getTypeBadge(type) {
   }
 }
 
+function formatWeekRange(value) {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{4}-\d{2}-\d{2})\s*[-–—]\s*(\d{4}-\d{2}-\d{2})$/);
+  if (!match) return value;
+  const parsePart = (p) => {
+    const [y, m, d] = p.split("-");
+    return {
+      year: y,
+      date: new Date(Number(y), Number(m) - 1, Number(d)),
+    };
+  };
+  const monthDay = (date) =>
+    date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const start = parsePart(match[1]);
+  const end = parsePart(match[2]);
+  if (start.year === end.year) {
+    return `${monthDay(start.date)} – ${monthDay(end.date)}, ${start.year}`;
+  }
+  return `${monthDay(start.date)}, ${start.year} – ${monthDay(end.date)}, ${end.year}`;
+}
+
+// Splits an existing notification message into a short description and its
+// labelled detail rows (Week, Approved By, Rejected By, Submitted To, ...).
+// Only data already present in the message is used — nothing new is invented.
+const DETAIL_LABELS = ["Week", "Approved By", "Rejected By", "Submitted To", "Reason"];
+
+function parseNotificationMessage(message) {
+  const descriptionLines = [];
+  const details = [];
+  let activeLabel = null;
+  let currentDetail = null;
+
+  for (const rawLine of (message || "").split("\n")) {
+    const line = rawLine.trim();
+    if (line === "") {
+      activeLabel = null;
+      currentDetail = null;
+      continue;
+    }
+    const colonIndex = line.indexOf(":");
+    const labelCandidate = colonIndex > 0 ? line.slice(0, colonIndex).trim() : "";
+    if (DETAIL_LABELS.includes(labelCandidate)) {
+      activeLabel = labelCandidate;
+      currentDetail = { label: activeLabel, value: line.slice(colonIndex + 1).trim() };
+      details.push(currentDetail);
+      continue;
+    }
+    if (activeLabel && currentDetail) {
+      currentDetail.value = currentDetail.value
+        ? `${currentDetail.value} ${line}`
+        : line;
+    } else {
+      descriptionLines.push(line);
+    }
+  }
+
+  return {
+    description: descriptionLines.join(" "),
+    details: details.map((d) => ({
+      label: d.label,
+      value: d.label === "Week" ? formatWeekRange(d.value) : d.value,
+    })),
+  };
+}
+
 export const Notifications = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
 
@@ -182,15 +286,15 @@ export const Notifications = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-<div>
-           <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
-             <Bell className="w-6 h-6 text-[#B33A2F]" />
-             Notifications
-           </h1>
-           <p className="text-[#64748B]">
-             {unreadCount > 0 ? `${unreadCount} unread` : "All caught up!"}
-           </p>
-         </div>
+        <div>
+          <h1 className="text-[32px] font-bold text-[#1E293B] leading-tight flex items-center gap-2">
+            <Bell className="w-6 h-6 text-[#B33A2F]" />
+            Notifications
+          </h1>
+          <p className="text-[#64748B]">
+            {unreadCount > 0 ? `${unreadCount} unread` : "All caught up!"}
+          </p>
+        </div>
         {unreadCount > 0 && (
           <Button onClick={handleMarkAllRead} className="hover:scale-105 active:scale-95">
             <CheckCheck className="w-4 h-4 mr-2" />
@@ -227,78 +331,124 @@ export const Notifications = () => {
       </div>
 
       <Card>
-<CardContent className="pt-6">
-           {isLoading ? (
-             <div className="text-center py-12">
-               <Clock className="w-8 h-8 mx-auto text-[#64748B] animate-spin" />
-               <p className="text-[#64748B] mt-2">Loading notifications...</p>
-             </div>
-           ) : filtered.length === 0 ? (
-             <div className="text-center py-12">
-               <Bell className="w-16 h-16 mx-auto mb-4 text-[#E2E8F0]" />
-               <p className="text-[#64748B] text-lg">No notifications</p>
-               <p className="text-[#64748B] text-sm mt-1">
-                 {filter === "all"
-                   ? "You're all caught up!"
-                   : `No ${filter} notifications`}
-               </p>
-             </div>
-           ) : (
-             <div className="space-y-3">
-               {filtered.map((n) => (
-                 <div
-                   key={n.id}
-                   className={`flex items-start gap-4 p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(179,58,47,0.08)] ${getNotificationBg(
-                     n.type,
-                     n.isRead
-                   )}`}
-                   onClick={() => !n.isRead && handleMarkRead(n.id)}
-                 >
-                   <div className="mt-0.5">{getNotificationIcon(n.type)}</div>
-                   <div className="flex-1 min-w-0">
-                     <div className="flex items-center gap-2 flex-wrap">
-                       <p className={`font-medium text-sm ${n.isRead ? "text-[#64748B]" : "text-[#1E293B]"}`}>
-                         {n.title}
-                       </p>
-                       {!n.isRead && <Badge variant="primary" className="animate-pulse">New</Badge>}
-                       <Badge variant={getTypeBadge(n.type).variant}>
-                         {getTypeBadge(n.type).label}
-                       </Badge>
-                       <span className="text-xs text-[#64748B] flex items-center gap-1">
-                         <Clock className="w-3 h-3" />
-                         {timeAgo(n.createdAt)}
-                       </span>
-                     </div>
-                      <p className={`text-sm mt-1 whitespace-pre-line ${n.isRead ? "text-[#64748B]" : "text-[#1E293B]"}`}>{n.message}</p>
-                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    {!n.isRead && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkRead(n.id);
-                        }}
-                        className="hover:scale-110 active:scale-95"
-                      >
-                        <CheckCheck className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(n.id);
-                      }}
-                      className="hover:scale-110 active:scale-95 hover:text-red-400"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+        <CardContent className="pt-6">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Clock className="w-8 h-8 mx-auto text-[#64748B] animate-spin" />
+              <p className="text-[#64748B] mt-2">Loading notifications...</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-12">
+              <Bell className="w-16 h-16 mx-auto mb-4 text-[#E2E8F0]" />
+              <p className="text-[#64748B] text-lg">No notifications</p>
+              <p className="text-[#64748B] text-sm mt-1">
+                {filter === "all"
+                  ? "You're all caught up!"
+                  : `No ${filter} notifications`}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((n) => {
+                const theme = getTypeTheme(n.type);
+                const { description, details } = parseNotificationMessage(n.message);
+                return (
+                  <div
+                    key={n.id}
+                    className={`flex items-start gap-3 p-4 rounded-2xl border shadow-sm hover:shadow-md cursor-pointer transition-all duration-200 ${getNotificationBg(
+                      n.type,
+                      n.isRead
+                    )}`}
+                    onClick={() => !n.isRead && handleMarkRead(n.id)}
+                  >
+                    <div className="shrink-0 mt-0.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${theme.circle}`}>
+                        {getCircleIcon(n.type)}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className={`text-sm font-semibold leading-snug ${n.isRead ? "text-[#64748B]" : "text-[#1E293B]"}`}>
+                          {n.title}
+                        </h3>
+                        {!n.isRead && <Badge variant="primary" className="animate-pulse">New</Badge>}
+                        <Badge variant={getTypeBadge(n.type).variant}>
+                          {getTypeBadge(n.type).label}
+                        </Badge>
+                        <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                          <span className="text-xs text-[#64748B] flex items-center gap-1 whitespace-nowrap">
+                            <Clock className="w-3 h-3" />
+                            {timeAgo(n.createdAt)}
+                          </span>
+                          <span className={`w-2 h-2 rounded-full ${theme.dot}`} />
+                          <button
+                            type="button"
+                            title="View Timesheet"
+                            onClick={() =>
+                              navigate(
+                                n.weekStartDate
+                                  ? `/employee/my-timesheet?weekStart=${n.weekStartDate}`
+                                  : "/employee/my-timesheet"
+                              )
+                            }
+                            className={`inline-flex items-center gap-0.5 text-xs font-medium cursor-pointer ${theme.link}`}
+                          >
+                            View Timesheet
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {description && (
+                        <p className={`text-[13px] leading-snug mt-1 ${n.isRead ? "text-[#64748B]" : "text-[#334155]"}`}>
+                          {description}
+                        </p>
+                      )}
+
+                      {details.length > 0 && (
+                        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 mt-1.5 text-xs">
+                          {details.map((d, idx) => (
+                            <div key={idx} className="flex items-baseline gap-1">
+                              <span className="font-medium text-[#64748B]">{d.label}:</span>
+                              <span className="text-[#1E293B]">{d.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1 mt-2">
+                        {!n.isRead && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkRead(n.id);
+                            }}
+                            className="h-7 w-7 p-0 hover:scale-110 active:scale-95"
+                            title="Mark as read"
+                          >
+                            <CheckCheck className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(n.id);
+                          }}
+                          className="h-7 w-7 p-0 hover:scale-110 active:scale-95 hover:text-red-400"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

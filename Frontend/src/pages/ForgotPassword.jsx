@@ -1,32 +1,30 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword } from "../services/api";
+import { useEmailValidation } from "../utils/emailValidation";
 import { Mail, Loader2 } from "lucide-react";
 
 import logo from "../assets/logo.png";
 
 export const ForgotPassword = () => {
-  const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const email = useEmailValidation({ onError: setError });
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setMessage("");
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+    if (!email.validate()) {
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const res = await forgotPassword(email);
+      const res = await forgotPassword(email.value);
       setMessage(res.message);
     } catch (err) {
       setError("Something went wrong");
@@ -193,8 +191,9 @@ export const ForgotPassword = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={email.value}
+                onChange={email.handleChange}
+                ref={email.inputRef}
                 required
                 disabled={isLoading}
                 style={{

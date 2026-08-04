@@ -4,19 +4,16 @@ import { Clock, Mail, Lock, Eye, EyeOff, LogIn, BarChart3, FileText } from "luci
 
 import { loginUser } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useEmailValidation } from "../utils/emailValidation";
 
 import logo from "../assets/logo.png";
 
 export const Login = () => {
-  const [email, setEmail] = useState("");
+  const email = useEmailValidation();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [emailError, setEmailError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const EMAIL_CHAR_REGEX = /^[a-zA-Z0-9._%+-@]*$/;
-  const EMAIL_FORMAT_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   useEffect(() => {
     document.documentElement.classList.remove("dark-theme");
@@ -35,30 +32,18 @@ export const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleEmailChange = (e) => {
-    const value = e.target.value;
-    if (value && !EMAIL_CHAR_REGEX.test(value)) {
-      setEmailError("Please enter a valid email address.");
-      return;
-    }
-    setEmail(value);
-    if (emailError) setEmailError("");
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    setEmailError("");
 
-    if (!email || !EMAIL_FORMAT_REGEX.test(email)) {
-      setEmailError("Please enter a valid email address.");
+    if (!email.validate()) {
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await loginUser({ email, password });
+      const response = await loginUser({ email: email.value, password });
 
       const user = response?.user;
       const token = response?.token;
@@ -188,16 +173,17 @@ export const Login = () => {
                   <input
                     type="email"
                     placeholder="you@company.com"
-                    value={email}
-                    onChange={handleEmailChange}
+                    value={email.value}
+                    onChange={email.handleChange}
+                    ref={email.inputRef}
                     required
                     className={`w-full h-11 pl-10 pr-4 rounded-xl border bg-gray-50 text-sm text-gray-900 placeholder:text-gray-400 outline-none ${
-                      emailError ? "border-red-400" : "border-gray-200"
+                      email.error ? "border-red-400" : "border-gray-200"
                     }`}
                   />
                 </div>
-                {emailError && (
-                  <p className="text-red-400 text-xs mt-1">{emailError}</p>
+                {email.error && (
+                  <p className="text-red-400 text-xs mt-1">{email.error}</p>
                 )}
               </div>
 

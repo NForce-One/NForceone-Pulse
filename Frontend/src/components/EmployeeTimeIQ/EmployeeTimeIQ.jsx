@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { format } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "../ui/Button";
 import {
   fetchETWeeklyTimesheet,
@@ -139,7 +140,19 @@ const deriveRowStatus = (row, managerActionsByRow) => {
 
 export const EmployeeTimeIQ = () => {
   const { user } = useAuth();
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
+  const [searchParams] = useSearchParams();
+  // If the page was opened with ?weekStart=YYYY-MM-DD (e.g. from a
+  // notification's "View Timesheet" action), open exactly that week instead of
+  // the current week. The date is normalized to the week's Monday so any valid
+  // date inside the week targets the correct week.
+  const initialWeekStart = (() => {
+    const param = searchParams.get("weekStart");
+    if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
+      return getWeekStart(param);
+    }
+    return getWeekStart(new Date());
+  })();
+  const [currentWeekStart, setCurrentWeekStart] = useState(initialWeekStart);
   const weekEnd = getWeekEnd(currentWeekStart);
   const weekDates = useMemo(() => generateWeekDates(currentWeekStart), [currentWeekStart]);
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
@@ -1395,7 +1408,7 @@ export const EmployeeTimeIQ = () => {
                           );
                         }
                         if (rowStatus === "SUBMITTED") {
-                          return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Submitted (Pending)</span>;
+                          return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Submitted</span>;
                         }
                         if (rowStatus === "RE-SUBMITTED") {
                           return <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">Re-Submitted</span>;

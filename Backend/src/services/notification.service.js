@@ -1,11 +1,12 @@
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 import TimeEntry from "../models/timeEntry.model.js";
+import Timesheet from "../models/timesheet.model.js";
 import { Op } from "sequelize";
 import { toDateOnlyString } from "../utils/dateUtils.js";
 
 export const getNotificationsByUser = async (userId) => {
-  return await Notification.findAll({
+  const notifications = await Notification.findAll({
     where: { userId },
     include: [
       {
@@ -15,6 +16,36 @@ export const getNotificationsByUser = async (userId) => {
     ],
     order: [["createdAt", "DESC"]],
   });
+
+  // Timesheet-related notifications carry the timesheet id in `relatedId`.
+  // Attach the exact week (weekStartDate / weekEndDate) from that Timesheet
+  // so the frontend can navigate straight to the correct week from a
+  // notification. Notifications without a related timesheet (e.g. reminders)
+  // are left unchanged.
+  const timesheetIds = [
+    ...new Set(
+      notifications
+        .map((n) => n.relatedId)
+        .filter((id) => id !== null && id !== undefined)
+    ),
+  ];
+
+  if (timesheetIds.length > 0) {
+    const timesheets = await Timesheet.findAll({
+      where: { id: { [Op.in]: timesheetIds } },
+      attributes: ["id", "weekStartDate", "weekEndDate"],
+    });
+    const timesheetMap = new Map(timesheets.map((ts) => [ts.id, ts]));
+    notifications.forEach((n) => {
+      const timesheet = timesheetMap.get(n.relatedId);
+      if (timesheet) {
+        n.setDataValue("weekStartDate", timesheet.weekStartDate);
+        n.setDataValue("weekEndDate", timesheet.weekEndDate);
+      }
+    });
+  }
+
+  return notifications;
 };
 
 export const getUnreadCount = async (userId) => {
