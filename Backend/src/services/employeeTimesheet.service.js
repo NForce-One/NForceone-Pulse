@@ -666,17 +666,23 @@ export const getManagerAction = async (timesheetId) => {
   const projectIds = [...new Set(entries.map((e) => e.projectId).filter((p) => p !== null && p !== undefined))];
 
   // Match history either by a still-alive entry (covers Update→resubmit,
-  // where the entries persist) or by (userId, projectId) — the latter is
-  // what survives a Cancel, which detaches the entries tied to it. Without
-  // this, a rejected project that's cancelled and re-added would lose all
-  // memory of ever having been decided, and read as a first-time Pending
-  // submission instead of a resubmission.
+  // where the entries persist) or by (userId, projectId, timesheetId) — the
+  // latter is what survives a Cancel, which detaches the entries tied to it.
+  // Without this, a rejected project that's cancelled and re-added would
+  // lose all memory of ever having been decided, and read as a first-time
+  // Pending submission instead of a resubmission. The timesheetId bound is
+  // required here — without it this matched ANY past decision on that
+  // (userId, projectId) pair from ANY other week, so a brand-new week's
+  // first-ever submission of a project the manager had decided on before
+  // would incorrectly read as Re-Submitted.
   const histories = await ApprovalHistory.findAll({
     where: {
       action: { [Op.in]: ["APPROVED", "REJECTED"] },
       [Op.or]: [
         { timeEntryId: { [Op.in]: entryIds } },
-        ...(projectIds.length > 0 ? [{ userId: timesheet.userId, projectId: { [Op.in]: projectIds } }] : []),
+        ...(projectIds.length > 0
+          ? [{ userId: timesheet.userId, projectId: { [Op.in]: projectIds }, timesheetId: timesheet.id }]
+          : []),
       ],
     },
     include: [{ model: User, as: "Actor", attributes: ["id", "name"] }],

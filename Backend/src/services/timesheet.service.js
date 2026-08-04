@@ -278,6 +278,7 @@ export const approveTimesheet = async (timesheetId, managerId, comment, actorRol
 
   const approvalHistories = entriesToApprove.map((entry) => ({
     timeEntryId: entry.id,
+    timesheetId: timesheet.id,
     userId: timesheet.userId,
     projectId: entry.projectId,
     actorId: managerId,
@@ -438,6 +439,7 @@ export const rejectTimesheet = async (timesheetId, managerId, comment, actorRole
 
   const approvalHistories = entriesToReject.map((entry) => ({
     timeEntryId: entry.id,
+    timesheetId: timesheet.id,
     userId: timesheet.userId,
     projectId: entry.projectId,
     actorId: managerId,
