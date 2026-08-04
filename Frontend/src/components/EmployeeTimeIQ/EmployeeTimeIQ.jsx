@@ -1408,7 +1408,7 @@ export const EmployeeTimeIQ = () => {
                           );
                         }
                         if (rowStatus === "SUBMITTED") {
-                          return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Submitted</span>;
+                          return <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Pending</span>;
                         }
                         if (rowStatus === "RE-SUBMITTED") {
                           return <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">Re-Submitted</span>;
