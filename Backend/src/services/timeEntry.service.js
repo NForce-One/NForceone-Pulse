@@ -1,7 +1,31 @@
 import TimeEntry from "../models/timeEntry.model.js";
 import User from "../models/user.model.js";
 import ApprovalHistory from "../models/approvalHistory.model.js";
+import Timesheet from "../models/timesheet.model.js";
 import { Op } from "sequelize";
+
+const toLocalDate = (date) => {
+  if (typeof date === "string") {
+    if (date.includes("T")) return new Date(date);
+    return new Date(date + "T00:00:00");
+  }
+  return new Date(date);
+};
+
+const formatDate = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const getWeekStart = (date) => {
+  const d = toLocalDate(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  return formatDate(d);
+};
 
 // ✅ HELPER FUNCTION TO GET ENTRIES WITH USER DATA
 const getEntriesWithUser = async (whereClause = {}) => {
@@ -62,8 +86,24 @@ const getEntriesWithUser = async (whereClause = {}) => {
           ...(projectIds.length > 0 ? [{ projectId: { [Op.in]: projectIds } }] : []),
         ],
       },
-      attributes: ["timeEntryId", "actorId", "userId", "projectId"],
+      attributes: ["timeEntryId", "actorId", "userId", "projectId", "timesheetId"],
     });
+
+    // The (userId, projectId) fallback above has no week boundary by itself,
+    // so it would also match a decision from a completely different week —
+    // making a brand-new week's first-ever submission of a project the
+    // manager had previously decided on misread as a resubmission. Resolve
+    // each entry to the id of the Timesheet (week) it actually belongs to,
+    // so that fallback can be restricted to same-week history only.
+    const userIds = [...new Set(entries.map((e) => e.userId))];
+    const weekStarts = [...new Set(entries.map((e) => getWeekStart(e.entryDate)))];
+    const timesheets = await Timesheet.findAll({
+      where: { userId: { [Op.in]: userIds }, weekStartDate: { [Op.in]: weekStarts } },
+      attributes: ["id", "userId", "weekStartDate"],
+    });
+    const timesheetIdByUserWeek = new Map();
+    timesheets.forEach((t) => timesheetIdByUserWeek.set(`${t.userId}:${t.weekStartDate}`, t.id));
+
     const priorActorsByEntry = new Map();
     const priorActorsByUserProject = new Map();
     approvalHistoryAll.forEach((h) => {
@@ -74,7 +114,7 @@ const getEntriesWithUser = async (whereClause = {}) => {
       if (h.userId && h.projectId) {
         const key = `${h.userId}:${h.projectId}`;
         if (!priorActorsByUserProject.has(key)) priorActorsByUserProject.set(key, []);
-        priorActorsByUserProject.get(key).push(h.actorId);
+        priorActorsByUserProject.get(key).push({ actorId: h.actorId, timesheetId: h.timesheetId });
       }
     });
 
@@ -86,8 +126,11 @@ const getEntriesWithUser = async (whereClause = {}) => {
       // as Re-Submitted) — if the entry was reassigned to a different
       // manager, that manager is seeing it for the first time (Pending).
       const byEntry = priorActorsByEntry.get(entry.id) || [];
+      const entryTimesheetId = timesheetIdByUserWeek.get(`${entry.userId}:${getWeekStart(entry.entryDate)}`);
       const byProject = entry.projectId
         ? (priorActorsByUserProject.get(`${entry.userId}:${entry.projectId}`) || [])
+            .filter((h) => entryTimesheetId != null && Number(h.timesheetId) === Number(entryTimesheetId))
+            .map((h) => h.actorId)
         : [];
       const priorActors = [...byEntry, ...byProject];
       entry.dataValues.previouslyApproved =

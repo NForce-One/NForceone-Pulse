@@ -286,8 +286,20 @@ export const approveTimeEntry = async (req, res) => {
     await entry.save();
     console.log("[TIME-ENTRY-APPROVE] Entry status updated to APPROVED");
 
+    // Stamp the week's Timesheet id so a later same-week Cancel+resubmit of
+    // this project can be matched back to this decision (see timeEntry.service.js).
+    const approveEntryDateStr = typeof entry.entryDate === "string" ? entry.entryDate : toDateOnlyString(entry.entryDate);
+    const approveEntryDateObj = new Date(approveEntryDateStr + "T00:00:00");
+    const approveWeekStart = new Date(approveEntryDateObj);
+    approveWeekStart.setDate(approveEntryDateObj.getDate() - approveEntryDateObj.getDay());
+    const approveTimesheet = await Timesheet.findOne({
+      where: { userId: entry.userId, weekStartDate: toDateOnlyString(approveWeekStart) },
+      attributes: ["id"],
+    });
+
     await ApprovalHistory.create({
       timeEntryId: entry.id,
+      timesheetId: approveTimesheet ? approveTimesheet.id : null,
       userId: entry.userId,
       projectId: entry.projectId,
       actorId: user.id,
@@ -498,8 +510,20 @@ export const rejectTimeEntry = async (req, res) => {
     await entry.save();
     console.log("[TIME-ENTRY-REJECT] Entry status updated to REJECTED");
 
+    // Stamp the week's Timesheet id so a later same-week Cancel+resubmit of
+    // this project can be matched back to this decision (see timeEntry.service.js).
+    const rejectEntryDateStr = typeof entry.entryDate === "string" ? entry.entryDate : toDateOnlyString(entry.entryDate);
+    const rejectEntryDateObj = new Date(rejectEntryDateStr + "T00:00:00");
+    const rejectWeekStart = new Date(rejectEntryDateObj);
+    rejectWeekStart.setDate(rejectEntryDateObj.getDate() - rejectEntryDateObj.getDay());
+    const rejectTimesheet = await Timesheet.findOne({
+      where: { userId: entry.userId, weekStartDate: toDateOnlyString(rejectWeekStart) },
+      attributes: ["id"],
+    });
+
     await ApprovalHistory.create({
       timeEntryId: entry.id,
+      timesheetId: rejectTimesheet ? rejectTimesheet.id : null,
       userId: entry.userId,
       projectId: entry.projectId,
       actorId: user.id,
