@@ -7,10 +7,10 @@ import {
   toggleUserStatus,
 } from "../services/api";
 import {
-  sanitizeEmailInput,
+  processEmailInput,
+  preventLeadingSpace,
+  preventLeadingSpaceBeforeInput,
   validateEmail,
-  EMAIL_INVALID_CHAR_MESSAGE,
-  MAX_EMAIL_LENGTH,
 } from "../utils/emailValidation";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -78,15 +78,16 @@ export const Users = () => {
       return;
     }
     if (name === "email") {
-      const filtered = sanitizeEmailInput(value);
-      setFormData((prev) => ({
-        ...prev,
-        email: filtered.length > MAX_EMAIL_LENGTH ? filtered.slice(0, MAX_EMAIL_LENGTH) : filtered,
-      }));
-      setEmailError(filtered !== value ? EMAIL_INVALID_CHAR_MESSAGE : "");
+      const { value: nextEmail, error } = processEmailInput(value);
+      setFormData((prev) => ({ ...prev, email: nextEmail }));
+      setEmailError(error);
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEmailBlur = () => {
+    setFormData((prev) => ({ ...prev, email: (prev.email || "").trim() }));
   };
 
   const handleSubmit = async (e) => {
@@ -96,14 +97,15 @@ export const Users = () => {
       return;
     }
     setEmployeeIdError("");
-    const emailCheck = validateEmail(formData.email);
+    const trimmedEmail = (formData.email || "").trim();
+    const emailCheck = validateEmail(trimmedEmail);
     setEmailError(emailCheck.error);
     if (!emailCheck.valid) {
       emailInputRef.current?.focus();
       return;
     }
     try {
-      const payload = { ...formData };
+      const payload = { ...formData, email: trimmedEmail };
       if (editingId) {
         // employeeId is editable by the admin, same as at creation; name is editable too
         await updateUser(editingId, payload);
@@ -197,7 +199,7 @@ export const Users = () => {
                  {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                </div>
                <div>
-                 <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required autoComplete="off"
+                 <Input name="email" type="email" value={formData.email} onChange={handleInputChange} onKeyDown={preventLeadingSpace} onBeforeInput={preventLeadingSpaceBeforeInput} onBlur={handleEmailBlur} placeholder="Email" required autoComplete="off"
                    ref={emailInputRef}
                    className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-200" />
                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}

@@ -24,7 +24,7 @@ export const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      const res = await forgotPassword(email.value);
+      const res = await forgotPassword(email.value.trim());
       setMessage(res.message);
     } catch (err) {
       setError("Something went wrong");
@@ -193,6 +193,9 @@ export const ForgotPassword = () => {
                 placeholder="Enter your email"
                 value={email.value}
                 onChange={email.handleChange}
+                onKeyDown={email.handleKeyDown}
+                onBeforeInput={email.handleBeforeInput}
+                onBlur={email.handleBlur}
                 ref={email.inputRef}
                 required
                 disabled={isLoading}

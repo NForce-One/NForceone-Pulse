@@ -49,7 +49,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await registerUser({ ...form, email: email.value });
+      await registerUser({ ...form, email: email.value.trim() });
 
       setSuccess("Registration successful! Redirecting to login...");
 
@@ -147,6 +147,9 @@ const Register = () => {
               placeholder="Email"
               value={email.value}
               onChange={email.handleChange}
+              onKeyDown={email.handleKeyDown}
+              onBeforeInput={email.handleBeforeInput}
+              onBlur={email.handleBlur}
               ref={email.inputRef}
               required
               className="bg-white border border-[#E2E8F0] text-[#1E293B] placeholder-[#64748B] focus:ring-2 focus:ring-[#B33A2F] transition-all duration-300 focus:scale-[1.02]"

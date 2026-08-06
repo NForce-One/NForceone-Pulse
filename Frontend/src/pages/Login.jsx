@@ -43,7 +43,7 @@ export const Login = () => {
     }
 
     try {
-      const response = await loginUser({ email: email.value, password });
+      const response = await loginUser({ email: email.value.trim(), password });
 
       const user = response?.user;
       const token = response?.token;
@@ -175,6 +175,9 @@ export const Login = () => {
                     placeholder="you@company.com"
                     value={email.value}
                     onChange={email.handleChange}
+                    onKeyDown={email.handleKeyDown}
+                    onBeforeInput={email.handleBeforeInput}
+                    onBlur={email.handleBlur}
                     ref={email.inputRef}
                     required
                     className={`w-full h-11 pl-10 pr-4 rounded-xl border bg-gray-50 text-sm text-gray-900 placeholder:text-gray-400 outline-none ${
