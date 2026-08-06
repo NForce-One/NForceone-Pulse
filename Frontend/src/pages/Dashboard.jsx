@@ -1,28 +1,12 @@
 ﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { getDashboardStats, getHourDetails, getMissingTimeDetails, fetchAllUsers, fetchAllProjects, fetchAllClients } from "../services/api";
+import { getDashboardStats, getHourDetails, getMissingTimeDetails } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCachedData } from "../hooks/useCachedData";
 import { formatHoursToHHMM } from "../utils/timeFormat";
-import { AdminListModal } from "../components/ui/AdminListModal";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { DrillDownModal } from "../components/ui/DrillDownModal";
 import { MissingTimeModal } from "../components/ui/MissingTimeModal";
-import { Users, ChevronDown, Clock, Briefcase, CalendarDays, Gift, Eye } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { Users, ChevronDown, Clock, Eye, Send, Hourglass, XCircle } from "lucide-react";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -47,11 +31,413 @@ const METRIC_OPTIONS = [
   { value: "holiday", label: "Holiday Working Hours" },
 ];
 
+const Sparkline = ({ data }) => {
+  const values = Array.isArray(data) ? data.filter((v) => typeof v === "number" && !Number.isNaN(v)) : [];
+  if (values.length === 0) {
+    return (
+      <svg viewBox="0 0 100 24" className="w-full h-6" fill="none" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 18 L100 18" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  if (values.length === 1) {
+    const y = 22 - ((values[0] - min) / range) * 18;
+    return (
+      <svg viewBox="0 0 100 24" className="w-full h-6" fill="none" preserveAspectRatio="none" aria-hidden="true">
+        <circle cx="50" cy={y} r="2" fill="#9CA3AF" />
+      </svg>
+    );
+  }
+  const stepX = 100 / (values.length - 1);
+  const points = values.map((v, i) => {
+    const x = (i * stepX).toFixed(2);
+    const y = (22 - ((v - min) / range) * 18).toFixed(2);
+    return `${x},${y}`;
+  });
+  return (
+    <svg viewBox="0 0 100 24" className="w-full h-6" fill="none" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points={points.join(" ")} stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+const KpiCard = ({ title, value, unit, description, trend, footer }) => (
+  <Card className="rounded-[12px] border border-[#B33A2F]/30 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-[200px]">
+    <div className="px-4 py-2.5 flex flex-col h-full">
+      <p className="text-sm uppercase text-[#374151]">{title}</p>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="text-2xl leading-none font-bold text-[#1F2937] whitespace-nowrap">{value}</span>
+        {unit && <span className="text-sm text-[#6B7280]">{unit}</span>}
+      </div>
+      <p className="mt-0.5 text-sm text-[#6B7280]">{description}</p>
+      <div className="mt-auto pt-2.5">
+        <Sparkline data={trend} />
+        <p className="mt-1 text-xs font-medium tracking-wide text-[#9CA3AF]">{footer}</p>
+      </div>
+    </div>
+  </Card>
+);
+
+const ExtraHoursCard = ({ total, weekdayValue, weekdayPct, weekendValue, weekendPct, holidayValue, holidayPct }) => (
+  <Card className="rounded-[12px] border border-[#B33A2F]/30 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-[200px]">
+    <div className="px-4 py-2.5 flex flex-col h-full">
+      <p className="text-sm uppercase text-[#374151]">Extra Hours Worked</p>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="text-2xl leading-none font-bold text-[#B33A2F] whitespace-nowrap">{total}</span>
+      </div>
+      <p className="mt-0.5 text-sm text-[#6B7280]">hrs beyond 40 hr week</p>
+      <div className="mt-auto pt-2 space-y-1">
+        <ProgressRow label="Weekday OT" value={weekdayValue} pct={weekdayPct} />
+        <ProgressRow label="Weekend" value={weekendValue} pct={weekendPct} />
+        <ProgressRow label="Holiday" value={holidayValue} pct={holidayPct} />
+      </div>
+    </div>
+  </Card>
+);
+
+const ProgressRow = ({ label, value, pct }) => (
+  <div>
+    <div className="flex items-center justify-between mb-0.5">
+      <span className="text-xs font-medium text-[#111827]">{label}</span>
+      <span className="text-xs font-semibold text-[#111827]">{value}</span>
+    </div>
+    <div className="h-0.5 w-full rounded-full bg-[#F1F5F9] overflow-hidden">
+      <div className="h-full rounded-full bg-[#B33A2F] transition-all duration-300" style={{ width: `${pct}%` }} />
+    </div>
+  </div>
+);
+
+const DASHBOARD_CARD_CLASS =
+  "rounded-[16px] border border-[#B33A2F]/20 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-[300px] overflow-hidden";
+
+const DOUGHNUT_SIZE = 120;
+const DOUGHNUT_RADIUS = 45;
+const DOUGHNUT_STROKE_WIDTH = 14;
+const DOUGHNUT_CIRCUMFERENCE = 2 * Math.PI * DOUGHNUT_RADIUS;
+
+const SubmissionStatusCard = ({ data = [], submittedPct = 0, bottomStats = [] }) => {
+  const segments = data.map((seg, idx) => {
+    const start = data.slice(0, idx).reduce(
+      (sum, s) => sum + (s.pct / 100) * DOUGHNUT_CIRCUMFERENCE,
+      0
+    );
+    const len = (seg.pct / 100) * DOUGHNUT_CIRCUMFERENCE;
+    return { ...seg, start, len };
+  });
+
+  return (
+    <Card className={DASHBOARD_CARD_CLASS}>
+      <div className="p-[18px] flex flex-col h-full">
+        <h2 className="text-[20px] font-bold leading-none text-[#1F2937]">Submission Status</h2>
+        <p className="mt-1 text-[12px] text-[#6B7280]">Where all timesheets stand right now</p>
+
+        <div className="flex items-center gap-5 mt-4">
+          <div className="relative flex-shrink-0">
+            <svg width={DOUGHNUT_SIZE} height={DOUGHNUT_SIZE} viewBox={`0 0 ${DOUGHNUT_SIZE} ${DOUGHNUT_SIZE}`}>
+              <circle
+                cx={DOUGHNUT_SIZE / 2}
+                cy={DOUGHNUT_SIZE / 2}
+                r={DOUGHNUT_RADIUS}
+                fill="none"
+                stroke="#F4F4F5"
+                strokeWidth={DOUGHNUT_STROKE_WIDTH}
+              />
+              {segments.map((seg) => (
+                <circle
+                  key={seg.label}
+                  cx={DOUGHNUT_SIZE / 2}
+                  cy={DOUGHNUT_SIZE / 2}
+                  r={DOUGHNUT_RADIUS}
+                  fill="none"
+                  stroke={seg.color}
+                  strokeWidth={DOUGHNUT_STROKE_WIDTH}
+                  strokeDasharray={`${seg.len} ${DOUGHNUT_CIRCUMFERENCE}`}
+                  strokeDashoffset={-seg.start}
+                  transform={`rotate(-90 ${DOUGHNUT_SIZE / 2} ${DOUGHNUT_SIZE / 2})`}
+                />
+              ))}
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-[26px] font-bold leading-none text-[#111827]">{submittedPct}%</p>
+                <p className="mt-1 text-[10px] font-medium uppercase tracking-[1.5px] text-[#6B7280]">Submitted</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0 space-y-2.5">
+            {data.map((row) => (
+              <div key={row.label} className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-[2px] flex-shrink-0" style={{ backgroundColor: row.color }} />
+                  <span className="text-[12px] text-[#374151] truncate">{row.label}</span>
+                </span>
+                <span className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[12px] font-bold text-[#111827]">{row.count}</span>
+                  <span className="text-[12px] text-[#9CA3AF] w-8 text-right">{row.pct}%</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-auto pt-4">
+          <div className="border-t border-[#E5E7EB] pt-3 grid grid-cols-3 divide-x divide-[#E5E7EB]">
+            {bottomStats.map((col) => (
+              <div key={col.label} className="px-3 text-center first:pl-0 last:pr-0">
+                <p className="text-[24px] font-bold leading-none text-[#111827]">{col.value}</p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]">{col.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const DAILY_HOURS_BARS = [
+  { day: "Mon", hours: 8, overtime: false },
+  { day: "Tue", hours: 9, overtime: true },
+  { day: "Wed", hours: 8, overtime: false },
+  { day: "Thu", hours: 7, overtime: false },
+  { day: "Fri", hours: 8, overtime: false },
+  { day: "Sat", hours: 4, overtime: true },
+  { day: "Sun", hours: 0, overtime: false },
+];
+
+const HoursLoggedPerDayCard = () => {
+  const maxHours = Math.max(...DAILY_HOURS_BARS.map((d) => d.hours), 1);
+  return (
+  <Card className={DASHBOARD_CARD_CLASS}>
+    <div className="p-[18px] flex flex-col h-full">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-[#111827]">Hours Logged Per Day</p>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-[#6B7280]">
+              <span className="w-2 h-2 rounded-full bg-[#1F2937]"></span>Working
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-[#6B7280]">
+              <span className="w-2 h-2 rounded-full bg-[#B33A2F]"></span>Overtime
+            </span>
+          </div>
+      </div>
+      <div className="flex items-end justify-between gap-2 flex-1 pt-5 pb-1">
+        {DAILY_HOURS_BARS.map((d) => (
+          <div key={d.day} className="flex flex-col items-center gap-1.5 flex-1 h-full">
+            <span className="text-[10px] font-semibold text-[#6B7280]">{d.hours > 0 ? d.hours : ""}</span>
+            <div className="w-full max-w-[26px] flex-1 min-h-[40px] rounded-[6px] bg-[#F1F5F9] overflow-hidden flex items-end">
+              <div
+                className={`w-full rounded-[6px] ${d.overtime ? "bg-[#B33A2F]" : "bg-[#1F2937]"}`}
+                style={{ height: `${(d.hours / maxHours) * 100}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-medium text-[#6B7280]">{d.day}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </Card>
+);
+};
+
+const HoursByClientCard = ({ data = [] }) => (
+  <Card className={DASHBOARD_CARD_CLASS}>
+    <div className="p-[18px] flex flex-col h-full">
+      <p className="text-sm font-semibold text-[#111827]">Hours by Client</p>
+      <div className="flex-1 flex flex-col justify-between pt-4">
+        {data.length > 0 ? (
+          data.map((c) => (
+            <ProgressRow key={c.label} label={c.label} value={c.value} pct={c.pct} />
+          ))
+        ) : (
+          <p className="text-xs text-[#9CA3AF] text-center py-6">
+            No client hours found for the selected period.
+          </p>
+        )}
+      </div>
+    </div>
+  </Card>
+);
+
+const APPROVAL_QUEUE_MANAGERS = [
+  { name: "Alex Morgan", days: 3, count: 5 },
+  { name: "Priya Sharma", days: 5, count: 2 },
+  { name: "David Kim", days: 1, count: 1 },
+];
+
+const ApprovalQueueCard = () => (
+  <Card className={DASHBOARD_CARD_CLASS}>
+    <div className="p-[18px] flex flex-col h-full">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-[#111827]">Approval Queue by Manager</p>
+        <span className="text-xs font-semibold text-[#B33A2F]">8 pending</span>
+      </div>
+      <div className="flex-1 flex flex-col justify-between pt-4">
+        {APPROVAL_QUEUE_MANAGERS.map((m) => (
+          <div key={m.name}>
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="text-xs font-medium text-[#111827]">{m.name}</span>
+              <span className="text-xs font-semibold text-[#B33A2F]">{m.days}d waiting</span>
+            </div>
+            <div className="h-0.5 w-full rounded-full bg-[#F1F5F9] overflow-hidden">
+              <div className="h-full rounded-full bg-[#B33A2F]" style={{ width: `${Math.min(m.days * 15, 100)}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </Card>
+);
+
+const ProjectHoursBurnCard = ({ data = [] }) => (
+  <Card className={DASHBOARD_CARD_CLASS}>
+    <div className="p-[18px] flex flex-col h-full">
+      <p className="text-sm font-semibold text-[#111827]">Project Hours Burn</p>
+      <div className="flex-1 flex flex-col justify-between pt-4">
+        {data.length > 0 ? (
+          data.map((p) => (
+            <div key={p.name}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-xs font-medium text-[#111827]">{p.name}</span>
+                <span className="text-xs font-semibold text-[#111827]">{p.pct}%</span>
+              </div>
+              <div className="h-0.5 w-full rounded-full bg-[#F1F5F9] overflow-hidden">
+                <div className="h-full rounded-full bg-[#1F2937]" style={{ width: `${p.pct}%` }} />
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-xs text-[#9CA3AF] text-center py-6">
+            No project hours found for the selected period.
+          </p>
+        )}
+      </div>
+    </div>
+  </Card>
+);
+
+const LEAVE_TAKEN = [
+  { name: "Ravi Kumar", days: 3 },
+  { name: "Sarah Lee", days: 2 },
+  { name: "Mike Chen", days: 1 },
+];
+
+const LeaveTakenCard = () => (
+  <Card className={DASHBOARD_CARD_CLASS}>
+    <div className="p-[18px] flex flex-col h-full">
+      <p className="text-sm font-semibold text-[#111827]">Leave Taken</p>
+      <div className="flex-1 flex flex-col justify-between pt-4">
+        {LEAVE_TAKEN.map((l) => (
+          <div key={l.name} className="flex items-center gap-3">
+            <span className="w-32 flex-shrink-0 text-xs font-medium text-[#111827]">{l.name}</span>
+            <div className="flex-1 h-1 rounded-full bg-[#F1F5F9] overflow-hidden">
+              <div className="h-full rounded-full bg-[#B33A2F]" style={{ width: `${l.days * 25}%` }} />
+            </div>
+            <span className="w-7 text-right text-xs font-semibold text-[#111827]">{l.days}d</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </Card>
+);
+
+const QUEUE_TABS = [
+  { value: "missing", label: "Missing Timesheets" },
+  { value: "stuck", label: "Stuck in Approval" },
+  { value: "overtime", label: "Overtime Watchlist" },
+];
+
+const QUEUE_ROWS = {
+  missing: [
+    { employee: "Ananya Rao", team: "Engineering", approver: "Alex Morgan", daysLate: 4, hoursLogged: "—" },
+    { employee: "Tom Becker", team: "Design", approver: "Priya Sharma", daysLate: 2, hoursLogged: "—" },
+    { employee: "Lena Ortiz", team: "Marketing", approver: "David Kim", daysLate: 1, hoursLogged: "—" },
+  ],
+  stuck: [
+    { employee: "Noah Grant", team: "Engineering", approver: "Alex Morgan", daysLate: 6, hoursLogged: "36h" },
+    { employee: "Emma Lawson", team: "Sales", approver: "Priya Sharma", daysLate: 3, hoursLogged: "21h" },
+    { employee: "Ivy Chen", team: "Finance", approver: "David Kim", daysLate: 2, hoursLogged: "14h" },
+  ],
+  overtime: [
+    { employee: "Ravi Kumar", team: "Engineering", approver: "Alex Morgan", daysLate: 0, hoursLogged: "52h" },
+    { employee: "Maya Patel", team: "Design", approver: "Priya Sharma", daysLate: 0, hoursLogged: "49h" },
+    { employee: "Omar Haddad", team: "Sales", approver: "David Kim", daysLate: 0, hoursLogged: "47h" },
+  ],
+};
+
+const AdminQueueTable = ({ activeTab, onTabChange }) => (
+  <Card className="rounded-[12px] border border-[#E5E7EB] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] overflow-hidden">
+    <div className="px-5 pt-4">
+      <p className="text-sm font-semibold text-[#111827]">Timesheet Queues</p>
+    </div>
+    <div className="px-5 flex items-center gap-6 mt-3 border-b border-[#F1F5F9]">
+      {QUEUE_TABS.map((tab) => (
+        <button
+          key={tab.value}
+          onClick={() => onTabChange(tab.value)}
+          className={`-mb-px px-1 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+            activeTab === tab.value
+              ? "text-[#B33A2F] border-[#B33A2F]"
+              : "text-[#6B7280] border-transparent hover:text-[#111827]"
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+          <tr>
+            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6B7280] whitespace-nowrap">Employee</th>
+            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6B7280] whitespace-nowrap">Team</th>
+            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6B7280] whitespace-nowrap">Approver</th>
+            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6B7280] whitespace-nowrap">Days Late</th>
+            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#6B7280] whitespace-nowrap">Hours Logged</th>
+          </tr>
+        </thead>
+        <tbody>
+          {QUEUE_ROWS[activeTab].map((row) => (
+            <tr key={row.employee} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150">
+              <td className="px-5 py-3 text-[#111827] font-medium whitespace-nowrap">{row.employee}</td>
+              <td className="px-5 py-3 text-[#374151]">{row.team}</td>
+              <td className="px-5 py-3 text-[#374151]">{row.approver}</td>
+              <td className="px-5 py-3">
+                {row.daysLate > 0 ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                    {row.daysLate} days
+                  </span>
+                ) : (
+                  <span className="text-[#6B7280]">—</span>
+                )}
+              </td>
+              <td className="px-5 py-3 text-[#374151]">{row.hoursLogged}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </Card>
+);
+
 const toDateStr = (date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+};
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return "";
+  const dt = new Date(dateStr + "T00:00:00");
+  if (Number.isNaN(dt.getTime())) return dateStr;
+  return `${String(dt.getDate()).padStart(2, "0")} ${SHORT_MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
 };
 
 export const Dashboard = () => {
@@ -64,6 +450,7 @@ export const Dashboard = () => {
   const [toDate, setToDate] = useState("");
   const [dashboardView, setDashboardView] = useState("self");
   const [selectedMetric, setSelectedMetric] = useState("total");
+  const [activeQueueTab, setActiveQueueTab] = useState("missing");
 
   const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
   const isAdmin = user?.role === "ADMIN";
@@ -76,14 +463,6 @@ export const Dashboard = () => {
     totals: { normalHours: 0, weekendHours: 0, holidayHours: 0, totalExtraHours: 0 },
     isLoading: false,
     date: "",
-  });
-
-  const [adminModal, setAdminModal] = useState({
-    isOpen: false,
-    title: "",
-    columns: [],
-    data: [],
-    isLoading: false,
   });
 
   const [missingTime, setMissingTime] = useState({ employees: [], totalCount: 0 });
@@ -163,7 +542,6 @@ export const Dashboard = () => {
 
   const openHourDetails = async (title, type, date = "") => {
     const entries = stats?.dashboardEntries;
-    console.log(`[DEBUG] openHourDetails invoked: title="${title}" type="${type}" date="${date}" entries=${Array.isArray(entries) ? entries.length : typeof entries} statsKeys=${Object.keys(stats).join(',')}`);
     if (Array.isArray(entries) && entries.length > 0 && !date) {
       let filteredEntries = [];
       if (type === "total") {
@@ -177,11 +555,9 @@ export const Dashboard = () => {
       } else if (type === "draft") {
         filteredEntries = entries.filter(e => e.approvalStatus === "DRAFT");
       }
-      const totalHours = filteredEntries.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
       const nHours = filteredEntries.filter(e => e.type === "working").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
       const wHours = filteredEntries.filter(e => e.type === "weekend").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
       const hHours = filteredEntries.filter(e => e.type === "holiday").reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
-      console.log(`[DEBUG Dashboard] Modal "${title}" (${type}): ${filteredEntries.length} entries, ${totalHours.toFixed(2)}h from dashboardEntries`);
       setModalState({
         isOpen: true, title, type,
         data: filteredEntries,
@@ -215,7 +591,6 @@ export const Dashboard = () => {
         return;
       }
       const respEntries = response?.entries ?? (Array.isArray(response) ? response : []);
-      console.log(`[DEBUG Dashboard] Fetched ${respEntries.length} entries from API for "${title}" (${type})`);
       const totals = {
         normalHours: response?.normalHours ?? 0,
         weekendHours: response?.weekendHours ?? 0,
@@ -237,107 +612,6 @@ export const Dashboard = () => {
 
   const closeModal = useCallback(() => {
     setModalState((prev) => ({ ...prev, isOpen: false }));
-  }, []);
-
-  const closeAdminModal = useCallback(() => {
-    setAdminModal((prev) => ({ ...prev, isOpen: false }));
-  }, []);
-
-  const openUsersModal = useCallback(async () => {
-    setAdminModal({ isOpen: true, title: "Total Users", columns: [], data: [], isLoading: true });
-    try {
-      const users = await fetchAllUsers();
-      const cols = [
-        { key: "name", label: "Employee Name" },
-        {
-          key: "role", label: "Role",
-          render: (u) => (
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-              u.role === "ADMIN" ? "bg-purple-100 text-purple-700 border border-purple-200" :
-              u.role === "MANAGER" ? "bg-blue-100 text-blue-700 border border-blue-200" :
-              "bg-[#F1F5F9] text-[#374151] border border-[#E2E8F0]"
-            }`}>{u.role}</span>
-          )
-        },
-        { key: "email", label: "Email" },
-        {
-          key: "isActive", label: "Status",
-          render: (u) => (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-              u.isActive ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-red-100 text-red-700 border border-red-200"
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${u.isActive ? "bg-emerald-400" : "bg-red-400"}`}></span>
-              {u.isActive ? "Active" : "Inactive"}
-            </span>
-          )
-        },
-      ];
-      setAdminModal({ isOpen: true, title: "Total Users", columns: cols, data: Array.isArray(users) ? users : [], isLoading: false });
-    } catch {
-      setAdminModal((prev) => ({ ...prev, data: [], isLoading: false }));
-    }
-  }, []);
-
-  const openProjectsModal = useCallback(async () => {
-    setAdminModal({ isOpen: true, title: "Active Projects", columns: [], data: [], isLoading: true });
-    try {
-      const projects = await fetchAllProjects();
-      const activeProjects = (Array.isArray(projects) ? projects : []).filter((p) => p.status === "ACTIVE");
-      const cols = [
-        { key: "name", label: "Project Name" },
-        { key: "clientWorked", label: "Client Name", render: (p) => p.Client?.name || "-" },
-        {
-          key: "status", label: "Status",
-          render: (p) => (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-              {p.status}
-            </span>
-          )
-        },
-      ];
-      setAdminModal({ isOpen: true, title: "Active Projects", columns: cols, data: activeProjects, isLoading: false });
-    } catch {
-      setAdminModal((prev) => ({ ...prev, data: [], isLoading: false }));
-    }
-  }, []);
-
-  const openClientsModal = useCallback(async () => {
-    setAdminModal({ isOpen: true, title: "Active Clients", columns: [], data: [], isLoading: true });
-    try {
-      const [clients, projects] = await Promise.all([fetchAllClients(), fetchAllProjects()]);
-      const activeClients = (Array.isArray(clients) ? clients : []).filter((c) => c.status === "ACTIVE");
-      const projectList = Array.isArray(projects) ? projects : [];
-      const projectCountMap = {};
-      projectList.forEach((p) => {
-        if (p.clientId) {
-          projectCountMap[p.clientId] = (projectCountMap[p.clientId] || 0) + 1;
-        }
-      });
-      const clientData = activeClients.map((c) => ({
-        ...c,
-        projectCount: projectCountMap[c.id] || 0,
-      }));
-      const cols = [
-        { key: "name", label: "Client Name" },
-        {
-          key: "status", label: "Status",
-          render: (c) => (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-              {c.status}
-            </span>
-          )
-        },
-        {
-          key: "projectCount", label: "Related Projects",
-          render: (c) => (
-            <span className="text-[#374151]">{c.projectCount} project{c.projectCount !== 1 ? "s" : ""}</span>
-          )
-        },
-      ];
-      setAdminModal({ isOpen: true, title: "Active Clients", columns: cols, data: clientData, isLoading: false });
-    } catch {
-      setAdminModal((prev) => ({ ...prev, data: [], isLoading: false }));
-    }
   }, []);
 
   const openMissingTimeModal = useCallback((employee) => {
@@ -405,67 +679,202 @@ export const Dashboard = () => {
     };
   }, [stats?.dailySummary, selectedMetric]);
 
-  const statCards = [];
+  const weekendExtraVal = Number(stats.weekendHours || 0);
+  const holidayExtraVal = Number(stats.holidayHours || 0);
+  const extraMaxVal = Math.max(weekendExtraVal, holidayExtraVal, 1);
+  const weekendExtraPct = Math.round((weekendExtraVal / extraMaxVal) * 100);
+  const holidayExtraPct = Math.round((holidayExtraVal / extraMaxVal) * 100);
 
-  if (isAdmin) {
-    statCards.push(
-      { title: "Total Users", value: stats.totalUsers || 0, clickable: true, onClick: openUsersModal },
-      { title: "Active Projects", value: stats.totalProjects || 0, clickable: true, onClick: openProjectsModal },
-      { title: "Active Clients", value: stats.totalClients || 0, clickable: true, onClick: openClientsModal }
-    );
-  }
+  const kpiEntries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];
+  const submittedCount = kpiEntries.filter((e) => e.approvalStatus === "SUBMITTED").length;
+  const rejectedCount = kpiEntries.filter((e) => e.approvalStatus === "REJECTED").length;
+  const pendingApprovals = Number(stats.pendingApprovals || 0);
+  const hoursLogged =
+    selectedMetric === "working"
+      ? Number(stats.normalHours || 0)
+      : selectedMetric === "weekend"
+        ? Number(stats.weekendHours || 0)
+        : selectedMetric === "holiday"
+          ? Number(stats.holidayHours || 0)
+          : Number(stats.totalWeekHours || 0);
+
+  const trendData = Array.isArray(stats?.dailySummary)
+    ? stats.dailySummary.map((d) => Number(d.totalHours || 0))
+    : [];
+
+  const getFilterLabel = () => {
+    switch (filterPeriod) {
+      case "today": return "Today";
+      case "thisWeek": return "This Week";
+      case "lastWeek": return "Last Week";
+      case "thisMonth": return "This Month";
+      case "lastMonth": return "Last Month";
+      case "nextMonth": return "Next Month";
+      case "thisYear": return "This Year";
+      case "customMonth": return `${MONTHS[customMonth]} ${customYear}`;
+      case "customRange": {
+        const fromLabel = formatDisplayDate(fromDate);
+        const toLabel = formatDisplayDate(toDate);
+        if (fromLabel && toLabel) return `${fromLabel} – ${toLabel}`;
+        return fromLabel || toLabel || "Custom Range";
+      }
+      default: return "";
+    }
+  };
+  const filterLabel = getFilterLabel();
+
+  const submissionStatusData = (() => {
+    const entries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];
+    let approved = 0;
+    let pending = 0;
+    let draft = 0;
+    let rejected = 0;
+    const usersWithEntries = new Set();
+    entries.forEach((e) => {
+      if (e.userName) usersWithEntries.add(e.userName);
+      if (e.approvalStatus === "APPROVED") approved += 1;
+      else if (e.approvalStatus === "SUBMITTED") pending += 1;
+      else if (e.approvalStatus === "DRAFT") draft += 1;
+      else if (e.approvalStatus === "REJECTED") rejected += 1;
+    });
+    const neverStarted = Math.max(Number(stats.totalUsers || 0) - usersWithEntries.size, 0);
+    const statuses = [
+      { label: "Approved", count: approved, color: "#3F3F46" },
+      { label: "Pending Approval", count: pending, color: "#9CA3AF" },
+      { label: "Draft", count: draft, color: "#D1D5DB" },
+      { label: "Never Started", count: neverStarted, color: "#DC2626" },
+      { label: "Rejected / Returned", count: rejected, color: "#EAB308" },
+    ];
+    const total = statuses.reduce((sum, s) => sum + s.count, 0);
+    return {
+      data: statuses.map((s) => ({
+        ...s,
+        pct: total > 0 ? Math.round((s.count / total) * 100) : 0,
+      })),
+      submittedPct: total > 0 ? Math.round(((approved + pending + rejected) / total) * 100) : 0,
+    };
+  })();
+
+  const submissionBottomStats = [
+    { label: "Total Users", value: String(stats.totalUsers || 0) },
+    { label: "Active Projects", value: String(stats.totalProjects || 0) },
+    { label: "Active Clients", value: String(stats.totalClients || 0) },
+  ];
+
+  const clientHoursData = (() => {
+    const entries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];
+    const clientHoursMap = new Map();
+    let totalHours = 0;
+    entries.forEach((e) => {
+      const client = e.clientWorked && e.clientWorked !== "-" ? e.clientWorked : "Unknown";
+      const hours = Number(e.hoursWorked || 0);
+      clientHoursMap.set(client, (clientHoursMap.get(client) || 0) + hours);
+      totalHours += hours;
+    });
+    return [...clientHoursMap.entries()]
+      .map(([label, hours]) => ({
+        label,
+        value: formatHoursToHHMM(hours),
+        pct: totalHours > 0 ? Math.round((hours / totalHours) * 100) : 0,
+      }))
+      .sort((a, b) => b.pct - a.pct)
+      .slice(0, 4);
+  })();
+
+  const projectBurnData = (() => {
+    const entries = Array.isArray(stats?.dashboardEntries) ? stats.dashboardEntries : [];
+    const projectHoursMap = new Map();
+    let totalHours = 0;
+    entries.forEach((e) => {
+      const project = e.projectWorked && e.projectWorked !== "-" ? e.projectWorked : "Unknown";
+      const hours = Number(e.hoursWorked || 0);
+      projectHoursMap.set(project, (projectHoursMap.get(project) || 0) + hours);
+      totalHours += hours;
+    });
+    return [...projectHoursMap.entries()]
+      .map(([name, hours]) => ({
+        name,
+        pct: totalHours > 0 ? Math.round((hours / totalHours) * 100) : 0,
+      }))
+      .sort((a, b) => b.pct - a.pct)
+      .slice(0, 4);
+  })();
+
+  const filterSelectClass =
+    "appearance-none bg-white border border-[#E5E7EB] text-sm text-[#111827] h-10 rounded-[10px] pl-3 pr-9 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-2 focus:ring-[#B33A2F]/15 cursor-pointer hover:border-[#B33A2F]/30 transition-colors";
+  const filterInputClass =
+    "bg-white border border-[#E5E7EB] text-sm text-[#111827] h-10 rounded-[10px] px-2.5 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-2 focus:ring-[#B33A2F]/15 cursor-pointer hover:border-[#B33A2F]/30 transition-colors";
+
+  const detailsThClass = isAdmin
+    ? "px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-[#6B7280] whitespace-nowrap"
+    : "px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap";
+  const detailsTdClass = isAdmin ? "px-5 py-3.5" : "px-4 py-3";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">Dashboard</h1>
-          <p className="text-sm text-[#374151]">Welcome back, {user?.name || "User"}!</p>
+    <div className={isAdmin ? "space-y-8" : "space-y-6"}>
+      <div className="flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          {isAdmin && (
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#B33A2F] mb-1.5">Admin Overview</p>
+          )}
+          <h1 className={isAdmin ? "text-[32px] font-bold tracking-tight text-[#111827] leading-none" : "text-2xl font-bold text-[#1E293B]"}>
+            Dashboard
+          </h1>
+          <p className="mt-3 text-sm text-[#6B7280]">Welcome back, {user?.name || "User"}!</p>
+          {isAdmin && (
+            <p className="mt-1 text-[13px] font-medium text-[#6B7280]">
+              <span className="font-semibold text-[#111827]">{stats.totalUsers || 0}</span> Users
+              <span className="mx-2 text-[#D1D5DB]">&bull;</span>
+              <span className="font-semibold text-[#111827]">{stats.totalProjects || 0}</span> Projects
+              <span className="mx-2 text-[#D1D5DB]">&bull;</span>
+              <span className="font-semibold text-[#111827]">{stats.totalClients || 0}</span> Clients
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap justify-end">
       {user?.role === "MANAGER" && (
             <div className="relative">
               <select
                 value={dashboardView}
                 onChange={(e) => setDashboardView(e.target.value)}
-                className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-1 focus:ring-[#B33A2F]/20 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
+                className={filterSelectClass}
               >
                 <option value="self">Self Dashboard</option>
                 <option value="team">Team Dashboard</option>
               </select>
-              <ChevronDown className="w-4 h-4 text-[#374151] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 text-[#6B7280] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           )}
           <div className="relative">
             <select
               value={selectedMetric}
               onChange={(e) => setSelectedMetric(e.target.value)}
-              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-1 focus:ring-[#B33A2F]/20 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
+              className={filterSelectClass}
             >
               {METRIC_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="w-4 h-4 text-[#374151] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-[#6B7280] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
           <div className="relative">
             <select
               value={filterPeriod}
               onChange={(e) => setFilterPeriod(e.target.value)}
-              className="appearance-none bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#B33A2F]/50 focus:ring-1 focus:ring-[#B33A2F]/20 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
+              className={filterSelectClass}
             >
               {FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="w-4 h-4 text-[#374151] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-[#6B7280] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
           {filterPeriod === "customMonth" && (
             <>
               <select
                 value={customMonth}
                 onChange={(e) => setCustomMonth(Number(e.target.value))}
-                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
+                className={filterSelectClass}
               >
                 {MONTHS.map((name, idx) => (
                   <option key={idx} value={idx}>{name}</option>
@@ -474,7 +883,7 @@ export const Dashboard = () => {
               <select
                 value={customYear}
                 onChange={(e) => setCustomYear(Number(e.target.value))}
-                className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors"
+                className={filterSelectClass}
               >
                 {YEARS.map((year) => (
                   <option key={year} value={year}>{year}</option>
@@ -484,22 +893,22 @@ export const Dashboard = () => {
           )}
           {filterPeriod === "customRange" && (
             <>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-[#374151]">From:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-[#6B7280]">From:</span>
                 <input
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors w-[140px]"
+                  className={filterInputClass}
                 />
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-[#374151]">To:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-[#6B7280]">To:</span>
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="bg-white border border-[#E2E8F0] text-[#1E293B] text-sm rounded-lg px-2 py-2 focus:outline-none focus:border-[#B33A2F]/50 cursor-pointer hover:border-[#B33A2F]/30 transition-colors w-[140px]"
+                  className={filterInputClass}
                 />
               </div>
             </>
@@ -507,21 +916,62 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Hour Metric Cards */}
+      {/* KPI Summary Cards */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((n) => (
-            <Card key={n} className="animate-pulse border-[#E2E8F0] bg-white">
-              <CardHeader className="flex justify-between pb-2">
-                <div className="h-4 w-1/2 bg-[#E2E8F0] rounded"></div>
-                <div className="h-4 w-4 bg-[#E2E8F0] rounded-full"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 w-1/3 bg-[#E2E8F0] rounded mb-2"></div>
-              </CardContent>
+        <div className="grid gap-5 grid-cols-2 lg:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <Card key={n} className="animate-pulse border-[#E2E8F0] bg-white rounded-[14px] shadow-[0_4px_18px_rgba(15,23,42,0.06)]">
+              <div className="p-6 space-y-3">
+                <div className="h-3 w-2/3 bg-[#E2E8F0] rounded"></div>
+                <div className="h-8 w-1/3 bg-[#E2E8F0] rounded"></div>
+                <div className="h-3 w-1/2 bg-[#E2E8F0] rounded"></div>
+              </div>
             </Card>
           ))}
         </div>
+      ) : isAdmin ? (
+        <>
+          <div className="grid gap-5 grid-cols-2 lg:grid-cols-5">
+            <KpiCard
+              title="Hours Logged"
+              value={Math.round(hoursLogged)}
+              unit="hrs"
+              description="Average hours per employee"
+              trend={trendData}
+              footer={filterLabel}
+            />
+            <KpiCard
+              title="Submitted"
+              value={submittedCount}
+              description="Submitted timesheets"
+              trend={trendData}
+              footer={filterLabel}
+            />
+            <KpiCard
+              title="Awaiting Approval"
+              value={pendingApprovals > 0 ? pendingApprovals : submittedCount}
+              description="Awaiting manager approval"
+              trend={trendData}
+              footer={filterLabel}
+            />
+            <KpiCard
+              title="Rejected"
+              value={rejectedCount}
+              description="Needs employee rework"
+              trend={trendData}
+              footer={filterLabel}
+            />
+            <ExtraHoursCard
+              total={formatHoursToHHMM(stats.totalExtraHours || 0)}
+              weekdayValue="—"
+              weekdayPct={0}
+              weekendValue={formatHoursToHHMM(stats.weekendHours || 0)}
+              weekendPct={weekendExtraPct}
+              holidayValue={formatHoursToHHMM(stats.holidayHours || 0)}
+              holidayPct={holidayExtraPct}
+            />
+          </div>
+        </>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
@@ -551,42 +1001,54 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* Admin Overview Cards */}
-      {statCards.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {statCards.map((card, index) => (
-            <Card
-              key={card.title}
-              className="border border-[#B33A2F]/30 hover:shadow-[0_0_20px_rgba(179,58,47,0.08)] hover:border-[#B33A2F]/30 transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-              style={{
-                animationDelay: `${index * 100}ms`,
-              }}
-              onClick={card.onClick}
-            >
-              <div className="flex items-center justify-between p-6 pb-2">
-                <span className="text-sm text-[#374151]">
-                  {card.title}
-                </span>
-              </div>
-              <div className="p-6 pt-0">
-                <div className="text-2xl font-bold text-[#1F2937]">
-                  {card.value}
-                </div>
-              </div>
-            </Card>
-          ))}
+      {!isLoading && (isAdmin ? (
+        <div className="space-y-5">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <SubmissionStatusCard
+              data={submissionStatusData.data}
+              submittedPct={submissionStatusData.submittedPct}
+              bottomStats={submissionBottomStats}
+            />
+            <HoursLoggedPerDayCard />
+          </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <HoursByClientCard data={clientHoursData} />
+            <ProjectHoursBurnCard data={projectBurnData} />
+          </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <ApprovalQueueCard />
+            <LeaveTakenCard />
+          </div>
+          <div>
+            <AdminQueueTable activeTab={activeQueueTab} onTabChange={setActiveQueueTab} />
+          </div>
         </div>
-      )}
-
-      {!isLoading && (
+      ) : (
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-[#1E293B]">
+          <Card
+            className={
+              isAdmin
+                ? "rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)] overflow-hidden"
+                : ""
+            }
+          >
+            <CardHeader
+              className={
+                isAdmin
+                  ? "flex flex-row items-center justify-between gap-4 px-6 py-5 border-b border-[#E5E7EB]"
+                  : ""
+              }
+            >
+              <CardTitle className={isAdmin ? "text-[15px] font-semibold tracking-tight text-[#111827]" : "text-[#1E293B]"}>
                 {METRIC_OPTIONS.find(m => m.value === selectedMetric)?.label || "Dashboard"} Details
               </CardTitle>
+              {isAdmin && (
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280] whitespace-nowrap">
+                  {filteredDashboardData.entries.length} days &middot; {formatHoursToHHMM(filteredDashboardData.totals.totalHours)} logged
+                </span>
+              )}
             </CardHeader>
-            <CardContent>
+            <CardContent className={isAdmin ? "p-0" : ""}>
               {filteredDashboardData.entries.length === 0 ? (
                 <div className="flex items-center justify-center h-32 text-[#374151]">
                   No entries found for the selected period.
@@ -594,16 +1056,16 @@ export const Dashboard = () => {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                    <thead className={isAdmin ? "bg-[#F9FAFB] border-b border-[#E5E7EB]" : "bg-[#F8FAFC] border-b border-[#E2E8F0]"}>
                       <tr>
                         {(user?.role === "MANAGER" && dashboardView === "team") && (
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Employee Name</th>
+                          <th className={detailsThClass}>Employee Name</th>
                         )}
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Day</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Total Hours</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Reported To</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-[#374151] whitespace-nowrap">Status</th>
+                        <th className={detailsThClass}>Date</th>
+                        <th className={detailsThClass}>Day</th>
+                        <th className={detailsThClass}>Total Hours</th>
+                        <th className={detailsThClass}>Reported To</th>
+                        <th className={detailsThClass}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -613,14 +1075,14 @@ export const Dashboard = () => {
                             className={`border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors duration-150 ${day.isWeekend || day.isHoliday ? "bg-amber-50 border-l-4 border-l-amber-500" : ""}`}
                           >
                             {(user?.role === "MANAGER" && dashboardView === "team") && (
-                              <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{day.userName || "-"}</td>
+                              <td className={`${detailsTdClass} text-[#111827] whitespace-nowrap font-medium`}>{day.userName || "-"}</td>
                             )}
-                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">
+                            <td className={`${detailsTdClass} text-[#111827] whitespace-nowrap`}>
                               <div className="flex items-center gap-2">
                                 {day.projectCount > 1 && (
                                   <button
                                     onClick={() => toggleExpand(day.rawDate)}
-                                    className="w-4 h-4 flex items-center justify-center text-[#374151] hover:text-[#1E293B] transition-colors"
+                                    className="w-4 h-4 flex items-center justify-center text-[#6B7280] hover:text-[#111827] transition-colors"
                                   >
                                     <ChevronDown
                                       className={`w-4 h-4 transition-transform duration-200 ${expandedDates.has(day.rawDate) ? "rotate-0" : "-rotate-90"}`}
@@ -631,25 +1093,25 @@ export const Dashboard = () => {
                                 <span>{day.date || day.rawDate || "-"}</span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.day || "-"}</td>
+                            <td className={`${detailsTdClass} text-[#111827] whitespace-nowrap`}>{day.day || "-"}</td>
                             {day.isMissing ? (
                               <>
-                                <td className="px-4 py-3 text-[#64748B]">No Entries Logged</td>
-                                <td className="px-4 py-3"></td>
-                                <td className="px-4 py-3"></td>
+                                <td className={`${detailsTdClass} text-[#9CA3AF]`}>No Entries Logged</td>
+                                <td className={detailsTdClass}></td>
+                                <td className={detailsTdClass}></td>
                               </>
                             ) : (
-                              <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap font-medium">{formatHoursToHHMM(day.totalHours)}</td>
+                              <td className={`${detailsTdClass} text-[#111827] whitespace-nowrap font-semibold`}>{formatHoursToHHMM(day.totalHours)}</td>
                             )}
-                            {!day.isMissing && <td className="px-4 py-3 text-[#1E293B] whitespace-nowrap">{day.reportedTo || "-"}</td>}
+                            {!day.isMissing && <td className={`${detailsTdClass} text-[#111827] whitespace-nowrap`}>{day.reportedTo || "-"}</td>}
                             {!day.isMissing && (
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                  day.status === "APPROVED" ? "bg-green-100 text-green-700 border border-green-200" :
-                                  day.status === "SUBMITTED" ? "bg-blue-100 text-blue-700 border border-blue-200" :
-                                  day.status === "REJECTED" ? "bg-red-100 text-red-700 border border-red-200" :
-                                  day.status === "PENDING" ? "bg-orange-100 text-orange-700 border border-orange-200" :
-                                  "bg-gray-100 text-gray-600 border border-gray-200"
+                              <td className={`${detailsTdClass} whitespace-nowrap`}>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                                  day.status === "APPROVED" ? "bg-green-50 text-green-700 border border-green-200" :
+                                  day.status === "SUBMITTED" ? "bg-blue-50 text-blue-700 border border-blue-200" :
+                                  day.status === "REJECTED" ? "bg-red-50 text-red-700 border border-red-200" :
+                                  day.status === "PENDING" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                                  "bg-gray-50 text-gray-600 border border-gray-200"
                                 }`}>
                                   {day.status === "APPROVED" ? "Approved" :
                                    day.status === "SUBMITTED" ? "Submitted" :
@@ -699,7 +1161,7 @@ export const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-      )}
+      ))}
 
       {user?.role === "MANAGER" && dashboardView === "team" && stats.teamData && stats.teamData.length > 0 && (
         <Card className="overflow-hidden">
@@ -876,15 +1338,6 @@ export const Dashboard = () => {
         userRole={user?.role}
         date={modalState.date}
         onDateChange={handleDateChange}
-      />
-
-      <AdminListModal
-        isOpen={adminModal.isOpen}
-        onClose={closeAdminModal}
-        title={adminModal.title}
-        columns={adminModal.columns}
-        data={adminModal.data}
-        isLoading={adminModal.isLoading}
       />
 
       <MissingTimeModal
